@@ -694,7 +694,7 @@ def set_paattymis_pvm_for_vakajarjestaja_data_task(vakajarjestaja_id, paattymis_
 
 @shared_task
 @single_instance_task(timeout_in_minutes=8 * 60)
-def get_ukranian_child_statistics(active_since='2022-02-24'):
+def get_ukranian_child_statistics(active_since='2022-02-24', swedish=False):
     """
     Get number of Ukranian children per each municipality that started in vaka after active_since parameter
     TEMPORARY FUNCTION
@@ -705,6 +705,9 @@ def get_ukranian_child_statistics(active_since='2022-02-24'):
         logger.error(f'Could not parse active_since: {active_since}')
         return None
 
+    asiointikieli_filter = (Q(lapsi__varhaiskasvatuspaatokset__varhaiskasvatussuhteet__toimipaikka__asiointikieli_koodi__icontains='sv')
+                            if swedish else Q())
+
     # Get list of henkilo_oid that have active Varhaiskasvatuspaatos and Varhaiskasvatussuhde after active since
     # and no previous Varhaiskasvatuspaatos objects
     today = datetime.datetime.today()
@@ -714,7 +717,8 @@ def get_ukranian_child_statistics(active_since='2022-02-24'):
                          Q(lapsi__varhaiskasvatuspaatokset__paattymis_pvm__gt=today)) &
                         Q(lapsi__varhaiskasvatuspaatokset__varhaiskasvatussuhteet__alkamis_pvm__gte=active_since) &
                         (Q(lapsi__varhaiskasvatuspaatokset__varhaiskasvatussuhteet__paattymis_pvm__isnull=True) |
-                         Q(lapsi__varhaiskasvatuspaatokset__varhaiskasvatussuhteet__paattymis_pvm__gt=today)))
+                         Q(lapsi__varhaiskasvatuspaatokset__varhaiskasvatussuhteet__paattymis_pvm__gt=today)) &
+                        asiointikieli_filter)
                 .exclude(lapsi__varhaiskasvatuspaatokset__alkamis_pvm__lt=active_since)
                 .distinct('henkilo_oid').values_list('henkilo_oid', flat=True))
     oid_chunk_list = list_to_chunks(oid_list, 5000)
@@ -729,6 +733,7 @@ def get_ukranian_child_statistics(active_since='2022-02-24'):
                     valid_oid_list.append(henkilo_data['oidHenkilo'])
                     break
 
+    code_language = 'sv' if swedish else 'fi'
     kunta_dict = {'total': {'amount': len(valid_oid_list)}}
     for henkilo_oid in valid_oid_list:
         kunta_code_list = (Toimipaikka.objects
@@ -736,7 +741,7 @@ def get_ukranian_child_statistics(active_since='2022-02-24'):
                            .distinct('kunta_koodi').values_list('kunta_koodi', flat=True))
         for kunta_code in kunta_code_list:
             kunta_translation = getattr(Z2_CodeTranslation.objects
-                                        .filter(language__iexact='fi', code__code_value=kunta_code,
+                                        .filter(language__iexact=code_language, code__code_value=kunta_code,
                                                 code__koodisto__name=Koodistot.kunta_koodit.value).first(),
                                         'name', None)
             kunta_dict[kunta_code] = {'name': kunta_translation,
