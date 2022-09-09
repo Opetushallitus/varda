@@ -9,20 +9,16 @@
   width: auto;
 }
 
-.menu-inline {
+.oph-logo {
   flex-grow: 1;
 }
 
-.menu-inline a {
-  color: white;
-  padding-right: 2em;
+.oph-logo img {
+  height: 3.5em;
 }
 
-.menu-inline .active-link {
-  font-weight: bold;
-  text-decoration: underline;
-  cursor: default;
-  pointer-events: none;
+.language-selector {
+  align-self: center;
 }
 
 .language-wrapper {

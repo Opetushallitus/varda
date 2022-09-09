@@ -2,6 +2,11 @@
   <div class="pulssi-header">
     <h1>{{ translations.menu_pulssi | translate }}</h1>
     <p>{{ translations.pulssi_description | translate }}</p>
+    <p>
+      <a href="{{ translations.pulssi_help_url | translate }}" target="_blank">
+        {{ translations.pulssi_help | translate }}
+      </a>
+    </p>
     <em *ngIf="pulssiData">{{ translations.pulssi_timestamp | translate }}: {{ pulssiData.timestamp | vardaLongDate }}</em>
   </div>
   <div class="pulssi-grid" *ngIf="pulssiData">

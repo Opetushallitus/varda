@@ -210,7 +210,8 @@ class PulssiViewSet(GenericViewSet, ListModelMixin):
         toimipaikka_with_tp = Toimipaikka.objects.filter(active_filter & tp_voimassa_filter).distinct('id').count()
 
         # Lapsi related information
-        lapsi_active_filter = get_active_filter(today, prefix='varhaiskasvatuspaatokset__varhaiskasvatussuhteet')
+        lapsi_active_filter = (get_active_filter(today, prefix='varhaiskasvatuspaatokset') &
+                               get_active_filter(today, prefix='varhaiskasvatuspaatokset__varhaiskasvatussuhteet'))
         lapsi_count = Lapsi.objects.filter(lapsi_active_filter).distinct('henkilo_id').count()
         vakapaatos_count = Varhaiskasvatuspaatos.objects.filter(active_filter).count()
         paivittainen_count = (Lapsi.objects
@@ -224,15 +225,18 @@ class PulssiViewSet(GenericViewSet, ListModelMixin):
                             .distinct('henkilo_id').count())
 
         # Huoltaja related information
+        huoltaja_vakapaatos_prefix = 'huoltajuussuhteet__lapsi__varhaiskasvatuspaatokset'
         huoltaja_vakasuhde_prefix = 'huoltajuussuhteet__lapsi__varhaiskasvatuspaatokset__varhaiskasvatussuhteet'
-        huoltaja_lapsi_active_filter = get_active_filter(today, prefix=huoltaja_vakasuhde_prefix)
+        huoltaja_lapsi_active_filter = (get_active_filter(today, prefix=huoltaja_vakapaatos_prefix) &
+                                        get_active_filter(today, prefix=huoltaja_vakasuhde_prefix))
         huoltaja_count = (Huoltaja.objects
                           .filter(huoltaja_lapsi_active_filter, huoltajuussuhteet__voimassa_kytkin=True)
                           .distinct('henkilo_id').count())
         asiakasmaksu_avg = Maksutieto.objects.filter(active_filter).aggregate(avg=Avg('asiakasmaksu'))
 
         # Tyontekija related information
-        tyontekija_active_filter = get_active_filter(today, prefix='palvelussuhteet')
+        tyontekija_active_filter = (get_active_filter(today, prefix='palvelussuhteet') &
+                                    get_active_filter(today, prefix='palvelussuhteet__tyoskentelypaikat'))
         tyontekija_count = Tyontekija.objects.filter(tyontekija_active_filter).distinct('henkilo_id').count()
 
         # Tyoskentelypaikka count by tehtavanimike_koodi
@@ -243,9 +247,11 @@ class PulssiViewSet(GenericViewSet, ListModelMixin):
         tn_annotations = {}
         for tn_code in tn_codes:
             tn_annotations[tn_code] = Sum(Case(When(tehtavanimike_koodi__iexact=tn_code, then=1), default=0))
+
+        tyoskentelypaikka_active_filter = active_filter & get_active_filter(today, prefix='palvelussuhde')
         # Count tehtavanimike_koodi per henkilo_id only once, raw query would probably be faster (SELECT FROM subquery)
         distinct_tp_subquery = (Tyoskentelypaikka.objects
-                                .filter(active_filter)
+                                .filter(tyoskentelypaikka_active_filter)
                                 .distinct('palvelussuhde__tyontekija__henkilo_id', 'tehtavanimike_koodi')
                                 .values('id'))
         tyoskentelypaikka_by_tn = (Tyoskentelypaikka.objects
@@ -255,7 +261,7 @@ class PulssiViewSet(GenericViewSet, ListModelMixin):
 
         # Tyontekija count with Tyoskentelypaikka in more than 1 Toimipaikka
         tyontekija_multi_count = (Tyoskentelypaikka.objects
-                                  .filter(active_filter)
+                                  .filter(tyoskentelypaikka_active_filter)
                                   .values('palvelussuhde__tyontekija__henkilo_id')
                                   .annotate(toimipaikka_count=Count('toimipaikka_id', distinct=True),
                                             kiertava_count=Sum(Case(When(kiertava_tyontekija_kytkin=True, then=1),

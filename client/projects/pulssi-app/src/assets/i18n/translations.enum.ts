@@ -4,6 +4,8 @@ export enum PulssiTranslations {
   lang_sv = 'lang.sv',
   varda_title = 'varda.title',
   pulssi_description = 'pulssi.description',
+  pulssi_help = 'pulssi.help',
+  pulssi_help_url = 'pulssi.help.url',
   pulssi_timestamp = 'pulssi.timestamp',
   pulssi_organisaatio = 'pulssi.organisaatio',
   pulssi_kunta = 'pulssi.kunta',
