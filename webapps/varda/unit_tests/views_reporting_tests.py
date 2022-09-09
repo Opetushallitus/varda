@@ -1256,7 +1256,7 @@ class VardaViewsReportingTests(TestCase):
         resp_no_permissions_2 = client_no_permissions_2.get(url)
         assert_status_code(resp_no_permissions_2, status.HTTP_404_NOT_FOUND)
 
-    def test_api_error_report_lapset_huoltajatiedot(self):
+    def test_api_error_report_lapset_huoltajatiedot_kunnallinen(self):
         vakajarjestaja = Organisaatio.objects.get(organisaatio_oid='1.2.246.562.10.57294396385')
         lapsi = Lapsi.objects.get(vakatoimija=vakajarjestaja, henkilo__henkilo_oid='1.2.246.562.24.6779627637492')
 
@@ -1282,6 +1282,55 @@ class VardaViewsReportingTests(TestCase):
         Maksutieto.objects.filter(huoltajuussuhteet__lapsi=lapsi).update(alkamis_pvm=tomorrow)
         resp = client.get(f'/api/v1/vakajarjestajat/{vakajarjestaja.id}/error-report-lapset/')
         self._verify_error_report_result(resp, ['MA016'])
+
+        # Make Lapsi under 8 years old, MA016 should not be raised
+        six_years_ago = datetime.date.today().year - 6
+        Henkilo.objects.filter(lapsi=lapsi).update(syntyma_pvm=datetime.date(year=six_years_ago, month=1, day=1))
+        # Set Maksutieto asiakasmaksu > 295
+        Maksutieto.objects.filter(huoltajuussuhteet__lapsi=lapsi).update(asiakasmaksu=296)
+        resp = client.get(f'/api/v1/vakajarjestajat/{vakajarjestaja.id}/error-report-lapset/')
+        self._verify_error_report_result(resp, ['MA020'])
+
+    @mock_date_decorator_factory('varda.viewsets_reporting.datetime', '2022-02-01')
+    def test_api_error_report_lapset_huoltajatiedot_yksityinen(self):
+        organisaatio_yksityinen = Organisaatio.objects.get(organisaatio_oid='1.2.246.562.10.93957375488')
+        organisaatio_kunnallinen = Organisaatio.objects.get(organisaatio_oid='1.2.246.562.10.34683023489')
+        lapsi_yksityinen = Lapsi.objects.get(tunniste='testing-lapsi1')
+        lapsi_kunnallinen = Lapsi.objects.get(tunniste='testing-lapsi3')
+        lapsi_paos = Lapsi.objects.get(tunniste='testing-lapsi4')
+
+        # Fix existing errors
+        (Henkilo.objects
+         .filter(lapsi__in=(lapsi_paos, lapsi_yksityinen, lapsi_kunnallinen))
+         .update(syntyma_pvm=datetime.date(year=2017, month=1, day=1)))
+
+        paos_maksutieto = {
+            'lapsi_tunniste': 'testing-lapsi4',
+            'lahdejarjestelma': '1',
+            'huoltajat': [{'henkilotunnus': '110548-316P', 'etunimet': 'Huoltaja', 'sukunimi': 'Vanhanen'}],
+            'maksun_peruste_koodi': 'mp02',
+            'palveluseteli_arvo': 500,
+            'asiakasmaksu': 0,
+            'perheen_koko': 3,
+            'alkamis_pvm': '2019-09-01'
+        }
+
+        client = SetUpTestClient('tester2').client()
+        assert_status_code(client.post('/api/v1/maksutiedot/', json.dumps(paos_maksutieto),
+                                       content_type='application/json'),
+                           status.HTTP_201_CREATED)
+
+        # Set Maksutieto asiakasmaksu > 295
+        Maksutieto.objects.filter(huoltajuussuhteet__lapsi__in=(lapsi_yksityinen, lapsi_paos,)).update(asiakasmaksu=296)
+
+        # One error for kunnallinen (Maksutieto of lapsi_paos)
+        resp = client.get(f'/api/v1/vakajarjestajat/{organisaatio_kunnallinen.id}/error-report-lapset/')
+        self._verify_error_report_result(resp, ['MA020'])
+
+        # Only one error for yksityinen (no errors for lapsi_paos)
+        client = SetUpTestClient('tester7').client()
+        resp = client.get(f'/api/v1/vakajarjestajat/{organisaatio_yksityinen.id}/error-report-lapset/')
+        self._verify_error_report_result(resp, [])
 
     @mock_date_decorator_factory('varda.viewsets_reporting.datetime', '2021-01-01')
     def test_api_error_report_lapset_vakatiedot(self):

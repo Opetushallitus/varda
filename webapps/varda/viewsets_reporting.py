@@ -653,12 +653,13 @@ class ErrorReportLapsetViewSet(AbstractErrorReportViewSet):
         # [[ErrorMessages, filter condition, parameters[], ID lookup, model name for ID lookup]]
         huoltajatiedot_error_nested_list = [
             [ErrorMessages.MA015, '''la.paos_organisaatio_id IS DISTINCT FROM %s AND ma.paattymis_pvm IS NULL AND
-             (ma.alkamis_pvm <= %s OR ma.alkamis_pvm IS NULL) AND
              NOT EXISTS(SELECT id FROM varda_varhaiskasvatuspaatos WHERE lapsi_id = la.id AND
-              alkamis_pvm <= %s AND (paattymis_pvm IS NULL OR paattymis_pvm >= %s))''',
+              alkamis_pvm <= %s AND (paattymis_pvm IS NULL OR paattymis_pvm >= %s)) AND (ma.alkamis_pvm <= %s)''',
              [self.vakajarjestaja_id, today, today, today], 'ma.id', Maksutieto.get_name()],
             [ErrorMessages.MA016, '''la.paos_organisaatio_id IS DISTINCT FROM %s AND ma.paattymis_pvm IS NULL AND
-             he.syntyma_pvm < %s''', [self.vakajarjestaja_id, overage_date], 'ma.id', Maksutieto.get_name()]
+             he.syntyma_pvm < %s''', [self.vakajarjestaja_id, overage_date], 'ma.id', Maksutieto.get_name()],
+            [ErrorMessages.MA020, '''la.paos_organisaatio_id IS DISTINCT FROM %s AND asiakasmaksu > 295 AND
+             org.yritysmuoto = ANY(%s)''', [self.vakajarjestaja_id, YRITYSMUOTO_KUNTA], 'ma.id', Maksutieto.get_name()]
         ]
 
         vakatiedot_list = vakatiedot_error_nested_list if self.is_vakatiedot_permissions else []
@@ -684,6 +685,7 @@ class ErrorReportLapsetViewSet(AbstractErrorReportViewSet):
             LEFT JOIN varda_huoltajuussuhde hu ON hu.lapsi_id = la.id
             LEFT JOIN varda_maksutietohuoltajuussuhde mahu ON mahu.huoltajuussuhde_id = hu.id
             LEFT JOIN varda_maksutieto ma ON ma.id = mahu.maksutieto_id
+            LEFT JOIN varda_organisaatio org ON org.id IN (la.vakatoimija_id, la.oma_organisaatio_id)
         ''' if self.is_huoltajatiedot_permissions else ''
         join_clause = f'{vakatiedot_join} {huoltajatiedot_join}'
 

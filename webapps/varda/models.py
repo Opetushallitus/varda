@@ -290,7 +290,8 @@ class Lapsi(UniqueLahdejarjestelmaTunnisteMixin, HistoryAbstractModel):
         """
         :return: True if lapsi is yksityinen, otherwise False
         """
-        return self.vakatoimija is not None and not self.vakatoimija.kunnallinen_kytkin
+        organisaatio = self.vakatoimija or self.oma_organisaatio
+        return not organisaatio.kunnallinen_kytkin
 
     def save(self, *args, **kwargs):
         try:

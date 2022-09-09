@@ -198,6 +198,7 @@ class ErrorMessages(enum.Enum):
     MA017 = get_error_dict('MA017', 'Duplicate huoltajat detected.')
     MA018 = get_error_dict('MA018', 'Huoltaja is already linked to this Maksutieto.')
     MA019 = get_error_dict('MA019', 'paattymis_pvm must be equal to or after 2019-09-01 for kunnallinen Lapsi.')
+    MA020 = get_error_dict('MA020', 'Maximum amount of asiakasmaksu is 295 for kunnallinen Lapsi.')
 
     # PaosToiminta errors, prefix: PT
     PT001 = get_error_dict('PT001', 'oma_organisaatio cannot be the same as paos_organisaatio.')
