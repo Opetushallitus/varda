@@ -21,7 +21,7 @@ from varda.enums.error_messages import ErrorMessages
 from varda.misc import path_parse, single_instance_task
 from varda.misc_queries import (get_lapsi_for_maksutieto, get_organisaatio_oid_for_taydennyskoulutus,
                                 get_tallentaja_organisaatio_oid_for_paos_lapsi)
-from varda.models import (Organisaatio, Taydennyskoulutus, Toimipaikka, Lapsi, Tutkinto, Varhaiskasvatussuhde,
+from varda.models import (Henkilo, Organisaatio, Taydennyskoulutus, Toimipaikka, Lapsi, Tutkinto, Varhaiskasvatussuhde,
                           PaosToiminta, PaosOikeus, Z3_AdditionalCasUserFields, Z4_CasKayttoOikeudet, Z5_AuditLog,
                           LoginCertificate, Maksutieto, Tyontekija, Tyoskentelypaikka, TaydennyskoulutusTyontekija)
 from varda.permission_groups import get_oph_yllapitaja_group_name
@@ -703,13 +703,20 @@ def delete_permissions_from_object_instance_by_oid(instance, organisaatio_oid):
                                          group__name__endswith=organisaatio_oid).delete()
 
 
-def delete_all_user_permissions(user):
+def delete_all_user_permissions(user, delete_henkilo_permissions=True):
     # Delete Z4_CasKayttoOikeudet related objects (not used, only set and deleted)
     Z4_CasKayttoOikeudet.objects.filter(user=user).delete()
+
     # Clear user group associations
     user.groups.clear()
+
     # Delete user specific permissions (e.g. to Henkilo objects)
-    UserObjectPermission.objects.filter(user=user).delete()
+    user_permission_qs = UserObjectPermission.objects.filter(user=user)
+    if not delete_henkilo_permissions:
+        # Preserve permissions to Henkilo objects, e.g. during API token fetch
+        # User can create Henkilo, fetch API token again and then try to create Lapsi
+        user_permission_qs = user_permission_qs.exclude(content_type=ContentType.objects.get_for_model(Henkilo))
+    user_permission_qs.delete()
 
 
 def delete_object_permissions(instance):

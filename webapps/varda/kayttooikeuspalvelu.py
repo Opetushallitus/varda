@@ -112,7 +112,7 @@ def set_user_kayttooikeudet(henkilo_oid, user):
     if is_oph_staff(user) and is_oph_yllapitaja:
         return None
 
-    delete_all_user_permissions(user)
+    delete_all_user_permissions(user, delete_henkilo_permissions=False)
 
     # After removal, let's set the user permissions.
     for permissions_by_organization in permissions_by_organization_list:
@@ -391,7 +391,7 @@ def set_service_user_permissions(user, henkilo_oid):
     finally:
         # Delete existing permissions after getting current ones, so that time without any permissions is short
         # Service users can use multiple simultaneous instances, so we want user to have permissions at all times
-        delete_all_user_permissions(user)
+        delete_all_user_permissions(user, delete_henkilo_permissions=False)
 
     if len(permissions_by_organization_list) != 1:
         # Decline access to Varda if the service user doesn't have correct permissions to VARDA-service

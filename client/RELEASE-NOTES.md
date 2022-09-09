@@ -1,6 +1,9 @@
 # Release notes
 Varda-käyttöliittymä release notes
 
+1.6.6 (09.09.2022)
+- OPHVARDA-2252: Robot framework Firefox ja Edge
+
 1.6.5 (18.08.2022)
 - OPHVARDA-2415: Paranna syötä tietoja -hakujen suorituskykyä
 - OPHVARDA-2417: Poista oikeudet lapseen PAOS-huoltajatiedot-ryhmiltä

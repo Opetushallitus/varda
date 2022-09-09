@@ -1,3 +1,4 @@
+import json
 from unittest.mock import patch
 
 import responses
@@ -11,7 +12,7 @@ from rest_framework.test import APIClient
 from varda import kayttooikeuspalvelu
 from varda.enums.kayttajatyyppi import Kayttajatyyppi
 from varda.enums.tietosisalto_ryhma import TietosisaltoRyhma
-from varda.models import Z4_CasKayttoOikeudet, Organisaatio
+from varda.models import Henkilo, Z4_CasKayttoOikeudet, Organisaatio
 from varda.unit_tests.test_utils import assert_status_code, base64_encoding, assert_validation_error
 
 
@@ -513,6 +514,49 @@ class TestPalvelukayttajaKayttooikeus(TestCase):
                               [TietosisaltoRyhma.TYONTEKIJATIEDOT.value,
                                TietosisaltoRyhma.TILAPAINENHENKILOSTOTIEDOT.value])
 
+    @responses.activate
+    def test_service_user_henkilo_permissions(self):
+        username = 'service-user-test'
+        organisaatio_oid = '1.2.246.562.10.57294396385'
+        mock_response = [
+            {
+                'organisaatioOid': organisaatio_oid,
+                'kayttooikeudet': [
+                    {
+                        'palvelu': 'VARDA',
+                        'oikeus': Z4_CasKayttoOikeudet.PALVELUKAYTTAJA,
+                    },
+                ]
+            }
+        ]
+        mock_cas_palvelukayttaja_responses(mock_response, username)
+
+        client = APIClient()
+        init_api_token(client, username)
+
+        # Create Henkilo
+        henkilo_obj = Henkilo.objects.get(henkilo_oid='1.2.246.562.24.47279942650')
+        assert_status_code(client.get(f'/api/v1/henkilot/{henkilo_obj.id}/'), status.HTTP_404_NOT_FOUND)
+        henkilo = {
+            'etunimet': 'Pekka',
+            'kutsumanimi': 'Pekka',
+            'sukunimi': 'Virtanen',
+            'henkilotunnus': '010114A0013'
+        }
+        assert_status_code(client.post('/api/v1/henkilot/', henkilo), status.HTTP_200_OK)
+        assert_status_code(client.get(f'/api/v1/henkilot/{henkilo_obj.id}/'), status.HTTP_200_OK)
+
+        # Fetch API token again, permissions are reset except Henkilo permissions
+        init_api_token(client, username)
+
+        lapsi = {
+            'vakatoimija_oid': '1.2.246.562.10.57294396385',
+            'henkilo_oid': '1.2.246.562.24.47279942650',
+            'lahdejarjestelma': '1'
+        }
+        assert_status_code(client.post('/api/v1/lapset/', lapsi), status.HTTP_201_CREATED)
+        assert_status_code(client.get(f'/api/v1/henkilot/{henkilo_obj.id}/'), status.HTTP_200_OK)
+
     def _assert_user_permissiongroups(self, expected_group_names, username):
         user = User.objects.get(username=username)
         group_names = Group.objects.filter(user=user).values_list('name', flat=True)
@@ -551,3 +595,12 @@ def _get_kayttooikeudet_json(organisaatiot, username, henkilo_oid):
         'organisaatiot': organisaatiot,
     }
     return kayttooikeus_json
+
+
+def init_api_token(client, username):
+    basic_auth_token = base64_encoding(f'{username}:password')
+    client.credentials(HTTP_AUTHORIZATION=f'Basic {basic_auth_token}')
+    resp = client.get('/api/user/apikey/')
+    assert_status_code(resp, status.HTTP_200_OK)
+    token = json.loads(client.get('/api/user/apikey/').content)['token']
+    client.credentials(HTTP_AUTHORIZATION=f'Token {token}')
