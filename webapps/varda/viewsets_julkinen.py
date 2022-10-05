@@ -2,7 +2,7 @@ import datetime
 
 from django.conf import settings
 from django.contrib.auth.models import User
-from django.db.models import Avg, Count, F, Sum, Value, CharField, Q, Case, When, BooleanField
+from django.db.models import Avg, Count, Exists, F, OuterRef, Sum, Value, CharField, Q, Case, When, BooleanField
 from django.db.models.functions import Lower
 from django.utils import timezone
 from drf_yasg.utils import swagger_auto_schema
@@ -23,8 +23,9 @@ from varda.filters import CustomParametersFilterBackend, CustomParameter
 from varda.lokalisointipalvelu import get_localisation_data
 from varda.misc_queries import get_active_filter
 from varda.misc_viewsets import parse_query_parameter
-from varda.models import (Huoltaja, Lapsi, Maksutieto, Organisaatio, TaydennyskoulutusTyontekija, TilapainenHenkilosto,
-                          Toimipaikka, Tyontekija, Tyoskentelypaikka, Varhaiskasvatuspaatos, Z2_Koodisto, Z2_Code)
+from varda.models import (Huoltaja, Lapsi, Maksutieto, Organisaatio, PidempiPoissaolo, TaydennyskoulutusTyontekija,
+                          TilapainenHenkilosto, Toimipaikka, Tyontekija, Tyoskentelypaikka, Varhaiskasvatuspaatos,
+                          Z2_Koodisto, Z2_Code)
 from varda.serializers_julkinen import LocalisationSerializer, KoodistotSerializer, PulssiSerializer
 from webapps.api_throttles import PublicAnonThrottle
 
@@ -236,7 +237,9 @@ class PulssiViewSet(GenericViewSet, ListModelMixin):
 
         # Tyontekija related information
         tyontekija_active_filter = (get_active_filter(today, prefix='palvelussuhteet') &
-                                    get_active_filter(today, prefix='palvelussuhteet__tyoskentelypaikat'))
+                                    get_active_filter(today, prefix='palvelussuhteet__tyoskentelypaikat') &
+                                    ~Exists(PidempiPoissaolo.objects
+                                            .filter(active_filter, palvelussuhde=OuterRef('palvelussuhteet'))))
         tyontekija_count = Tyontekija.objects.filter(tyontekija_active_filter).distinct('henkilo_id').count()
 
         # Tyoskentelypaikka count by tehtavanimike_koodi
@@ -248,7 +251,9 @@ class PulssiViewSet(GenericViewSet, ListModelMixin):
         for tn_code in tn_codes:
             tn_annotations[tn_code] = Sum(Case(When(tehtavanimike_koodi__iexact=tn_code, then=1), default=0))
 
-        tyoskentelypaikka_active_filter = active_filter & get_active_filter(today, prefix='palvelussuhde')
+        tyoskentelypaikka_active_filter = (active_filter & get_active_filter(today, prefix='palvelussuhde') &
+                                           ~Exists(PidempiPoissaolo.objects
+                                                   .filter(active_filter, palvelussuhde=OuterRef('palvelussuhde'))))
         # Count tehtavanimike_koodi per henkilo_id only once, raw query would probably be faster (SELECT FROM subquery)
         distinct_tp_subquery = (Tyoskentelypaikka.objects
                                 .filter(tyoskentelypaikka_active_filter)
