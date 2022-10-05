@@ -89,23 +89,196 @@
     <mat-progress-bar mode="indeterminate" class="varda-theme"></mat-progress-bar>
   </div>
   <div class="col-12 col-md-10 col-lg-8 col-xl-7 margin-top" *ngIf="yearlyReport.status === ReportStatus.FINISHED">
-    <div *ngFor="let data of [[datasourceAll, i18n.yearly_report_all], [datasourceOwn, i18n.yearly_report_own], [datasourcePaos, i18n.yearly_report_paos]]"
-         class="margin-top-large">
-      <span class="oph-bold margin-top">{{data[1] | translate}}</span>
+    <app-mat-table-dummy></app-mat-table-dummy>
+    <div class="margin-top-large">
+      <span class="oph-bold margin-top">{{i18n.yearly_report_all | translate}}</span>
       <div class="table-responsive">
-        <table mat-table [dataSource]="data[0]">
-          <ng-container matColumnDef="name">
-            <th mat-header-cell *matHeaderCellDef>{{i18n.katsele_tietoja_yhteenveto_key | translate }}</th>
-            <td mat-cell *matCellDef="let element">{{element.name | translate}}</td>
-          </ng-container>
-          <ng-container matColumnDef="value">
-            <th mat-header-cell *matHeaderCellDef>{{i18n.katsele_tietoja_yhteenveto_value | translate }}</th>
-            <td mat-cell *matCellDef="let element">
-              {{element.value === true || element.value === false ? ((element.value ? i18n.yes : i18n.no) | translate) : (element.value | number:undefined:'fi')}}
+        <table class="mat-table">
+          <tr class="mat-header-row">
+            <th class="mat-header-cell">{{i18n.katsele_tietoja_yhteenveto_key | translate}}</th>
+            <th class="mat-header-cell">{{i18n.katsele_tietoja_yhteenveto_value | translate}}</th>
+          </tr>
+          <tr class="mat-row">
+            <td class="mat-cell">{{i18n.yearly_report_result_vakajarjestaja_count | translate}}</td>
+            <td class="mat-cell">{{yearlyReport.vakajarjestaja_count | number:undefined:'fi'}}</td>
+          </tr>
+          <tr class="mat-row">
+            <td class="mat-cell">{{i18n.yearly_report_result_vakajarjestaja_is_active | translate}}</td>
+            <td class="mat-cell">{{(yearlyReport.vakajarjestaja_is_active ? i18n.yes : i18n.no) | translate}}</td>
+          </tr>
+          <tr class="mat-row">
+            <td class="mat-cell">{{i18n.yearly_report_result_toimipaikka_count | translate}}</td>
+            <td class="mat-cell">{{yearlyReport.toimipaikka_count | number:undefined:'fi'}}</td>
+          </tr>
+          <tr class="mat-row">
+            <td class="mat-cell table-subheader" colspan="2">
+              {{ i18n.yearly_report_result_toimipaikka_by_toimintamuoto_count | translate }}
             </td>
-          </ng-container>
-          <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-          <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+          </tr>
+          <tr *ngFor="let toimintamuoto of getEntries(yearlyReport.toimipaikka_by_toimintamuoto_count)"
+              class="mat-row table-subrow">
+            <td class="mat-cell" [libKoodistoValue]="KoodistoEnum.toimintamuoto" format="long">{{toimintamuoto[0]}}</td>
+            <td class="mat-cell">{{toimintamuoto[1] | number:undefined:'fi'}}</td>
+          </tr>
+          <tr class="mat-row">
+            <td class="mat-cell">{{i18n.yearly_report_result_varhaiskasvatuspaikat_sum | translate}}</td>
+            <td class="mat-cell">{{yearlyReport.varhaiskasvatuspaikat_sum | number:undefined:'fi'}}</td>
+          </tr>
+          <tr class="mat-row">
+            <td class="mat-cell">{{i18n.yearly_report_result_toimintapainotus_count | translate}}</td>
+            <td class="mat-cell">{{yearlyReport.toimintapainotus_count | number:undefined:'fi'}}</td>
+          </tr>
+          <tr class="mat-row">
+            <td class="mat-cell">{{i18n.yearly_report_result_kielipainotus_count | translate}}</td>
+            <td class="mat-cell">{{yearlyReport.kielipainotus_count | number:undefined:'fi'}}</td>
+          </tr>
+          <tr class="mat-row">
+            <td class="mat-cell">{{i18n.yearly_report_result_yhteensa_henkilo_count | translate}}</td>
+            <td class="mat-cell">{{yearlyReport.yhteensa_henkilo_count | number:undefined:'fi'}}</td>
+          </tr>
+          <tr class="mat-row">
+            <td class="mat-cell">{{i18n.yearly_report_result_yhteensa_lapsi_count | translate}}</td>
+            <td class="mat-cell">{{yearlyReport.yhteensa_lapsi_count | number:undefined:'fi'}}</td>
+          </tr>
+          <tr class="mat-row">
+            <td class="mat-cell">{{i18n.yearly_report_result_yhteensa_varhaiskasvatussuhde_count | translate}}</td>
+            <td class="mat-cell">{{yearlyReport.yhteensa_varhaiskasvatussuhde_count | number:undefined:'fi'}}</td>
+          </tr>
+          <tr class="mat-row">
+            <td class="mat-cell">{{i18n.yearly_report_result_yhteensa_varhaiskasvatuspaatos_count | translate}}</td>
+            <td class="mat-cell">{{yearlyReport.yhteensa_varhaiskasvatuspaatos_count | number:undefined:'fi'}}</td>
+          </tr>
+          <tr class="mat-row">
+            <td class="mat-cell">{{i18n.yearly_report_result_yhteensa_vuorohoito_count | translate}}</td>
+            <td class="mat-cell">{{yearlyReport.yhteensa_vuorohoito_count | number:undefined:'fi'}}</td>
+          </tr>
+          <tr class="mat-row">
+            <td class="mat-cell">{{i18n.yearly_report_result_yhteensa_maksutieto_count | translate}}</td>
+            <td class="mat-cell">{{yearlyReport.yhteensa_maksutieto_count | number:undefined:'fi'}}</td>
+          </tr>
+          <tr class="mat-row">
+            <td class="mat-cell table-subheader" colspan="2">
+              {{ i18n.maksutieto_maksunperuste_koodi | translate }}
+            </td>
+          </tr>
+          <tr class="mat-row table-subrow">
+            <td class="mat-cell" [libKoodistoValue]="KoodistoEnum.maksunperuste" format="long">mp01</td>
+            <td class="mat-cell">{{yearlyReport.yhteensa_maksutieto_mp01_count | number:undefined:'fi'}}</td>
+          </tr>
+          <tr class="mat-row table-subrow">
+            <td class="mat-cell" [libKoodistoValue]="KoodistoEnum.maksunperuste" format="long">mp02</td>
+            <td class="mat-cell">{{yearlyReport.yhteensa_maksutieto_mp02_count | number:undefined:'fi'}}</td>
+          </tr>
+          <tr class="mat-row table-subrow">
+            <td class="mat-cell" [libKoodistoValue]="KoodistoEnum.maksunperuste" format="long">mp03</td>
+            <td class="mat-cell">{{yearlyReport.yhteensa_maksutieto_mp03_count | number:undefined:'fi'}}</td>
+          </tr>
+        </table>
+      </div>
+    </div>
+
+    <div class="margin-top-large">
+      <span class="oph-bold margin-top">{{i18n.yearly_report_own | translate}}</span>
+      <div class="table-responsive">
+        <table class="mat-table">
+          <tr class="mat-header-row">
+            <th class="mat-header-cell">{{i18n.katsele_tietoja_yhteenveto_key | translate}}</th>
+            <th class="mat-header-cell">{{i18n.katsele_tietoja_yhteenveto_value | translate}}</th>
+          </tr>
+          <tr class="mat-row">
+            <td class="mat-cell">{{i18n.yearly_report_result_oma_henkilo_count | translate}}</td>
+            <td class="mat-cell">{{yearlyReport.oma_henkilo_count | number:undefined:'fi'}}</td>
+          </tr>
+          <tr class="mat-row">
+            <td class="mat-cell">{{i18n.yearly_report_result_oma_lapsi_count | translate}}</td>
+            <td class="mat-cell">{{yearlyReport.oma_lapsi_count | number:undefined:'fi'}}</td>
+          </tr>
+          <tr class="mat-row">
+            <td class="mat-cell">{{i18n.yearly_report_result_oma_varhaiskasvatussuhde_count | translate}}</td>
+            <td class="mat-cell">{{yearlyReport.oma_varhaiskasvatussuhde_count | number:undefined:'fi'}}</td>
+          </tr>
+          <tr class="mat-row">
+            <td class="mat-cell">{{i18n.yearly_report_result_oma_varhaiskasvatuspaatos_count | translate}}</td>
+            <td class="mat-cell">{{yearlyReport.oma_varhaiskasvatuspaatos_count | number:undefined:'fi'}}</td>
+          </tr>
+          <tr class="mat-row">
+            <td class="mat-cell">{{i18n.yearly_report_result_oma_vuorohoito_count | translate}}</td>
+            <td class="mat-cell">{{yearlyReport.oma_vuorohoito_count | number:undefined:'fi'}}</td>
+          </tr>
+          <tr class="mat-row">
+            <td class="mat-cell">{{i18n.yearly_report_result_oma_maksutieto_count | translate}}</td>
+            <td class="mat-cell">{{yearlyReport.oma_maksutieto_count | number:undefined:'fi'}}</td>
+          </tr>
+          <tr class="mat-row">
+            <td class="mat-cell table-subheader" colspan="2">
+              {{ i18n.maksutieto_maksunperuste_koodi | translate }}
+            </td>
+          </tr>
+          <tr class="mat-row table-subrow">
+            <td class="mat-cell" [libKoodistoValue]="KoodistoEnum.maksunperuste" format="long">mp01</td>
+            <td class="mat-cell">{{yearlyReport.oma_maksutieto_mp01_count | number:undefined:'fi'}}</td>
+          </tr>
+          <tr class="mat-row table-subrow">
+            <td class="mat-cell" [libKoodistoValue]="KoodistoEnum.maksunperuste" format="long">mp02</td>
+            <td class="mat-cell">{{yearlyReport.oma_maksutieto_mp02_count | number:undefined:'fi'}}</td>
+          </tr>
+          <tr class="mat-row table-subrow">
+            <td class="mat-cell" [libKoodistoValue]="KoodistoEnum.maksunperuste" format="long">mp03</td>
+            <td class="mat-cell">{{yearlyReport.oma_maksutieto_mp03_count | number:undefined:'fi'}}</td>
+          </tr>
+        </table>
+      </div>
+    </div>
+
+    <div class="margin-top-large">
+      <span class="oph-bold margin-top">{{i18n.yearly_report_paos | translate}}</span>
+      <div class="table-responsive">
+        <table class="mat-table">
+          <tr class="mat-header-row">
+            <th class="mat-header-cell">{{i18n.katsele_tietoja_yhteenveto_key | translate}}</th>
+            <th class="mat-header-cell">{{i18n.katsele_tietoja_yhteenveto_value | translate}}</th>
+          </tr>
+          <tr class="mat-row">
+            <td class="mat-cell">{{i18n.yearly_report_result_paos_henkilo_count | translate}}</td>
+            <td class="mat-cell">{{yearlyReport.paos_henkilo_count | number:undefined:'fi'}}</td>
+          </tr>
+          <tr class="mat-row">
+            <td class="mat-cell">{{i18n.yearly_report_result_paos_lapsi_count | translate}}</td>
+            <td class="mat-cell">{{yearlyReport.paos_lapsi_count | number:undefined:'fi'}}</td>
+          </tr>
+          <tr class="mat-row">
+            <td class="mat-cell">{{i18n.yearly_report_result_paos_varhaiskasvatussuhde_count | translate}}</td>
+            <td class="mat-cell">{{yearlyReport.paos_varhaiskasvatussuhde_count | number:undefined:'fi'}}</td>
+          </tr>
+          <tr class="mat-row">
+            <td class="mat-cell">{{i18n.yearly_report_result_paos_varhaiskasvatuspaatos_count | translate}}</td>
+            <td class="mat-cell">{{yearlyReport.paos_varhaiskasvatuspaatos_count | number:undefined:'fi'}}</td>
+          </tr>
+          <tr class="mat-row">
+            <td class="mat-cell">{{i18n.yearly_report_result_paos_vuorohoito_count | translate}}</td>
+            <td class="mat-cell">{{yearlyReport.paos_vuorohoito_count | number:undefined:'fi'}}</td>
+          </tr>
+          <tr class="mat-row">
+            <td class="mat-cell">{{i18n.yearly_report_result_paos_maksutieto_count | translate}}</td>
+            <td class="mat-cell">{{yearlyReport.paos_maksutieto_count | number:undefined:'fi'}}</td>
+          </tr>
+          <tr class="mat-row">
+            <td class="mat-cell table-subheader" colspan="2">
+              {{ i18n.maksutieto_maksunperuste_koodi | translate }}
+            </td>
+          </tr>
+          <tr class="mat-row table-subrow">
+            <td class="mat-cell" [libKoodistoValue]="KoodistoEnum.maksunperuste" format="long">mp01</td>
+            <td class="mat-cell">{{yearlyReport.paos_maksutieto_mp01_count | number:undefined:'fi'}}</td>
+          </tr>
+          <tr class="mat-row table-subrow">
+            <td class="mat-cell" [libKoodistoValue]="KoodistoEnum.maksunperuste" format="long">mp02</td>
+            <td class="mat-cell">{{yearlyReport.paos_maksutieto_mp02_count | number:undefined:'fi'}}</td>
+          </tr>
+          <tr class="mat-row table-subrow">
+            <td class="mat-cell" [libKoodistoValue]="KoodistoEnum.maksunperuste" format="long">mp03</td>
+            <td class="mat-cell">{{yearlyReport.paos_maksutieto_mp03_count | number:undefined:'fi'}}</td>
+          </tr>
         </table>
       </div>
     </div>

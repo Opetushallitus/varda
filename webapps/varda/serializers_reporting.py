@@ -6,6 +6,7 @@ from django.contrib.postgres.aggregates import StringAgg
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import connection
 from django.db.models import OuterRef, Q, Subquery, Sum
+from drf_yasg import openapi
 from drf_yasg.utils import swagger_serializer_method
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
@@ -14,6 +15,7 @@ from rest_framework.reverse import reverse
 from varda import validators
 from varda.clients.allas_s3_client import Client as S3Client
 from varda.constants import SUCCESSFUL_STATUS_CODE_LIST
+from varda.custom_swagger import CustomSchemaField
 from varda.enums.change_type import ChangeType
 from varda.enums.error_messages import ErrorMessages
 from varda.excel_export import ReportStatus, ExcelReportType, get_s3_object_name
@@ -943,16 +945,24 @@ class YearlyReportingDataSummarySerializer(serializers.ModelSerializer):
     status = serializers.CharField(read_only=True)
     tilasto_pvm = serializers.DateField(read_only=True)
     tilastovuosi = serializers.IntegerField(write_only=True, required=False, allow_null=False)
+    toimipaikka_by_toimintamuoto_count = CustomSchemaField({
+        'type': openapi.TYPE_OBJECT,
+        'additionalProperties': {'type': openapi.TYPE_INTEGER}
+    }, read_only=True)
 
     class Meta:
         model = YearlyReportSummary
-        read_only_fields = ('vakajarjestaja_count', 'vakajarjestaja_is_active', 'toimipaikka_count', 'toimintapainotus_count',
-                            'kielipainotus_count', 'yhteensa_henkilo_count', 'yhteensa_lapsi_count', 'yhteensa_varhaiskasvatussuhde_count',
-                            'yhteensa_varhaiskasvatuspaatos_count', 'yhteensa_vuorohoito_count', 'oma_henkilo_count',
-                            'oma_lapsi_count', 'oma_varhaiskasvatussuhde_count', 'oma_varhaiskasvatuspaatos_count',
-                            'oma_vuorohoito_count', 'paos_henkilo_count', 'paos_lapsi_count', 'paos_varhaiskasvatussuhde_count',
-                            'paos_varhaiskasvatuspaatos_count', 'paos_vuorohoito_count', 'yhteensa_maksutieto_count',
-                            'yhteensa_maksutieto_mp01_count', 'yhteensa_maksutieto_mp02_count', 'yhteensa_maksutieto_mp03_count',
-                            'oma_maksutieto_count', 'oma_maksutieto_mp01_count', 'oma_maksutieto_mp02_count', 'oma_maksutieto_mp03_count',
-                            'paos_maksutieto_count', 'paos_maksutieto_mp01_count', 'paos_maksutieto_mp02_count', 'paos_maksutieto_mp03_count')
-        exclude = ('luonti_pvm', 'muutos_pvm')
+        read_only_fields = (
+            'vakajarjestaja_count', 'vakajarjestaja_is_active', 'toimipaikka_count',
+            'toimipaikka_by_toimintamuoto_count', 'varhaiskasvatuspaikat_sum', 'toimintapainotus_count',
+            'kielipainotus_count', 'yhteensa_henkilo_count', 'yhteensa_lapsi_count',
+            'yhteensa_varhaiskasvatussuhde_count', 'yhteensa_varhaiskasvatuspaatos_count', 'yhteensa_vuorohoito_count',
+            'oma_henkilo_count', 'oma_lapsi_count', 'oma_varhaiskasvatussuhde_count', 'oma_varhaiskasvatuspaatos_count',
+            'oma_vuorohoito_count', 'paos_henkilo_count', 'paos_lapsi_count', 'paos_varhaiskasvatussuhde_count',
+            'paos_varhaiskasvatuspaatos_count', 'paos_vuorohoito_count', 'yhteensa_maksutieto_count',
+            'yhteensa_maksutieto_mp01_count', 'yhteensa_maksutieto_mp02_count', 'yhteensa_maksutieto_mp03_count',
+            'oma_maksutieto_count', 'oma_maksutieto_mp01_count', 'oma_maksutieto_mp02_count',
+            'oma_maksutieto_mp03_count', 'paos_maksutieto_count', 'paos_maksutieto_mp01_count',
+            'paos_maksutieto_mp02_count', 'paos_maksutieto_mp03_count',
+        )
+        exclude = ('luonti_pvm', 'muutos_pvm',)

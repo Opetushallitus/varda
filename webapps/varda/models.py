@@ -698,6 +698,8 @@ class YearlyReportSummary(HistoryAbstractModel):
     vakajarjestaja_count = models.IntegerField(null=True)
     vakajarjestaja_is_active = models.BooleanField(null=True)
     toimipaikka_count = models.IntegerField(null=True)
+    toimipaikka_by_toimintamuoto_count = models.JSONField(null=True)
+    varhaiskasvatuspaikat_sum = models.IntegerField(null=True)
     toimintapainotus_count = models.IntegerField(null=True)
     kielipainotus_count = models.IntegerField(null=True)
     yhteensa_henkilo_count = models.IntegerField(null=True)

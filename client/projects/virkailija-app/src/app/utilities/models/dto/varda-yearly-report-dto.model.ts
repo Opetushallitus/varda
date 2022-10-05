@@ -7,6 +7,8 @@ export class VardaYearlyReportDTO {
   vakajarjestaja_count?: number;
   vakajarjestaja_is_active?: boolean;
   toimipaikka_count?: number;
+  toimipaikka_by_toimintamuoto_count?: Record<string, number>;
+  varhaiskasvatuspaikat_sum?: number;
   toimintapainotus_count?: number;
   kielipainotus_count?: number;
   yhteensa_henkilo_count?: number;

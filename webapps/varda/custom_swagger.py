@@ -171,21 +171,10 @@ class ActionPaginationSwaggerAutoSchema(ReadWriteAutoSchema):
         return responses
 
 
-class DynamicDictField(DictField):
+class CustomSchemaField(DictField):
     """
-    Serializer field that is an object with dynamic number of properties, e.g. {jm01: 1, jm02: 3, jm04: 5...}
-    Property names are not displayed in Swagger documentation. If positional argument is provided, value type can
-    be overridden (default openapi.TYPE_INTEGER, must be another openapi.TYPE_*)
+    Provide custom OpenAPI 2.0 schema for this field in the first positional argument.
     """
     def __init__(self, *args, **kwargs):
-        value_type = openapi.TYPE_INTEGER
-        if len(args) > 0:
-            value_type = args[0]
-
-        self.Meta = TemporaryObject(swagger_schema_fields={
-            'type': openapi.TYPE_OBJECT,
-            'additionalProperties': {
-                'type': value_type
-            }
-        })
+        self.Meta = TemporaryObject(swagger_schema_fields=args[0])
         super().__init__(**kwargs)

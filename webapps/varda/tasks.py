@@ -546,7 +546,7 @@ def general_monitoring_task():
 @shared_task
 @single_instance_task(timeout_in_minutes=8 * 60)
 def create_yearly_reporting_summary(tilasto_pvm, poiminta_pvm, organisaatio_id):
-    from varda.misc_queries import (get_yearly_report_organisaatio_count, get_yearly_report_toimipaikka_count,
+    from varda.misc_queries import (get_yearly_report_organisaatio_count, get_yearly_report_toimipaikka_data,
                                     get_yearly_report_kielipainotus_count,
                                     get_yearly_report_toiminnallinen_painotus_count, get_yearly_report_vaka_data,
                                     get_yearly_report_maksutieto_data)
@@ -567,7 +567,10 @@ def create_yearly_reporting_summary(tilasto_pvm, poiminta_pvm, organisaatio_id):
         else:
             vakajarjestaja_active = organisaatio_obj.alkamis_pvm <= tilasto_pvm <= organisaatio_obj.paattymis_pvm
 
-    toimipaikka_count = get_yearly_report_toimipaikka_count(poiminta_pvm, tilasto_pvm, organisaatio_id)
+    toimipaikka_data = get_yearly_report_toimipaikka_data(poiminta_pvm, tilasto_pvm, organisaatio_id)
+    toimipaikka_count = toimipaikka_data.pop('toimipaikka_count')
+    varhaiskasvatuspaikat_sum = toimipaikka_data.pop('varhaiskasvatuspaikat_sum')
+    toimipaikka_by_toimintamuoto_count = toimipaikka_data
     kielipainotus_count = get_yearly_report_kielipainotus_count(poiminta_pvm, tilasto_pvm, organisaatio_id)
     toiminnallinen_painotus_count = get_yearly_report_toiminnallinen_painotus_count(poiminta_pvm, tilasto_pvm,
                                                                                     organisaatio_id)
@@ -619,6 +622,8 @@ def create_yearly_reporting_summary(tilasto_pvm, poiminta_pvm, organisaatio_id):
         'vakajarjestaja_is_active': vakajarjestaja_active,
         'poiminta_pvm': poiminta_pvm,
         'toimipaikka_count': toimipaikka_count,
+        'toimipaikka_by_toimintamuoto_count': toimipaikka_by_toimintamuoto_count,
+        'varhaiskasvatuspaikat_sum': varhaiskasvatuspaikat_sum,
         'kielipainotus_count': kielipainotus_count,
         'toimintapainotus_count': toiminnallinen_painotus_count,
         'yhteensa_henkilo_count': henkilo_count,

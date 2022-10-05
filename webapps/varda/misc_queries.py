@@ -4,12 +4,16 @@ from django.contrib.auth.models import Group
 from django.contrib.postgres.aggregates import ArrayAgg
 from django.db import connection
 from django.db.models import OuterRef, Q, Subquery
+from django.db.models.functions import Lower
 from guardian.shortcuts import get_objects_for_group
+from psycopg2 import sql
 from rest_framework.exceptions import APIException
 from rest_framework.reverse import reverse
 
+from varda.enums.koodistot import Koodistot
 from varda.enums.organisaatiotyyppi import Organisaatiotyyppi
-from varda.models import Lapsi, PaosOikeus, PaosToiminta, Toimipaikka, Z4_CasKayttoOikeudet, Z9_RelatedObjectChanged
+from varda.models import (Lapsi, PaosOikeus, PaosToiminta, Toimipaikka, Z2_Code, Z4_CasKayttoOikeudet,
+                          Z9_RelatedObjectChanged)
 
 
 logger = logging.getLogger(__name__)
@@ -48,8 +52,8 @@ def get_related_object_changed_id_qs(model_name, datetime_gt, datetime_lte, addi
             .values_list(return_value, flat=True).distinct())
 
 
-def _execute_yearly_report_query(cursor, query, params, organisaatio_id=None, organisaatio_field_list=(),
-                                 group_by_list=()):
+def _execute_yearly_report_query(cursor, query, params, format_args=(), organisaatio_id=None,
+                                 organisaatio_field_list=(), group_by_list=None):
     if organisaatio_id:
         organisaatio_filter_list = [f'{organisaatio_field} = %s' for organisaatio_field in organisaatio_field_list]
         query += f' AND ({" OR ".join(organisaatio_filter_list)})'
@@ -58,9 +62,9 @@ def _execute_yearly_report_query(cursor, query, params, organisaatio_id=None, or
         # PostgreSQL specific functionality (CUBE)
         query += f' GROUP BY CUBE ({", ".join(group_by_list)})'
 
-    cursor.execute(f'{query};', params)
+    cursor.execute(sql.SQL(query).format(*format_args), params)
 
-    if group_by_list:
+    if group_by_list is not None:
         result = cursor.fetchall()
 
         # Create a nested dict for easy value access
@@ -94,18 +98,30 @@ def get_yearly_report_organisaatio_count(poiminta_pvm, tilasto_pvm):
         return cursor.fetchone()[0]
 
 
-def get_yearly_report_toimipaikka_count(poiminta_pvm, tilasto_pvm, organisaatio_id):
+def get_yearly_report_toimipaikka_data(poiminta_pvm, tilasto_pvm, organisaatio_id):
+    tm_codes = (Z2_Code.objects
+                .filter(koodisto__name=Koodistot.toimintamuoto_koodit.value)
+                .annotate(code_lower=Lower('code_value'))
+                .values_list('code_lower', flat=True).order_by('code_lower'))
+    tm_annotations = ''
+    format_args = []
+    for tm_code in tm_codes:
+        tm_annotations += ", COALESCE(SUM(CASE WHEN lower(toimintamuoto_koodi) = %s THEN 1 ELSE 0 END), 0) AS {}"
+        format_args.append(sql.Identifier(tm_code))
+
     with connection.cursor() as cursor:
-        query = '''
-            SELECT count(id) FROM
+        query = f'''
+            SELECT count(id) AS toimipaikka_count,
+            sum(varhaiskasvatuspaikat) AS varhaiskasvatuspaikat_sum{tm_annotations} FROM
             (SELECT DISTINCT ON (id) * FROM varda_historicaltoimipaikka
                 WHERE history_date <= %s ORDER BY id, history_date DESC) tp
             WHERE history_type != '-' AND alkamis_pvm <= %s AND
                 (paattymis_pvm >= %s OR paattymis_pvm IS NULL)
         '''
-        params = [poiminta_pvm, tilasto_pvm, tilasto_pvm]
+        params = [*tm_codes, poiminta_pvm, tilasto_pvm, tilasto_pvm]
 
-        return _execute_yearly_report_query(cursor, query, params, organisaatio_id=organisaatio_id,
+        return _execute_yearly_report_query(cursor, query, params, format_args=format_args,
+                                            organisaatio_id=organisaatio_id, group_by_list=(),
                                             organisaatio_field_list=['vakajarjestaja_id'])
 
 
@@ -150,6 +166,9 @@ def get_yearly_report_toiminnallinen_painotus_count(poiminta_pvm, tilasto_pvm, o
 
 
 def get_yearly_report_vaka_data(poiminta_pvm, tilasto_pvm, organisaatio_id):
+    # In Vipunen Lapsi has to be under 11 years old and Varhaiskasvatussuhde related Toimipaikka, and Lapsi related
+    # Organisaatio objects must be active, but let's simplify here because they are edge cases and make the query
+    # too heavy
     with connection.cursor() as cursor:
         query = '''
             SELECT
@@ -188,6 +207,9 @@ def get_yearly_report_vaka_data(poiminta_pvm, tilasto_pvm, organisaatio_id):
 
 
 def get_yearly_report_maksutieto_data(poiminta_pvm, tilasto_pvm, organisaatio_id):
+    # In Vipunen Lapsi has to be under 11 years old and Varhaiskasvatussuhde related Toimipaikka, and Lapsi related
+    # Organisaatio objects must be active, and Lapsi has to have an active Varhaisaksvatuspaatos with an active
+    # Varhaiskasvatussuhde, but let's simplify here because they are edge cases and make the query too heavy
     with connection.cursor() as cursor:
         query = '''
             SELECT

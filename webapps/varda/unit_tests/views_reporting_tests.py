@@ -2862,6 +2862,8 @@ class VardaViewsReportingTests(TestCase):
             'vakajarjestaja_count': None,
             'vakajarjestaja_is_active': None,
             'toimipaikka_count': None,
+            'toimipaikka_by_toimintamuoto_count': None,
+            'varhaiskasvatuspaikat_sum': None,
             'toimintapainotus_count': None,
             'kielipainotus_count': None,
             'yhteensa_henkilo_count': None,
@@ -2908,6 +2910,12 @@ class VardaViewsReportingTests(TestCase):
             'vakajarjestaja_count': 1,
             'vakajarjestaja_is_active': True,
             'toimipaikka_count': 2,
+            'toimipaikka_by_toimintamuoto_count': {
+                'tm01': 2,
+                'tm02': 0,
+                'tm03': 0
+            },
+            'varhaiskasvatuspaikat_sum': 300,
             'toimintapainotus_count': 0,
             'kielipainotus_count': 0,
             'yhteensa_henkilo_count': 3,

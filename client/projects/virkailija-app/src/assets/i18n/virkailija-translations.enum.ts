@@ -910,6 +910,8 @@ export enum VirkailijaTranslations {
   yearly_report_result_vakajarjestaja_count = 'yearly-report.result.vakajarjestaja-count',
   yearly_report_result_vakajarjestaja_is_active = 'yearly-report.result.vakajarjestaja-is-active',
   yearly_report_result_toimipaikka_count = 'yearly-report.result.toimipaikka-count',
+  yearly_report_result_toimipaikka_by_toimintamuoto_count = 'yearly-report.result.toimipaikka-by-toimintamuoto-count',
+  yearly_report_result_varhaiskasvatuspaikat_sum = 'yearly-report.result.varhaiskasvatuspaikat-sum',
   yearly_report_result_toimintapainotus_count = 'yearly-report.result.toimintapainotus-count',
   yearly_report_result_kielipainotus_count = 'yearly-report.result.kielipainotus-count',
   yearly_report_result_yhteensa_henkilo_count = 'yearly-report.result.yhteensa-henkilo-count',

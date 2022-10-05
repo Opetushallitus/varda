@@ -11,7 +11,7 @@ import {
   VardaYearlyReportPostDTO
 } from '../../../../utilities/models/dto/varda-yearly-report-dto.model';
 import moment, { Moment } from 'moment';
-import { VardaDateService } from 'varda-shared';
+import { VardaDateService, KoodistoEnum } from 'varda-shared';
 import { AuthService } from '../../../../core/auth/auth.service';
 import { ErrorTree, VardaErrorMessageService } from '../../../../core/services/varda-error-message.service';
 import { TranslateService } from '@ngx-translate/core';
@@ -28,6 +28,7 @@ export class VardaYearlyReportComponent implements OnInit, OnDestroy {
   @ViewChild('datePicker') datePicker: NgModel;
 
   i18n = VirkailijaTranslations;
+  KoodistoEnum = KoodistoEnum;
 
   currentVakajarjestaja: VardaVakajarjestajaUi;
   isOPHUser = false;
@@ -36,10 +37,6 @@ export class VardaYearlyReportComponent implements OnInit, OnDestroy {
   newYearlyReport: VardaYearlyReportPostDTO;
   poimintaPvm: Moment = null;
   yearlyReport: VardaYearlyReportDTO;
-  datasourceAll: Array<{name: string; value: number | boolean}> = [];
-  datasourceOwn: Array<{name: string; value: number | boolean}> = [];
-  datasourcePaos: Array<{name: string; value: number | boolean}> = [];
-  displayedColumns = ['name', 'value'];
   updateInterval = interval(10000);
   yearOptions: Array<number> = [];
   organizationOptions: Array<VardaVakajarjestajaUi> = [];
@@ -112,47 +109,6 @@ export class VardaYearlyReportComponent implements OnInit, OnDestroy {
         if (this.yearlyReport.status === ReportStatus.PENDING || this.yearlyReport.status === ReportStatus.CREATING) {
           // If report has status PENDING or CREATING, refresh every 10 seconds
           this.intervalSubscription = this.updateInterval.subscribe(() => this.postYearlyReport());
-        } else if (this.yearlyReport.status === ReportStatus.FINISHED) {
-          this.datasourceAll = [
-            [this.i18n.yearly_report_result_vakajarjestaja_count, result.vakajarjestaja_count],
-            [this.i18n.yearly_report_result_vakajarjestaja_is_active, result.vakajarjestaja_is_active],
-            [this.i18n.yearly_report_result_toimipaikka_count, result.toimipaikka_count],
-            [this.i18n.yearly_report_result_toimintapainotus_count, result.toimintapainotus_count],
-            [this.i18n.yearly_report_result_kielipainotus_count, result.kielipainotus_count],
-            [this.i18n.yearly_report_result_yhteensa_henkilo_count, result.yhteensa_henkilo_count],
-            [this.i18n.yearly_report_result_yhteensa_lapsi_count, result.yhteensa_lapsi_count],
-            [this.i18n.yearly_report_result_yhteensa_varhaiskasvatussuhde_count, result.yhteensa_varhaiskasvatussuhde_count],
-            [this.i18n.yearly_report_result_yhteensa_varhaiskasvatuspaatos_count, result.yhteensa_varhaiskasvatuspaatos_count],
-            [this.i18n.yearly_report_result_yhteensa_vuorohoito_count, result.yhteensa_vuorohoito_count],
-            [this.i18n.yearly_report_result_yhteensa_maksutieto_count, result.yhteensa_maksutieto_count],
-            [this.i18n.yearly_report_result_yhteensa_maksutieto_mp01_count, result.yhteensa_maksutieto_mp01_count],
-            [this.i18n.yearly_report_result_yhteensa_maksutieto_mp02_count, result.yhteensa_maksutieto_mp02_count],
-            [this.i18n.yearly_report_result_yhteensa_maksutieto_mp03_count, result.yhteensa_maksutieto_mp03_count]
-          ].map(item => ({name: item[0] as string, value: item[1] as number | boolean}));
-
-          this.datasourceOwn = [
-            [this.i18n.yearly_report_result_oma_henkilo_count, result.oma_henkilo_count],
-            [this.i18n.yearly_report_result_oma_lapsi_count, result.oma_lapsi_count],
-            [this.i18n.yearly_report_result_oma_varhaiskasvatussuhde_count, result.oma_varhaiskasvatussuhde_count],
-            [this.i18n.yearly_report_result_oma_varhaiskasvatuspaatos_count, result.oma_varhaiskasvatuspaatos_count],
-            [this.i18n.yearly_report_result_oma_vuorohoito_count, result.oma_vuorohoito_count],
-            [this.i18n.yearly_report_result_oma_maksutieto_count, result.oma_maksutieto_count],
-            [this.i18n.yearly_report_result_oma_maksutieto_mp01_count, result.oma_maksutieto_mp01_count],
-            [this.i18n.yearly_report_result_oma_maksutieto_mp02_count, result.oma_maksutieto_mp02_count],
-            [this.i18n.yearly_report_result_oma_maksutieto_mp03_count, result.oma_maksutieto_mp03_count]
-          ].map(item => ({name: item[0] as string, value: item[1] as number | boolean}));
-
-          this.datasourcePaos = [
-            [this.i18n.yearly_report_result_paos_henkilo_count, result.paos_henkilo_count],
-            [this.i18n.yearly_report_result_paos_lapsi_count, result.paos_lapsi_count],
-            [this.i18n.yearly_report_result_paos_varhaiskasvatussuhde_count, result.paos_varhaiskasvatussuhde_count],
-            [this.i18n.yearly_report_result_paos_varhaiskasvatuspaatos_count, result.paos_varhaiskasvatuspaatos_count],
-            [this.i18n.yearly_report_result_paos_vuorohoito_count, result.paos_vuorohoito_count],
-            [this.i18n.yearly_report_result_paos_maksutieto_count, result.paos_maksutieto_count],
-            [this.i18n.yearly_report_result_paos_maksutieto_mp01_count, result.paos_maksutieto_mp01_count],
-            [this.i18n.yearly_report_result_paos_maksutieto_mp02_count, result.paos_maksutieto_mp02_count],
-            [this.i18n.yearly_report_result_paos_maksutieto_mp03_count, result.paos_maksutieto_mp03_count]
-          ].map(item => ({name: item[0] as string, value: item[1] as number | boolean}));
         }
       }, error: error => {
         this.errorService.handleError(error, this.snackbarService);
@@ -174,6 +130,10 @@ export class VardaYearlyReportComponent implements OnInit, OnDestroy {
   cancel() {
     this.intervalSubscription?.unsubscribe();
     this.yearlyReport = null;
+  }
+
+  getEntries(obj: object) {
+    return Object.entries(obj);
   }
 
   ngOnDestroy() {

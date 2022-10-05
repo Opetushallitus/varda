@@ -1,6 +1,7 @@
+from drf_yasg import openapi
 from rest_framework import serializers
 
-from varda.custom_swagger import DynamicDictField
+from varda.custom_swagger import CustomSchemaField
 from varda.models import Z2_Code, Z2_Koodisto
 
 
@@ -42,9 +43,18 @@ class PulssiSerializer(serializers.Serializer):
     kunta_count = serializers.IntegerField()
     yksityinen_count = serializers.IntegerField()
     toimipaikka_count = serializers.IntegerField()
-    toimipaikka_by_tm = DynamicDictField()
-    toimipaikka_by_jm = DynamicDictField()
-    toimipaikka_by_kj = DynamicDictField()
+    toimipaikka_by_tm = CustomSchemaField({
+        'type': openapi.TYPE_OBJECT,
+        'additionalProperties': {'type': openapi.TYPE_INTEGER}
+    })
+    toimipaikka_by_jm = CustomSchemaField({
+        'type': openapi.TYPE_OBJECT,
+        'additionalProperties': {'type': openapi.TYPE_INTEGER}
+    })
+    toimipaikka_by_kj = CustomSchemaField({
+        'type': openapi.TYPE_OBJECT,
+        'additionalProperties': {'type': openapi.TYPE_INTEGER}
+    })
     toimipaikka_with_kp = serializers.IntegerField()
     toimipaikka_with_tp = serializers.IntegerField()
     lapsi_count = serializers.IntegerField()
@@ -55,7 +65,10 @@ class PulssiSerializer(serializers.Serializer):
     huoltaja_count = serializers.IntegerField()
     asiakasmaksu_avg = serializers.DecimalField(0, 0)
     tyontekija_count = serializers.IntegerField()
-    tyoskentelypaikka_by_tn = DynamicDictField()
+    tyoskentelypaikka_by_tn = CustomSchemaField({
+        'type': openapi.TYPE_OBJECT,
+        'additionalProperties': {'type': openapi.TYPE_INTEGER}
+    })
     tyontekija_multi_count = serializers.IntegerField()
     koulutuspaiva_count = serializers.DecimalField(0, 0)
     tilapainen_henkilosto_tyontekijamaara = serializers.IntegerField()

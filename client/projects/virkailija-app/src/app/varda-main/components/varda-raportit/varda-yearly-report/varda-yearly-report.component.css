@@ -1,3 +1,11 @@
 .yearly-report-form button {
   width: auto;
 }
+
+.table-subheader {
+  font-weight: bold;
+}
+
+.table-subrow td:first-of-type {
+  padding-left: 48px;
+}
