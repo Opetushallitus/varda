@@ -95,7 +95,8 @@ def run_post_migration_tasks(sender, **kwargs):
 def load_dev_testing_data():
     # Note: If you are adding new permissions this might need to be moved to current migration block.
     env_type = os.getenv('VARDA_ENVIRONMENT_TYPE', None)
-    if env_type is None or env_type != 'env-varda-prod':
+    # Load testing data if environment is not production(like) or anonymization related
+    if env_type != 'env-varda-prod' and not settings.ANONYMIZATION_ENV:
         load_testing_data()
 
 
