@@ -810,6 +810,7 @@ export enum VirkailijaTranslations {
   tiedonsiirrot_kaikki_lahdejarjestelmat = 'tiedonsiirrot.kaikki-lahdejarjestelmat',
   tiedonsiirrot_timestamp_error_short = 'tiedonsiirrot.timestamp.error.short',
   tiedonsiirrot_timestamp_error_order = 'tiedonsiirrot.timestamp.error.order',
+  tiedonsiirrot_timestamp_error_min = 'tiedonsiirrot.timestamp.error.min',
 
   tiedonsiirrot_yhteenveto_date = 'tiedonsiirrot.yhteenveto.date',
   tiedonsiirrot_yhteenveto_successful = 'tiedonsiirrot.yhteenveto.successful',

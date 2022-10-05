@@ -24,10 +24,12 @@
             <app-varda-datepicker formControlName="timestampAfter"
                                   [placeholder]="i18n.tiedonsiirrot_placeholder_timestamp_after | translate"
                                   [required]="true"
+                                  [min]="timestampAfterMin"
                                   [isTouched]="timestampFormGroup.controls.timestampAfter.touched"
                                   [errorMap]="[
                                     { key: 'required', value: i18n.required_field },
-                                    { key: 'matDatepickerParse', value: i18n.katsele_tietoja_error_date_format }
+                                    { key: 'matDatepickerParse', value: i18n.katsele_tietoja_error_date_format },
+                                    { key: 'matDatepickerMin', value: i18n.tiedonsiirrot_timestamp_error_min }
                                   ]"
                                   (dateChange)="timestampAfterChange($event.value)">
             </app-varda-datepicker>

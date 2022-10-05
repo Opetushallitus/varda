@@ -2,7 +2,7 @@ import { OnDestroy, Component, OnInit, ViewChild, ElementRef, AfterViewInit } fr
 import { MatPaginator, PageEvent } from '@angular/material/paginator';
 import { ActivatedRoute } from '@angular/router';
 import { TranslateService } from '@ngx-translate/core';
-import { Moment } from 'moment';
+import moment, { Moment } from 'moment';
 import { AuthService } from 'projects/virkailija-app/src/app/core/auth/auth.service';
 import { ErrorTree, VardaErrorMessageService } from 'projects/virkailija-app/src/app/core/services/varda-error-message.service';
 import { VardaRaportitService } from 'projects/virkailija-app/src/app/core/services/varda-raportit.service';
@@ -79,6 +79,8 @@ export abstract class AbstractTiedonsiirrotSectionsComponent implements OnInit, 
     username: null,
     search_target: null,
   };
+  // Request log is stored for 90 days, so do not allow after-date to be earlier than that
+  timestampAfterMin: Date = moment().add(-90, 'days').toDate();
   timestampBeforeRange: { min: Date; max: Date } = { min: null, max: null };
   timestampFormGroup: FormGroup;
 
