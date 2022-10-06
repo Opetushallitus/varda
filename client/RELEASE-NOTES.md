@@ -1,6 +1,10 @@
 # Release notes
 Varda-käyttöliittymä release notes
 
+1.6.7 (06.10.2022)
+- OPHVARDA-2521: Tiedonsiirron minimipäivämäärärajaus
+- OPHVARDA-2500: Vuosiraportin uudet kentät
+
 1.6.6 (09.09.2022)
 - OPHVARDA-2252: Robot framework Firefox ja Edge
 
