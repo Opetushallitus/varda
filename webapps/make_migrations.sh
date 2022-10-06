@@ -1,6 +1,6 @@
 #!/bin/bash
 
-read -p "This will erase your local DB, and set it up again. Are you sure you want to continue? <Y/n> " prompt
+read -p "This will erase your local DB, and set it up again. Are you sure you want to continue? <y/n> " prompt
 if [[ $prompt == "y" || $prompt == "Y" || $prompt == "yes" || $prompt == "Yes" ]]
 then
 
