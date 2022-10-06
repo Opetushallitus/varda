@@ -6,7 +6,6 @@ from django.db.models import Q
 from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
 from drf_yasg.utils import swagger_serializer_method
-from guardian.shortcuts import get_objects_for_user
 from rest_framework import serializers
 from rest_framework.exceptions import APIException, ValidationError
 
@@ -37,7 +36,9 @@ from varda.validators import (fill_missing_fields_for_validations, validate_henk
                               validate_henkilotunnus_or_oid_needed, validate_organisaatio_oid,
                               validate_instance_uniqueness)
 
+
 logger = logging.getLogger(__name__)
+
 
 """
 Admin serializers
@@ -1185,65 +1186,6 @@ class LapsiSerializerAdmin(RequiredLahdejarjestelmaMixin, serializers.Hyperlinke
         model = Lapsi
         exclude = ('luonti_pvm',)
         read_only_fields = ('oma_organisaatio', 'paos_organisaatio', 'paos_kytkin', 'luonti_pvm')
-
-
-class HenkilohakuLapsetToimipaikkaSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Toimipaikka
-        fields = ('nimi', 'nimi_sv', 'organisaatio_oid',)
-
-
-class HenkilohakuLapsetSerializer(serializers.HyperlinkedModelSerializer):
-    id = serializers.IntegerField(read_only=True)
-    henkilo = HenkiloSerializer()
-    maksutiedot = serializers.SerializerMethodField()
-    toimipaikat = serializers.SerializerMethodField()
-
-    class Meta:
-        model = Lapsi
-        exclude = ('luonti_pvm', 'muutos_pvm')
-
-    @swagger_serializer_method(serializer_or_field=serializers.ListField(child=serializers.URLField()))
-    def get_maksutiedot(self, lapsi_obj):
-        request = self.context.get('request')
-        maksutiedot_query = (Maksutieto.objects
-                             .filter(huoltajuussuhteet__lapsi=lapsi_obj)
-                             .order_by('id')
-                             )
-        return [request.build_absolute_uri(reverse('maksutieto-detail', kwargs={'pk': maksutieto.pk}))
-                for maksutieto
-                in get_objects_for_user(request.user, 'view_maksutieto', maksutiedot_query)
-                ]
-
-    @swagger_serializer_method(serializer_or_field=HenkilohakuLapsetToimipaikkaSerializer(many=True))
-    def get_toimipaikat(self, lapsi_obj):
-        request = self.context.get('request')
-        view = self.context.get('view')
-        list_of_toimipaikka_ids = self.context.get('list_of_toimipaikka_ids')
-
-        varhaiskasvatuspaatokset_query = view.kwargs['varhaiskasvatuspaatokset_query']
-        varhaiskasvatussuhteet_query = view.kwargs['varhaiskasvatussuhteet_query']
-        maksutiedot_query = view.kwargs['maksutiedot_query']
-
-        toimipaikka_filter = (Q(varhaiskasvatussuhteet__varhaiskasvatuspaatos__lapsi=lapsi_obj) &
-                              Q(varhaiskasvatussuhteet__varhaiskasvatuspaatos__in=varhaiskasvatuspaatokset_query) &
-                              Q(varhaiskasvatussuhteet__in=varhaiskasvatussuhteet_query) &
-                              Q(id__in=list_of_toimipaikka_ids))
-
-        if maksutiedot_query is not None:
-            toimipaikka_filter = toimipaikka_filter & Q(**{'varhaiskasvatussuhteet__varhaiskasvatuspaatos__lapsi'
-                                                           '__huoltajuussuhteet__maksutiedot__in': maksutiedot_query})
-
-        toimipaikat_query = (Toimipaikka.objects
-                             .filter(toimipaikka_filter)
-                             .distinct('id')
-                             )
-        return HenkilohakuLapsetToimipaikkaSerializer(get_objects_for_user(request.user, 'view_toimipaikka',
-                                                                           toimipaikat_query), many=True).data
-
-    @caching_to_representation('henkilohakulapset')
-    def to_representation(self, instance):
-        return super(HenkilohakuLapsetSerializer, self).to_representation(instance)
 
 
 class HuoltajaSerializer(serializers.HyperlinkedModelSerializer):

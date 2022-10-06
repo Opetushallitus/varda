@@ -257,7 +257,7 @@ def get_top_results(request, queryset, permission_group_list, oid_list):
     :return: List of object URIs
     """
     # Import locally to avoid circular import
-    from varda.cache import get_object_ids_for_user_by_model
+    from varda.cache import get_object_ids_user_has_permissions
     from varda.permissions import is_oph_staff, user_permission_groups_in_organizations
 
     items_to_show = 3
@@ -267,7 +267,7 @@ def get_top_results(request, queryset, permission_group_list, oid_list):
     permission_group_qs = user_permission_groups_in_organizations(user, oid_list, permission_group_list)
     if not user.is_superuser and not is_oph_staff(user) and not permission_group_qs.exists():
         # User is not superuser, OPH user and does not belong to correct permission groups
-        id_list = get_object_ids_for_user_by_model(user, queryset_model_name)
+        id_list = get_object_ids_user_has_permissions(user, queryset.model)
         queryset = queryset.filter(id__in=id_list)
     queryset = queryset.order_by('id')[:items_to_show].values('pk')
     return [reverse(viewname=f'{queryset_model_name}-detail', kwargs={'pk': instance['pk']}, request=request)

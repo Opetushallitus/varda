@@ -1,11 +1,15 @@
 import datetime
 
 from django.http import Http404
+from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.exceptions import ValidationError
+from rest_framework.mixins import ListModelMixin
 
+from varda.cache import get_object_ids_user_has_permissions
 from varda.custom_swagger import TunnisteIdSchema
 from varda.enums.error_messages import ErrorMessages
+from varda.permissions import is_oph_staff
 from webapps.api_throttles import SustainedModifyRateThrottle, BurstRateThrottle
 
 
@@ -183,3 +187,38 @@ def parse_query_parameter(parameters, parameter_name, parameter_type):
             except ValueError:
                 raise ValidationError({parameter_name: [ErrorMessages.GE020.value]})
     return query_parameter
+
+
+class ParentObjectMixin:
+    """
+    Mixin that gets parent object for nested views and verifies view permission
+    @DynamicAttrs
+    """
+    parent_model = None
+
+    def get_parent_object(self):
+        parent_model_name = self.parent_model.get_name()
+        parent_model_id = self.kwargs[f'{parent_model_name}_pk']
+
+        if not parent_model_id.isdigit():
+            raise Http404
+
+        parent_object = get_object_or_404(self.parent_model, pk=parent_model_id)
+        user = self.request.user
+        if user.has_perm(f'view_{parent_model_name}', parent_object):
+            return parent_object
+        else:
+            raise Http404
+
+
+class PermissionListMixin(ListModelMixin):
+    """
+    Mixin that filters list results based on user permissions
+    @DynamicAttrs
+    """
+    def list(self, request, *args, **kwargs):
+        user = request.user
+        if not user.is_superuser and not is_oph_staff(user):
+            # Get permission filtered results for non admin users
+            self.queryset = self.queryset.filter(id__in=get_object_ids_user_has_permissions(user, self.queryset.model))
+        return super().list(request, *args, **kwargs)

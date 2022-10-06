@@ -5,7 +5,7 @@ from drf_yasg.utils import swagger_serializer_method
 from rest_framework import serializers
 
 from varda import validators
-from varda.cache import caching_to_representation, get_object_ids_for_user_by_model
+from varda.cache import caching_to_representation, get_object_ids_user_has_permissions
 from varda.enums.error_messages import ErrorMessages
 from varda.misc_viewsets import ViewSetValidator
 from varda.models import (Henkilo, TilapainenHenkilosto, Tutkinto, Tyontekija, Organisaatio, Palvelussuhde,
@@ -935,8 +935,7 @@ def _get_permission_checked_henkilosto_tyontekija_objects(serializer_instance, q
                                                                   [Z4_CasKayttoOikeudet.HENKILOSTO_TYONTEKIJA_KATSELIJA,
                                                                    Z4_CasKayttoOikeudet.HENKILOSTO_TYONTEKIJA_TALLENTAJA])
     if not user.is_superuser and not is_oph_staff(user) and not tyontekija_groups_qs.exists():
-        model_name = queryset.model.__name__.lower()
-        queryset = queryset.filter(id__in=get_object_ids_for_user_by_model(user, model_name))
+        queryset = queryset.filter(id__in=get_object_ids_user_has_permissions(user, queryset.model))
 
     filtered_list = []
     for instance in queryset.all().order_by('-alkamis_pvm'):

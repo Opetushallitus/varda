@@ -2,7 +2,6 @@ import logging
 from functools import wraps
 
 from celery import shared_task
-from django.apps import apps
 from django.conf import settings
 from django.contrib.auth.models import AnonymousUser, Group, Permission
 from django.contrib.contenttypes.models import ContentType
@@ -10,8 +9,6 @@ from django.db import transaction, IntegrityError
 from django.db.models import IntegerField, Q, Model, QuerySet
 from django.db.models.functions import Cast
 from django.forms import model_to_dict
-from django.http import Http404
-from django.shortcuts import get_object_or_404
 from guardian.models import UserObjectPermission, GroupObjectPermission
 from guardian.shortcuts import assign_perm, remove_perm
 from rest_framework import permissions, status
@@ -379,11 +376,6 @@ def user_has_huoltajatieto_tallennus_permissions_to_correct_organization(user, v
     return False
 
 
-def get_object_ids_user_has_view_permissions(user, model_name):
-    model = apps.get_model('varda', model_name)
-    return get_ids_user_has_permissions_by_type(user, model)
-
-
 def get_ids_user_has_permissions_by_type(user, model, permission_type='view'):
     model_name = model.get_name()
     content_type = ContentType.objects.get(model=model_name)
@@ -554,19 +546,6 @@ def get_taydennyskoulutus_tyontekija_group_organisaatio_oids(user):
     :return: List of organisaatio oids (mixed vakajarjestaja and toimipaikka oids)
     """
     return get_organisaatio_oids_from_groups(user, 'HENKILOSTO_TAYDENNYSKOULUTUS_', 'HENKILOSTO_TYONTEKIJA_')
-
-
-def get_toimipaikka_or_404(user, toimipaikka_pk=None):
-    """
-    Get toimipaikka or 404 if not found or user has no view permission to the toimipaikka.
-    :param user: User whose permissions are checked
-    :param toimipaikka_pk: Toimipaikka id
-    :return: Toimipaikka object
-    """
-    toimipaikka = get_object_or_404(Toimipaikka.objects.all(), pk=toimipaikka_pk)
-    if user.has_perm('view_toimipaikka', toimipaikka):
-        return toimipaikka
-    raise Http404
 
 
 def user_permission_groups_in_organization(user, organisaatio_oid, permission_group_list):

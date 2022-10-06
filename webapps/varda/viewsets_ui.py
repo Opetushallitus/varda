@@ -1,6 +1,5 @@
 import datetime
 
-from django.contrib.contenttypes.models import ContentType
 from django.db import transaction
 from django.db.models import Prefetch, Q, Subquery
 from django.http import Http404
@@ -16,7 +15,7 @@ from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
 
 from varda import filters
-from varda.cache import get_object_ids_for_user_by_model, get_object_ids_user_has_permissions
+from varda.cache import get_object_ids_user_has_permissions
 from varda.cas.varda_permissions import IsVardaPaakayttaja
 from varda.custom_swagger import ActionPaginationSwaggerAutoSchema
 from varda.filters import CustomParametersFilterBackend, CustomParameter
@@ -66,9 +65,7 @@ class UiVakajarjestajatViewSet(GenericViewSet, ListModelMixin):
         if user.is_superuser:
             queryset = Organisaatio.objects.all().order_by('nimi')
         else:
-            model_name = 'organisaatio'
-            content_type = ContentType.objects.get(model=model_name)
-            vakajarjestaja_ids = get_object_ids_user_has_permissions(user, model_name, content_type)
+            vakajarjestaja_ids = get_object_ids_user_has_permissions(user, Organisaatio)
             queryset = Organisaatio.objects.filter(id__in=vakajarjestaja_ids).order_by('nimi')
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
@@ -113,7 +110,7 @@ class UiVakajarjestajatViewSet(GenericViewSet, ListModelMixin):
 
         if not self._has_organisaatio_level_henkilosto_permissions():
             # No organisaatio level permissions, get results based on object permissions
-            tyontekija_id_list = get_object_ids_for_user_by_model(user, Tyontekija.get_name())
+            tyontekija_id_list = get_object_ids_user_has_permissions(user, Tyontekija)
             taydennyskoulutus_filters, organisaatio_oids = get_tyontekija_filters_for_taydennyskoulutus_groups(user)
             filter_condition &= Q(id__in=tyontekija_id_list) | taydennyskoulutus_filters
 
@@ -169,7 +166,7 @@ class UiVakajarjestajatViewSet(GenericViewSet, ListModelMixin):
 
         if not self._has_organisaatio_level_vaka_permissions():
             # No organisaatio level permissions, get results based on object permissions
-            lapsi_id_list = get_object_ids_for_user_by_model(user, Lapsi.get_name())
+            lapsi_id_list = get_object_ids_user_has_permissions(user, Lapsi)
             filter_condition &= Q(id__in=lapsi_id_list)
 
         query_params = self.request.query_params
@@ -253,7 +250,7 @@ class NestedToimipaikkaViewSet(GenericViewSet, ListModelMixin):
                                                                VAKA_GROUPS)
         if not user.is_superuser and not is_oph_staff(user) and not vaka_group_qs.exists():
             # Get only toimipaikat user has object level permissions to
-            toimipaikka_ids_user_has_view_permissions = get_object_ids_for_user_by_model(user, Toimipaikka.get_name())
+            toimipaikka_ids_user_has_view_permissions = get_object_ids_user_has_permissions(user, Toimipaikka)
             toimipaikka_filter = toimipaikka_filter & Q(id__in=toimipaikka_ids_user_has_view_permissions)
 
         return (Toimipaikka.objects.filter(toimipaikka_filter)
@@ -445,7 +442,7 @@ class UiNestedLapsiViewSet(GenericViewSet, ListModelMixin):
         # Get all Lapsi objects for superuser, OPH and vakajarjestaja level KATSELIJA/TALLENTAJA permissions
         # Huoltajatieto groups do not have permissions to Lapsi objects where organisaatio is paos_organisaatio
         if not user.is_superuser and not is_oph_staff(user) and not lapsi_organization_groups_qs.exists():
-            lapsi_object_ids_user_has_view_permissions = get_object_ids_for_user_by_model(user, Lapsi.get_name())
+            lapsi_object_ids_user_has_view_permissions = get_object_ids_user_has_permissions(user, Lapsi)
             lapsi_filter &= Q(id__in=lapsi_object_ids_user_has_view_permissions)
 
         return Lapsi.objects.filter(lapsi_filter).order_by('henkilo__sukunimi', 'henkilo__etunimet')
@@ -558,7 +555,7 @@ class UiNestedTyontekijaViewSet(GenericViewSet, ListModelMixin):
         if not self.has_vakajarjestaja_tyontekija_permissions and not taydennyskoulutus_organization_groups_qs.exists():
             # Get only Tyontekija objects user has object permissions to, or objects that belong to user's
             # taydennyskoulutus groups
-            tyontekija_ids_user_has_view_permissions = get_object_ids_for_user_by_model(user, Tyontekija.get_name())
+            tyontekija_ids_user_has_view_permissions = get_object_ids_user_has_permissions(user, Tyontekija)
             tyontekija_taydennyskoulutus_filters, organisaatio_oids = get_tyontekija_filters_for_taydennyskoulutus_groups(self.request.user)
             tyontekija_filter = (tyontekija_filter & (Q(id__in=tyontekija_ids_user_has_view_permissions) | tyontekija_taydennyskoulutus_filters))
 

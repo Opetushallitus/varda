@@ -1,12 +1,11 @@
 import logging
 import datetime
 
-import pytz
 from django.conf import settings
 from django.contrib.auth.models import Group, User
 from django.core.cache import cache
 from django.db import IntegrityError, transaction
-from django.db.models import Prefetch, ProtectedError, Q, Subquery, Sum
+from django.db.models import ProtectedError, Q, Subquery, Sum
 from django.db.models.query import EmptyQuerySet
 from django.http import Http404
 from django.shortcuts import get_object_or_404
@@ -18,7 +17,6 @@ from rest_framework import permissions, status
 from rest_framework.authentication import get_authorization_header
 from rest_framework.decorators import action
 from rest_framework.exceptions import (NotAuthenticated, NotFound, PermissionDenied, ValidationError)
-from rest_framework.filters import SearchFilter
 from rest_framework.mixins import (CreateModelMixin, DestroyModelMixin, ListModelMixin, RetrieveModelMixin,
                                    UpdateModelMixin)
 from rest_framework.response import Response
@@ -27,8 +25,8 @@ from rest_framework_guardian.filters import ObjectPermissionsFilter
 
 from varda import filters, validators
 from varda.api_token import KnoxLoginView
-from varda.cache import (cached_list_response, delete_organisaatio_yhteenveto_cache, delete_toimipaikan_lapset_cache,
-                         delete_cache_keys_related_model, get_object_ids_for_user_by_model)
+from varda.cache import (delete_organisaatio_yhteenveto_cache, delete_toimipaikan_lapset_cache,
+                         delete_cache_keys_related_model, get_object_ids_user_has_permissions)
 from varda.clients.oppijanumerorekisteri_client import (get_henkilo_data_by_oid, add_henkilo_to_oppijanumerorekisteri,
                                                         get_henkilo_by_henkilotunnus)
 from varda.custom_swagger import IntegerIdSchema
@@ -36,11 +34,11 @@ from varda.enums.error_messages import ErrorMessages
 from varda.enums.kayttajatyyppi import Kayttajatyyppi
 from varda.enums.organisaatiotyyppi import Organisaatiotyyppi
 from varda.exceptions.conflict_error import ConflictError
-from varda.filters import CustomParametersFilterBackend, CustomParameter
 from varda.kayttooikeuspalvelu import set_user_info_from_onr
 from varda.misc import CustomServerErrorException, encrypt_string, hash_string, update_painotus_kytkin
 from varda.misc_queries import get_paos_toimipaikat
-from varda.misc_viewsets import IncreasedModifyThrottleMixin, ObjectByTunnisteMixin
+from varda.misc_viewsets import (IncreasedModifyThrottleMixin, ObjectByTunnisteMixin, ParentObjectMixin,
+                                 PermissionListMixin)
 from varda.models import (Organisaatio, Toimipaikka, ToiminnallinenPainotus, KieliPainotus, Henkilo, PaosToiminta,
                           Lapsi, Huoltaja, Huoltajuussuhde, Varhaiskasvatuspaatos, Varhaiskasvatussuhde, Maksutieto,
                           PaosOikeus, Z3_AdditionalCasUserFields, Z4_CasKayttoOikeudet, Tyontekija, Palvelussuhde,
@@ -61,7 +59,7 @@ from varda.permissions import (assign_henkilo_permissions, assign_kielipainotus_
                                check_if_user_has_paakayttaja_permissions, ReadAdminOrOPHUser, CustomModelPermissions,
                                user_has_huoltajatieto_tallennus_permissions_to_correct_organization,
                                user_has_tallentaja_permission_in_organization, auditlogclass, save_audit_log,
-                               ToimipaikkaPermissions, get_toimipaikka_or_404, auditlog, is_oph_staff,
+                               ToimipaikkaPermissions, auditlog, is_oph_staff,
                                user_permission_groups_in_organizations, user_permission_groups_in_organization,
                                CustomObjectPermissions)
 from varda.request_logging import request_log_viewset_decorator_factory
@@ -73,10 +71,9 @@ from varda.serializers import (ExternalPermissionsSerializer, GroupSerializer, U
                                HuoltajaSerializer, HuoltajuussuhdeSerializer, MaksutietoSerializer,
                                MaksutietoUpdateSerializer, VarhaiskasvatuspaatosSerializer,
                                VarhaiskasvatussuhdeSerializer, OrganisaatioYhteenvetoSerializer,
-                               HenkilohakuLapsetSerializer, PaosToimintaSerializer, PaosToimijatSerializer,
-                               PaosToimipaikatSerializer, PaosOikeusSerializer, LapsiKoosteSerializer, UserSerializer,
-                               ToimipaikkaKoosteSerializer, ToimipaikkaUpdateSerializer,
-                               PulssiVakajarjestajatSerializer, MaksutietoPostSerializer)
+                               PaosToimintaSerializer, PaosToimijatSerializer, PaosToimipaikatSerializer,
+                               PaosOikeusSerializer, LapsiKoosteSerializer, UserSerializer, ToimipaikkaKoosteSerializer,
+                               ToimipaikkaUpdateSerializer, PulssiVakajarjestajatSerializer, MaksutietoPostSerializer)
 from webapps.api_throttles import (BurstRateThrottleStrict, SustainedRateThrottleStrict)
 
 
@@ -95,7 +92,7 @@ class UserViewSet(ModelViewSet):
     """
     queryset = User.objects.all().order_by('-date_joined')
     serializer_class = UserSerializer
-    permission_classes = (permissions.IsAdminUser, )
+    permission_classes = (permissions.IsAdminUser,)
 
 
 @auditlogclass
@@ -105,7 +102,7 @@ class GroupViewSet(ModelViewSet):
     """
     queryset = Group.objects.all().order_by('id')
     serializer_class = GroupSerializer
-    permission_classes = (permissions.IsAdminUser, )
+    permission_classes = (permissions.IsAdminUser,)
 
 
 class UpdateHenkiloWithOid(GenericViewSet, CreateModelMixin):
@@ -115,7 +112,7 @@ class UpdateHenkiloWithOid(GenericViewSet, CreateModelMixin):
     """
     queryset = Henkilo.objects.none()
     serializer_class = UpdateHenkiloWithOidSerializer
-    permission_classes = (permissions.IsAdminUser, )
+    permission_classes = (permissions.IsAdminUser,)
 
     def create(self, request, *args, **kwargs):
         user = request.user
@@ -139,7 +136,7 @@ class ClearCacheViewSet(GenericViewSet, CreateModelMixin):
         Tyhjennä memcached-sisältö kokonaisuudessaan.
     """
     serializer_class = ClearCacheSerializer
-    permission_classes = (permissions.IsAdminUser, )
+    permission_classes = (permissions.IsAdminUser,)
     # QuerySet is required in browserable API
     queryset = EmptyQuerySet
 
@@ -173,7 +170,7 @@ class HaeYksiloimattomatHenkilotViewSet(GenericViewSet, ListModelMixin):
     filterset_class = filters.YksiloimattomatHenkilotFilter
     queryset = Henkilo.objects.filter(Q(vtj_yksiloity=False) & Q(vtj_yksilointi_yritetty=True))
     serializer_class = YksiloimattomatHenkilotSerializer
-    permission_classes = (ReadAdminOrOPHUser, )
+    permission_classes = (ReadAdminOrOPHUser,)
     pagination_class = ChangeableReportingPageSizePagination
 
     def get_queryset(self):
@@ -199,7 +196,7 @@ class HuoltajaViewSet(ModelViewSet):
     filterset_class = filters.HuoltajaFilter
     queryset = Huoltaja.objects.none()
     serializer_class = HuoltajaSerializer
-    permission_classes = (permissions.IsAdminUser, )
+    permission_classes = (permissions.IsAdminUser,)
     http_method_names = ['get', 'head', 'options']
 
     def get_queryset(self):
@@ -220,7 +217,7 @@ class NestedHuoltajaViewSet(GenericViewSet, ListModelMixin):
     filterset_class = filters.HuoltajaFilter
     queryset = Huoltaja.objects.none()
     serializer_class = HuoltajaSerializer
-    permission_classes = (permissions.IsAdminUser, )
+    permission_classes = (permissions.IsAdminUser,)
     swagger_schema = IntegerIdSchema
     swagger_path_model = Lapsi
 
@@ -264,7 +261,7 @@ class HuoltajuussuhdeViewSet(ModelViewSet):
     filterset_class = None
     queryset = Huoltajuussuhde.objects.none()
     serializer_class = HuoltajuussuhdeSerializer
-    permission_classes = (permissions.IsAdminUser, )
+    permission_classes = (permissions.IsAdminUser,)
     http_method_names = ['get', 'head', 'options']
 
     def get_queryset(self):
@@ -285,7 +282,7 @@ class NestedLapsiViewSet(GenericViewSet, ListModelMixin):
     filterset_class = filters.LapsiFilter
     queryset = Lapsi.objects.none()
     serializer_class = LapsiSerializer
-    permission_classes = (permissions.IsAdminUser, )
+    permission_classes = (permissions.IsAdminUser,)
 
     def get_huoltaja(self, request, huoltaja_pk=None):
         huoltaja = get_object_or_404(Huoltaja.objects.all(), pk=huoltaja_pk)
@@ -321,7 +318,7 @@ class PulssiVakajarjestajat(GenericViewSet, ListModelMixin):
     list:
         Nouda vakajarjestajien lukumaara.
     """
-    permission_classes = (permissions.AllowAny, )
+    permission_classes = (permissions.AllowAny,)
     pagination_class = None
     throttle_classes = ()  # TODO: Add ratelimit for Pulssi
     queryset = Organisaatio.objects.all()
@@ -346,7 +343,7 @@ class ActiveUserViewSet(GenericViewSet, ListModelMixin):
     """
     queryset = User.objects.none()
     serializer_class = ActiveUserSerializer
-    permission_classes = (permissions.IsAuthenticated, )
+    permission_classes = (permissions.IsAuthenticated,)
     pagination_class = None
 
     @swagger_auto_schema(responses={status.HTTP_200_OK: ActiveUserSerializer(many=False)})
@@ -375,7 +372,7 @@ class ApikeyViewSet(GenericViewSet, ListModelMixin, CreateModelMixin):
         Päivitä käyttäjän apikey.
     """
     queryset = AuthToken.objects.none()
-    permission_classes = (permissions.IsAuthenticated, )
+    permission_classes = (permissions.IsAuthenticated,)
     serializer_class = AuthTokenSerializer
     pagination_class = None
 
@@ -418,7 +415,7 @@ class ExternalPermissionsViewSet(GenericViewSet, CreateModelMixin):
     """
     queryset = Henkilo.objects.none()
     serializer_class = ExternalPermissionsSerializer
-    permission_classes = (permissions.AllowAny, )
+    permission_classes = (permissions.AllowAny,)
     # TODO: Allow queries only from Varda fe-proxy; it then allows only from ONR.
 
     @auditlog
@@ -492,7 +489,7 @@ When a new instance is created (POST-request), we give object-level permissions 
 
 @auditlogclass
 @request_log_viewset_decorator_factory()
-class OrganisaatioViewSet(IncreasedModifyThrottleMixin, ModelViewSet):
+class OrganisaatioViewSet(IncreasedModifyThrottleMixin, PermissionListMixin, ModelViewSet):
     """
     list:
         Nouda kaikki vakajarjestajat.
@@ -518,9 +515,6 @@ class OrganisaatioViewSet(IncreasedModifyThrottleMixin, ModelViewSet):
     serializer_class = OrganisaatioSerializer
     permission_classes = (CustomModelPermissions, CustomObjectPermissions,)
 
-    def list(self, request, *args, **kwargs):
-        return cached_list_response(self, request.user, request.get_full_path())
-
     def perform_destroy(self, instance):
         try:
             instance.delete()
@@ -530,8 +524,8 @@ class OrganisaatioViewSet(IncreasedModifyThrottleMixin, ModelViewSet):
 
 @auditlogclass
 @request_log_viewset_decorator_factory(target_path=[])
-class ToimipaikkaViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMixin, GenericViewSet, CreateModelMixin,
-                         RetrieveModelMixin, UpdateModelMixin, ListModelMixin):
+class ToimipaikkaViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMixin, PermissionListMixin, GenericViewSet,
+                         CreateModelMixin, RetrieveModelMixin, UpdateModelMixin, ListModelMixin):
     """
     list:
         Nouda kaikki toimipaikat.
@@ -562,9 +556,6 @@ class ToimipaikkaViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMixin, Ge
             return ToimipaikkaKoosteSerializer
         else:
             return ToimipaikkaSerializer
-
-    def list(self, request, *args, **kwargs):
-        return cached_list_response(self, request.user, request.get_full_path())
 
     def perform_create(self, serializer):
         validated_data = serializer.validated_data
@@ -613,7 +604,8 @@ class ToimipaikkaViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMixin, Ge
 
 @auditlogclass
 @request_log_viewset_decorator_factory(target_path=['toimipaikka'])
-class ToiminnallinenPainotusViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMixin, ModelViewSet):
+class ToiminnallinenPainotusViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMixin, PermissionListMixin,
+                                    ModelViewSet):
     """
     list:
         Nouda kaikki toiminnalliset painotukset.
@@ -641,9 +633,6 @@ class ToiminnallinenPainotusViewSet(IncreasedModifyThrottleMixin, ObjectByTunnis
 
     def _toggle_toimipaikka_kytkin(self, toimipaikka):
         update_painotus_kytkin(toimipaikka, 'toiminnallisetpainotukset', 'toiminnallinenpainotus_kytkin')
-
-    def list(self, request, *args, **kwargs):
-        return cached_list_response(self, request.user, request.get_full_path())
 
     @transaction.atomic
     def perform_create(self, serializer):
@@ -677,7 +666,7 @@ class ToiminnallinenPainotusViewSet(IncreasedModifyThrottleMixin, ObjectByTunnis
 
 @auditlogclass
 @request_log_viewset_decorator_factory(target_path=['toimipaikka'])
-class KieliPainotusViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMixin, ModelViewSet):
+class KieliPainotusViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMixin, PermissionListMixin, ModelViewSet):
     """
     list:
         Nouda kaikki kielipainotukset.
@@ -705,9 +694,6 @@ class KieliPainotusViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMixin, 
 
     def _toggle_toimipaikka_kytkin(self, toimipaikka):
         update_painotus_kytkin(toimipaikka, 'kielipainotukset', 'kielipainotus_kytkin')
-
-    def list(self, request, *args, **kwargs):
-        return cached_list_response(self, request.user, request.get_full_path())
 
     @transaction.atomic
     def perform_create(self, serializer):
@@ -965,7 +951,7 @@ class HenkiloViewSet(IncreasedModifyThrottleMixin, GenericViewSet, RetrieveModel
 
 @auditlogclass
 @request_log_viewset_decorator_factory(target_path=[])
-class LapsiViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMixin, ModelViewSet):
+class LapsiViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMixin, PermissionListMixin, ModelViewSet):
     """
     list:
         Nouda kaikki lapset.
@@ -996,9 +982,6 @@ class LapsiViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMixin, ModelVie
         if request is not None and request.user.is_superuser:
             return LapsiSerializerAdmin
         return LapsiSerializer
-
-    def list(self, request, *args, **kwargs):
-        return cached_list_response(self, request.user, request.get_full_path())
 
     def return_lapsi_if_already_created(self, validated_data, toimipaikka_oid, paos_oikeus):
         user = self.request.user
@@ -1124,7 +1107,8 @@ class LapsiViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMixin, ModelVie
 
 @auditlogclass
 @request_log_viewset_decorator_factory(target_path=['lapsi'])
-class VarhaiskasvatuspaatosViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMixin, ModelViewSet):
+class VarhaiskasvatuspaatosViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMixin, PermissionListMixin,
+                                   ModelViewSet):
     """
     list:
         Nouda kaikki varhaiskasvatuspäätökset.
@@ -1149,9 +1133,6 @@ class VarhaiskasvatuspaatosViewSet(IncreasedModifyThrottleMixin, ObjectByTunnist
     queryset = Varhaiskasvatuspaatos.objects.all().order_by('id')
     serializer_class = VarhaiskasvatuspaatosSerializer
     permission_classes = (CustomModelPermissions, CustomObjectPermissions,)
-
-    def list(self, request, *args, **kwargs):
-        return cached_list_response(self, request.user, request.get_full_path())
 
     def perform_create(self, serializer):
         user = self.request.user
@@ -1225,7 +1206,8 @@ class VarhaiskasvatuspaatosViewSet(IncreasedModifyThrottleMixin, ObjectByTunnist
 
 @auditlogclass
 @request_log_viewset_decorator_factory(target_path=['varhaiskasvatuspaatos', 'lapsi'])
-class VarhaiskasvatussuhdeViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMixin, ModelViewSet):
+class VarhaiskasvatussuhdeViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMixin, PermissionListMixin,
+                                  ModelViewSet):
     """
     list:
         Nouda kaikki varhaiskasvatussuhteet.
@@ -1250,9 +1232,6 @@ class VarhaiskasvatussuhdeViewSet(IncreasedModifyThrottleMixin, ObjectByTunniste
     queryset = Varhaiskasvatussuhde.objects.all().order_by('id')
     serializer_class = VarhaiskasvatussuhdeSerializer
     permission_classes = (CustomModelPermissions, CustomObjectPermissions,)
-
-    def list(self, request, *args, **kwargs):
-        return cached_list_response(self, request.user, request.get_full_path())
 
     def perform_create(self, serializer):
         user = self.request.user
@@ -1301,7 +1280,7 @@ class VarhaiskasvatussuhdeViewSet(IncreasedModifyThrottleMixin, ObjectByTunniste
 
 @auditlogclass
 @request_log_viewset_decorator_factory()
-class MaksutietoViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMixin, ModelViewSet):
+class MaksutietoViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMixin, PermissionListMixin, ModelViewSet):
     """
     list:
         hae maksutiedot
@@ -1336,9 +1315,6 @@ class MaksutietoViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMixin, Mod
             return MaksutietoPostSerializer
         else:
             return MaksutietoSerializer
-
-    def list(self, request, *args, **kwargs):
-        return cached_list_response(self, request.user, request.get_full_path())
 
     def perform_create(self, serializer):
         user = self.request.user
@@ -1398,8 +1374,8 @@ class MaksutietoViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMixin, Mod
 
 @auditlogclass
 @request_log_viewset_decorator_factory()
-class PaosToimintaViewSet(IncreasedModifyThrottleMixin, GenericViewSet, ListModelMixin, RetrieveModelMixin,
-                          CreateModelMixin, DestroyModelMixin):
+class PaosToimintaViewSet(IncreasedModifyThrottleMixin, PermissionListMixin, GenericViewSet, ListModelMixin,
+                          RetrieveModelMixin, CreateModelMixin, DestroyModelMixin):
     """
     list:
         hae palveluseteli- ja ostopalvelutoiminnat
@@ -1413,14 +1389,11 @@ class PaosToimintaViewSet(IncreasedModifyThrottleMixin, GenericViewSet, ListMode
     delete:
         poista palveluseteli- ja ostopalvelutoiminta
     """
-    filter_backends = (DjangoFilterBackend, )
+    filter_backends = (DjangoFilterBackend,)
     filterset_class = filters.PaosToimintaFilter
     queryset = PaosToiminta.objects.filter(voimassa_kytkin=True).order_by('id')
     serializer_class = PaosToimintaSerializer
     permission_classes = (CustomModelPermissions, CustomObjectPermissions,)
-
-    def list(self, request, *args, **kwargs):
-        return cached_list_response(self, request.user, request.get_full_path())
 
     def get_paos_toiminta_is_active_q(self, validated_data):
         paos_toiminta_is_active_q = Q()
@@ -1557,8 +1530,8 @@ class PaosToimintaViewSet(IncreasedModifyThrottleMixin, GenericViewSet, ListMode
 
 @auditlogclass
 @request_log_viewset_decorator_factory()
-class PaosOikeusViewSet(IncreasedModifyThrottleMixin, GenericViewSet, UpdateModelMixin, ListModelMixin,
-                        RetrieveModelMixin):
+class PaosOikeusViewSet(IncreasedModifyThrottleMixin, PermissionListMixin, GenericViewSet, UpdateModelMixin,
+                        ListModelMixin, RetrieveModelMixin):
     """
     list:
         hae organisaatioiden väliset palveluseteli- ja ostopalveluoikeudet
@@ -1572,14 +1545,11 @@ class PaosOikeusViewSet(IncreasedModifyThrottleMixin, GenericViewSet, UpdateMode
     partial_update:
         päivitä organisaatioiden välillä oleva tallentaja
     """
-    filter_backends = (DjangoFilterBackend, )
+    filter_backends = (DjangoFilterBackend,)
     filterset_class = filters.PaosOikeusFilter
     queryset = PaosOikeus.objects.all().order_by('id')
     serializer_class = PaosOikeusSerializer
     permission_classes = (CustomModelPermissions, CustomObjectPermissions,)
-
-    def list(self, request, *args, **kwargs):
-        return cached_list_response(self, request.user, request.get_full_path())
 
     def perform_update(self, serializer):
         paos_oikeus_obj = self.get_object()
@@ -1903,7 +1873,7 @@ class NestedOrganisaatioYhteenvetoViewSet(GenericViewSet, ListModelMixin):
 
 
 @auditlogclass
-class NestedVarhaiskasvatussuhdeViewSet(GenericViewSet, ListModelMixin):
+class NestedVarhaiskasvatussuhdeViewSet(ParentObjectMixin, PermissionListMixin, GenericViewSet, ListModelMixin):
     """
     list:
         nouda tietyn varhaiskasvatuspaatoksen kaikki varhaiskasvatussuhteet
@@ -1915,28 +1885,17 @@ class NestedVarhaiskasvatussuhdeViewSet(GenericViewSet, ListModelMixin):
     permission_classes = (CustomModelPermissions,)
     swagger_schema = IntegerIdSchema
     swagger_path_model = Varhaiskasvatuspaatos
-
-    def get_varhaiskasvatuspaatos(self, request, varhaiskasvatuspaatos_pk=None):
-        varhaiskasvatuspaatos = get_object_or_404(Varhaiskasvatuspaatos.objects.all(), pk=varhaiskasvatuspaatos_pk)
-        user = request.user
-        if user.has_perm('view_varhaiskasvatuspaatos', varhaiskasvatuspaatos):
-            return varhaiskasvatuspaatos
-        else:
-            raise Http404
+    parent_model = Varhaiskasvatuspaatos
 
     @transaction.atomic
     def list(self, request, *args, **kwargs):
-        if not kwargs['varhaiskasvatuspaatos_pk'].isdigit():
-            raise Http404
-
-        self.get_varhaiskasvatuspaatos(request, varhaiskasvatuspaatos_pk=kwargs['varhaiskasvatuspaatos_pk'])
-        self.queryset = Varhaiskasvatussuhde.objects.filter(varhaiskasvatuspaatos=kwargs['varhaiskasvatuspaatos_pk']).order_by('id')
-
-        return cached_list_response(self, request.user, request.get_full_path())
+        vakapaatos_obj = self.get_parent_object()
+        self.queryset = Varhaiskasvatussuhde.objects.filter(varhaiskasvatuspaatos=vakapaatos_obj).order_by('id')
+        return super().list(request, *args, **kwargs)
 
 
 @auditlogclass
-class NestedToimipaikkaViewSet(GenericViewSet, ListModelMixin):
+class NestedToimipaikkaViewSet(ParentObjectMixin, PermissionListMixin, GenericViewSet, ListModelMixin):
     """
     list:
         Nouda tietyn vaka-järjestäjän kaikki toimipaikat.
@@ -1948,33 +1907,22 @@ class NestedToimipaikkaViewSet(GenericViewSet, ListModelMixin):
     permission_classes = (CustomModelPermissions,)
     swagger_schema = IntegerIdSchema
     swagger_path_model = Organisaatio
-
-    def get_vakajarjestaja(self, request, vakajarjestaja_pk=None):
-        vakajarjestaja = get_object_or_404(Organisaatio.objects.all(), pk=vakajarjestaja_pk)
-        user = request.user
-        if user.has_perm('view_organisaatio', vakajarjestaja):
-            return vakajarjestaja
-        else:
-            raise Http404
+    parent_model = Organisaatio
 
     @transaction.atomic
     def list(self, request, *args, **kwargs):
-        if not kwargs['organisaatio_pk'].isdigit():
-            raise Http404
-
-        vakajarjestaja_obj = self.get_vakajarjestaja(request, vakajarjestaja_pk=kwargs['organisaatio_pk'])
+        vakajarjestaja_obj = self.get_parent_object()
         paos_toimipaikat = get_paos_toimipaikat(vakajarjestaja_obj)
-        qs_own_toimipaikat = Q(vakajarjestaja=kwargs['organisaatio_pk'])
+        qs_own_toimipaikat = Q(vakajarjestaja=vakajarjestaja_obj)
         qs_paos_toimipaikat = Q(id__in=paos_toimipaikat)
         toimipaikka_filter = qs_own_toimipaikat | qs_paos_toimipaikat
 
         self.queryset = Toimipaikka.objects.filter(toimipaikka_filter).order_by('nimi')
-
-        return cached_list_response(self, request.user, request.get_full_path(), order_by='nimi')
+        return super().list(request, *args, **kwargs)
 
 
 @auditlogclass
-class NestedToiminnallinenPainotusViewSet(GenericViewSet, ListModelMixin):
+class NestedToiminnallinenPainotusViewSet(ParentObjectMixin, GenericViewSet, ListModelMixin):
     """
     list:
         Nouda tietyn toimipaikan kaikki toiminnalliset painotukset.
@@ -1983,22 +1931,20 @@ class NestedToiminnallinenPainotusViewSet(GenericViewSet, ListModelMixin):
     filterset_class = filters.ToiminnallinenPainotusFilter
     queryset = ToiminnallinenPainotus.objects.none()
     serializer_class = ToiminnallinenPainotusSerializer
-    permission_classes = (ToimipaikkaPermissions, )
+    permission_classes = (ToimipaikkaPermissions,)
     swagger_schema = IntegerIdSchema
     swagger_path_model = Toimipaikka
+    parent_model = Toimipaikka
 
     @transaction.atomic
     def list(self, request, *args, **kwargs):
-        if not kwargs['toimipaikka_pk'].isdigit():
-            raise Http404
-        get_toimipaikka_or_404(request.user, toimipaikka_pk=kwargs['toimipaikka_pk'])
-
-        self.queryset = ToiminnallinenPainotus.objects.filter(toimipaikka=kwargs['toimipaikka_pk']).order_by('id')
-        return super(NestedToiminnallinenPainotusViewSet, self).list(request, *args, **kwargs)
+        toimipaikka_obj = self.get_parent_object()
+        self.queryset = ToiminnallinenPainotus.objects.filter(toimipaikka=toimipaikka_obj).order_by('id')
+        return super().list(request, *args, **kwargs)
 
 
 @auditlogclass
-class NestedKieliPainotusViewSet(GenericViewSet, ListModelMixin):
+class NestedKieliPainotusViewSet(ParentObjectMixin, GenericViewSet, ListModelMixin):
     """
     list:
         Nouda tietyn toimipaikan kaikki kielipainotukset.
@@ -2007,22 +1953,21 @@ class NestedKieliPainotusViewSet(GenericViewSet, ListModelMixin):
     filterset_class = filters.KieliPainotusFilter
     queryset = KieliPainotus.objects.none()
     serializer_class = KieliPainotusSerializer
-    permission_classes = (ToimipaikkaPermissions, )
+    permission_classes = (ToimipaikkaPermissions,)
     swagger_schema = IntegerIdSchema
     swagger_path_model = Toimipaikka
+    parent_model = Toimipaikka
 
     @transaction.atomic
     def list(self, request, *args, **kwargs):
-        if not kwargs['toimipaikka_pk'].isdigit():
-            raise Http404
-        get_toimipaikka_or_404(request.user, toimipaikka_pk=kwargs['toimipaikka_pk'])
-
-        self.queryset = KieliPainotus.objects.filter(toimipaikka=kwargs['toimipaikka_pk']).order_by('id')
-        return super(NestedKieliPainotusViewSet, self).list(request, *args, **kwargs)
+        toimipaikka_obj = self.get_parent_object()
+        self.queryset = KieliPainotus.objects.filter(toimipaikka=toimipaikka_obj).order_by('id')
+        return super().list(request, *args, **kwargs)
 
 
 @auditlogclass
-class NestedVarhaiskasvatussuhdeToimipaikkaViewSet(GenericViewSet, ListModelMixin):
+class NestedVarhaiskasvatussuhdeToimipaikkaViewSet(ParentObjectMixin, PermissionListMixin, GenericViewSet,
+                                                   ListModelMixin):
     """
     list:
         Nouda tietyn toimipaikan kaikki varhaiskasvatussuhteet.
@@ -2034,20 +1979,17 @@ class NestedVarhaiskasvatussuhdeToimipaikkaViewSet(GenericViewSet, ListModelMixi
     permission_classes = (CustomModelPermissions,)
     swagger_schema = IntegerIdSchema
     swagger_path_model = Toimipaikka
+    parent_model = Toimipaikka
 
     @transaction.atomic
     def list(self, request, *args, **kwargs):
-        if not kwargs['toimipaikka_pk'].isdigit():
-            raise Http404
-
-        get_toimipaikka_or_404(request.user, toimipaikka_pk=kwargs['toimipaikka_pk'])
-        self.queryset = Varhaiskasvatussuhde.objects.filter(toimipaikka=kwargs['toimipaikka_pk']).order_by('id')
-
-        return cached_list_response(self, request.user, request.get_full_path())
+        toimipaikka_obj = self.get_parent_object()
+        self.queryset = Varhaiskasvatussuhde.objects.filter(toimipaikka=toimipaikka_obj).order_by('id')
+        return super().list(request, *args, **kwargs)
 
 
 @auditlogclass
-class NestedVarhaiskasvatuspaatosViewSet(GenericViewSet, ListModelMixin):
+class NestedVarhaiskasvatuspaatosViewSet(ParentObjectMixin, PermissionListMixin, GenericViewSet, ListModelMixin):
     """
     list:
         Nouda tietyn lapsen kaikki varhaiskasvatuspäätökset.
@@ -2059,24 +2001,13 @@ class NestedVarhaiskasvatuspaatosViewSet(GenericViewSet, ListModelMixin):
     permission_classes = (CustomModelPermissions,)
     swagger_schema = IntegerIdSchema
     swagger_path_model = Lapsi
-
-    def get_lapsi(self, request, lapsi_pk=None):
-        lapsi = get_object_or_404(Lapsi.objects.all(), pk=lapsi_pk)
-        user = request.user
-        if user.has_perm('view_lapsi', lapsi):
-            return lapsi
-        else:
-            raise Http404
+    parent_model = Lapsi
 
     @transaction.atomic
     def list(self, request, *args, **kwargs):
-        if not kwargs['lapsi_pk'].isdigit():
-            raise Http404
-
-        self.get_lapsi(request, lapsi_pk=kwargs['lapsi_pk'])
-        self.queryset = Varhaiskasvatuspaatos.objects.filter(lapsi=kwargs['lapsi_pk']).order_by('id')
-
-        return cached_list_response(self, request.user, request.get_full_path())
+        lapsi_obj = self.get_parent_object()
+        self.queryset = Varhaiskasvatuspaatos.objects.filter(lapsi=lapsi_obj).order_by('id')
+        return super().list(request, *args, **kwargs)
 
 
 @auditlogclass
@@ -2129,7 +2060,7 @@ class NestedLapsiKoosteViewSet(ObjectByTunnisteMixin, GenericViewSet, ListModelM
                                                                                      Z4_CasKayttoOikeudet.TALLENTAJA,
                                                                                      Z4_CasKayttoOikeudet.KATSELIJA,))
         if not is_superuser_or_oph_staff and not vakatiedot_organization_groups_qs.exists():
-            vakapaatos_filter &= Q(id__in=get_object_ids_for_user_by_model(user, 'varhaiskasvatuspaatos'))
+            vakapaatos_filter &= Q(id__in=get_object_ids_user_has_permissions(user, Varhaiskasvatuspaatos))
 
         vakapaatokset = Varhaiskasvatuspaatos.objects.filter(vakapaatos_filter).distinct().order_by('-alkamis_pvm')
         lapsi_data['varhaiskasvatuspaatokset'] = vakapaatokset
@@ -2137,7 +2068,7 @@ class NestedLapsiKoosteViewSet(ObjectByTunnisteMixin, GenericViewSet, ListModelM
         # Get vakasuhteet
         vakasuhde_filter = Q(varhaiskasvatuspaatos__lapsi=lapsi)
         if not is_superuser_or_oph_staff and not vakatiedot_organization_groups_qs.exists():
-            vakasuhde_filter &= Q(id__in=get_object_ids_for_user_by_model(user, 'varhaiskasvatussuhde'))
+            vakasuhde_filter &= Q(id__in=get_object_ids_user_has_permissions(user, Varhaiskasvatussuhde))
 
         vakasuhteet = Varhaiskasvatussuhde.objects.filter(vakasuhde_filter).distinct().order_by('-alkamis_pvm')
         lapsi_data['varhaiskasvatussuhteet'] = vakasuhteet
@@ -2149,7 +2080,7 @@ class NestedLapsiKoosteViewSet(ObjectByTunnisteMixin, GenericViewSet, ListModelM
                                                                                         Z4_CasKayttoOikeudet.HUOLTAJATIEDOT_KATSELIJA,
                                                                                         Z4_CasKayttoOikeudet.HUOLTAJATIEDOT_TALLENTAJA))
         if not is_superuser_or_oph_staff and not huoltajatiedot_organization_groups_qs.exists():
-            maksutieto_filter &= Q(id__in=get_object_ids_for_user_by_model(user, 'maksutieto'))
+            maksutieto_filter &= Q(id__in=get_object_ids_user_has_permissions(user, Maksutieto))
 
         maksutiedot = Maksutieto.objects.filter(maksutieto_filter).distinct().order_by('-alkamis_pvm')
         lapsi_data['maksutiedot'] = maksutiedot
@@ -2159,7 +2090,7 @@ class NestedLapsiKoosteViewSet(ObjectByTunnisteMixin, GenericViewSet, ListModelM
 
 
 @auditlogclass
-class NestedLapsenVarhaiskasvatussuhdeViewSet(GenericViewSet, ListModelMixin):
+class NestedLapsenVarhaiskasvatussuhdeViewSet(ParentObjectMixin, PermissionListMixin, GenericViewSet, ListModelMixin):
     """
     list:
         Nouda tietyn lapsen kaikki varhaiskasvatussuhteet.
@@ -2171,29 +2102,17 @@ class NestedLapsenVarhaiskasvatussuhdeViewSet(GenericViewSet, ListModelMixin):
     permission_classes = (CustomModelPermissions,)
     swagger_schema = IntegerIdSchema
     swagger_path_model = Lapsi
-
-    def get_lapsi(self, request, lapsi_pk=None):
-        lapsi = get_object_or_404(Lapsi.objects.all(), pk=lapsi_pk)
-        user = request.user
-        if user.has_perm('view_lapsi', lapsi):
-            return lapsi
-        else:
-            raise Http404
+    parent_model = Lapsi
 
     @transaction.atomic
     def list(self, request, *args, **kwargs):
-        if not kwargs['lapsi_pk'].isdigit():
-            raise Http404
-
-        self.get_lapsi(request, lapsi_pk=kwargs['lapsi_pk'])
-        varhaiskasvatuspaatos_ids = Varhaiskasvatuspaatos.objects.filter(lapsi=kwargs['lapsi_pk']).values('id')
-        self.queryset = Varhaiskasvatussuhde.objects.filter(varhaiskasvatuspaatos_id__in=varhaiskasvatuspaatos_ids).order_by('id')
-
-        return cached_list_response(self, request.user, request.get_full_path())
+        lapsi_obj = self.get_parent_object()
+        self.queryset = Varhaiskasvatussuhde.objects.filter(varhaiskasvatuspaatos__lapsi=lapsi_obj).order_by('id')
+        return super().list(request, *args, **kwargs)
 
 
 @auditlogclass
-class NestedLapsiMaksutietoViewSet(GenericViewSet, ListModelMixin):
+class NestedLapsiMaksutietoViewSet(ParentObjectMixin, GenericViewSet, ListModelMixin):
     """
     list:
         Nouda tietyn lapsen kaikki maksutiedot.
@@ -2205,76 +2124,40 @@ class NestedLapsiMaksutietoViewSet(GenericViewSet, ListModelMixin):
     permission_classes = (CustomModelPermissions,)
     swagger_schema = IntegerIdSchema
     swagger_path_model = Lapsi
-
-    def get_lapsi(self, request, lapsi_pk=None):
-        lapsi = get_object_or_404(Lapsi.objects.all(), pk=lapsi_pk)
-        user = request.user
-        if user.has_perm('view_lapsi', lapsi):
-            return lapsi
-        else:
-            raise Http404
+    parent_model = Lapsi
 
     @transaction.atomic
     def list(self, request, *args, **kwargs):
-        if not kwargs['lapsi_pk'].isdigit():
-            raise Http404
-
-        self.get_lapsi(request, lapsi_pk=kwargs['lapsi_pk'])
-        queryset = self.filter_queryset(Maksutieto.objects.filter(huoltajuussuhteet__lapsi=kwargs['lapsi_pk']).distinct().order_by('id'))
-
-        page = self.paginate_queryset(queryset)
-        if page is not None:
-            serializer = self.get_serializer(page, many=True)
-            return self.get_paginated_response(serializer.data)
-
-        serializer = self.get_serializer(queryset, many=True)
-        return Response(serializer.data)
+        lapsi_obj = self.get_parent_object()
+        self.queryset = Maksutieto.objects.filter(huoltajuussuhteet__lapsi=lapsi_obj).distinct().order_by('id')
+        return super().list(request, *args, **kwargs)
 
 
 @auditlogclass
-class NestedVakajarjestajaPaosToimijatViewSet(GenericViewSet, ListModelMixin):
+class NestedVakajarjestajaPaosToimijatViewSet(ParentObjectMixin, GenericViewSet, ListModelMixin):
     """
     list:
         Nouda varhaiskasvatustoimijan paos-järjestäjät
     """
     filter_backends = (ObjectPermissionsFilter,)
-    filterset_class = None
     queryset = Organisaatio.objects.none()
     serializer_class = PaosToimijatSerializer
     permission_classes = (CustomModelPermissions,)
     today = datetime.datetime.now()
     swagger_schema = IntegerIdSchema
-
-    def get_vakajarjestaja(self, vakajarjestaja_pk=None):
-        vakajarjestaja = get_object_or_404(Organisaatio.objects.all(), pk=vakajarjestaja_pk)
-        user = self.request.user
-        if user.has_perm('view_organisaatio', vakajarjestaja):
-            return vakajarjestaja
-        else:
-            raise Http404
+    parent_model = Organisaatio
 
     def list(self, request, *args, **kwargs):
-        if not self.kwargs['organisaatio_pk'].isdigit():
-            raise Http404
-
-        vakajarjestaja_obj = self.get_vakajarjestaja(vakajarjestaja_pk=self.kwargs['organisaatio_pk'])
-
-        paos_toiminnat = PaosToiminta.objects.filter(
+        vakajarjestaja_obj = self.get_parent_object()
+        self.queryset = PaosToiminta.objects.filter(
             Q(voimassa_kytkin=True) &
             Q(oma_organisaatio=vakajarjestaja_obj, paos_organisaatio__isnull=False)
         ).order_by('id')
-
-        page = self.paginate_queryset(paos_toiminnat)
-        if page is not None:
-            serializer = self.get_serializer(page, many=True)
-            return self.get_paginated_response(serializer.data)
-
-        serializer = self.get_serializer(paos_toiminnat, many=True)
-        return Response(serializer.data)
+        return super().list(request, *args, **kwargs)
 
 
 @auditlogclass
-class NestedVakajarjestajaPaosToimipaikatViewSet(GenericViewSet, ListModelMixin):
+class NestedVakajarjestajaPaosToimipaikatViewSet(ParentObjectMixin, GenericViewSet, ListModelMixin):
     """
     list:
         Nouda varhaiskasvatustoimijan paos-järjestäjän toimipaikat
@@ -2284,184 +2167,40 @@ class NestedVakajarjestajaPaosToimipaikatViewSet(GenericViewSet, ListModelMixin)
         organisaatio_oid: suodata toimipaikan organisaatio_oid:n perusteella
         toimija_nimi: suodata toimijan nimen perusteella
     """
-    filter_backends = (ObjectPermissionsFilter, )
-    filterset_class = None
+    filter_backends = (ObjectPermissionsFilter,)
     queryset = Organisaatio.objects.none()
     serializer_class = PaosToimipaikatSerializer
     permission_classes = (CustomModelPermissions,)
     today = datetime.datetime.now()
     swagger_schema = IntegerIdSchema
-
-    def get_vakajarjestaja(self, vakajarjestaja_pk=None):
-        vakajarjestaja = get_object_or_404(Organisaatio.objects.all(), pk=vakajarjestaja_pk)
-        user = self.request.user
-        if user.has_perm('view_organisaatio', vakajarjestaja):
-            return vakajarjestaja
-        else:
-            raise Http404
+    parent_model = Organisaatio
 
     def list(self, request, *args, **kwargs):
-        if not self.kwargs['organisaatio_pk'].isdigit():
-            raise Http404
+        vakajarjestaja_obj = self.get_parent_object()
 
         query_params = self.request.query_params
         toimipaikka_nimi_filter = query_params.get('toimipaikka_nimi')
         organisaatio_oid_filter = query_params.get('organisaatio_oid')
         toimija_nimi_filter = query_params.get('toimija_nimi')
 
-        vakajarjestaja_obj = self.get_vakajarjestaja(vakajarjestaja_pk=self.kwargs['organisaatio_pk'])
         paos_toiminta_qs = PaosToiminta.objects.filter(
             Q(voimassa_kytkin=True) &
             Q(oma_organisaatio=vakajarjestaja_obj, paos_toimipaikka__isnull=False)
         ).select_related('paos_toimipaikka', 'paos_toimipaikka__vakajarjestaja')
 
         # Subquery, see the end of page: https://code.djangoproject.com/ticket/24218
-        paos_toiminnat = paos_toiminta_qs.filter(
+        paos_toiminta_qs = paos_toiminta_qs.filter(
             pk__in=Subquery(
                 paos_toiminta_qs.distinct('paos_toimipaikka__id').values('pk')
             )
         ).order_by('paos_toimipaikka__nimi')
 
         if toimipaikka_nimi_filter is not None:
-            paos_toiminnat = paos_toiminnat.filter(paos_toimipaikka__nimi__icontains=toimipaikka_nimi_filter)
+            paos_toiminta_qs = paos_toiminta_qs.filter(paos_toimipaikka__nimi__icontains=toimipaikka_nimi_filter)
         if organisaatio_oid_filter is not None:
-            paos_toiminnat = paos_toiminnat.filter(paos_toimipaikka__organisaatio_oid=organisaatio_oid_filter)
+            paos_toiminta_qs = paos_toiminta_qs.filter(paos_toimipaikka__organisaatio_oid=organisaatio_oid_filter)
         if toimija_nimi_filter is not None:
-            paos_toiminnat = paos_toiminnat.filter(paos_toimipaikka__vakajarjestaja__nimi__icontains=toimija_nimi_filter)
+            paos_toiminta_qs = paos_toiminta_qs.filter(paos_toimipaikka__vakajarjestaja__nimi__icontains=toimija_nimi_filter)
 
-        page = self.paginate_queryset(paos_toiminnat)
-        if page is not None:
-            serializer = self.get_serializer(page, many=True)
-            return self.get_paginated_response(serializer.data)
-
-        serializer = self.get_serializer(paos_toiminnat, many=True)
-        return Response(serializer.data)
-
-
-@auditlogclass
-class HenkilohakuLapset(GenericViewSet, ListModelMixin):
-    """
-    Henkilöhaku rajapinta
-
-    Haettaessa hetulla hetun täytyy olla utf-8 enkoodatusta tekstistä sha256 hashatyssä hexadesimaali muodossa. Parametrit:
-        search = henkilön nimi
-        filter_status = objektin tila, voi olla 'kaikki', 'voimassaolevat' tai 'paattyneet'
-        filter_object = objekti, voi olla 'vakapaatokset', 'vakasuhteet' tai 'maksutiedot'
-    """
-    serializer_class = HenkilohakuLapsetSerializer
-    queryset = Lapsi.objects.none()
-    filter_backends = (CustomParametersFilterBackend, SearchFilter,)
-    permission_classes = (CustomModelPermissions,)
-    search_fields = ('henkilo__etunimet', 'henkilo__sukunimi', '=henkilo__henkilotunnus_unique_hash', '=henkilo__henkilo_oid', )
-    tz = pytz.timezone('Europe/Helsinki')
-    today = datetime.datetime.now(tz=tz)
-    custom_parameters = (CustomParameter(name='filter_status', required=False, location='query', data_type='string',
-                                         description='Locale code (fi/sv)'),
-                         CustomParameter(name='filter_object', required=False, location='query', data_type='string',
-                                         description='Locale code (fi/sv)'),)
-
-    def get_toimipaikka_ids(self):
-        if getattr(self, 'swagger_fake_view', False):
-            # Swagger crashes if 404 is thrown from get_object_or_404
-            return ()
-        vakajarjestaja_id = self.kwargs.get('organisaatio_pk', None)
-        vakajarjestaja_obj = get_object_or_404(Organisaatio, pk=vakajarjestaja_id)
-        paos_toimipaikat = get_paos_toimipaikat(vakajarjestaja_obj, is_only_active_paostoiminta_included=False)
-        qs_own_toimipaikat = Q(vakajarjestaja=vakajarjestaja_obj)
-        qs_paos_toimipaikat = Q(id__in=paos_toimipaikat)
-        return (Toimipaikka
-                .objects
-                .filter(qs_own_toimipaikat | qs_paos_toimipaikat)
-                .values_list('id', flat=True))
-
-    def get_serializer_context(self):
-        context = super().get_serializer_context()
-        context['list_of_toimipaikka_ids'] = self.get_toimipaikka_ids()
-        return context
-
-    def set_filter_backends(self, request):
-        """
-        Do not check for object-level permissions from OPH staff. Otherwise the query timeouts.
-        """
-        user = request.user
-        if not user.is_superuser and not is_oph_staff(user):
-            self.filter_backends += (ObjectPermissionsFilter,)
-
-    def list(self, request, *args, **kwargs):
-        # Only for throwing not found so swagger doesn't throw tartum.
-        vakajarjestaja_id = self.kwargs.get('organisaatio_pk', None)
-        if not vakajarjestaja_id or not vakajarjestaja_id.isdigit() or not get_object_or_404(Organisaatio, pk=vakajarjestaja_id):
-            raise NotFound
-        self.set_filter_backends(request)
-        return super(HenkilohakuLapset, self).list(request, *args, **kwargs)
-
-    def get_queryset(self, **kwargs):
-        list_of_toimipaikka_ids = self.get_toimipaikka_ids()
-        query = Lapsi.objects.all()
-        query_filter = self.get_lapsi_query(list_of_toimipaikka_ids)
-        return (self.add_order_by(query.filter(query_filter))
-                .prefetch_related('huoltajuussuhteet__maksutiedot',
-                                  Prefetch('varhaiskasvatuspaatokset__varhaiskasvatussuhteet',
-                                           Varhaiskasvatussuhde.objects.select_related('toimipaikka'))
-                                  )
-                .select_related('henkilo')
-                ).distinct()
-
-    def filter_status_generic(self, query, filter_status):
-        if filter_status == 'voimassaolevat':
-            query = query.filter(
-                Q(alkamis_pvm__lte=self.today) &
-                (Q(paattymis_pvm__isnull=True) | Q(paattymis_pvm__gte=self.today)))
-        elif filter_status == 'paattyneet':
-            query = query.filter(Q(paattymis_pvm__lt=self.today))
-        return query
-
-    def get_lapsi_query(self, list_of_toimipaikka_ids):
-        varhaiskasvatuspaatokset_query = (Varhaiskasvatuspaatos
-                                          .objects
-                                          .filter(varhaiskasvatussuhteet__toimipaikka__id__in=list_of_toimipaikka_ids))
-
-        varhaiskasvatussuhteet_query = (Varhaiskasvatussuhde
-                                        .objects
-                                        .filter(toimipaikka__id__in=list_of_toimipaikka_ids))
-
-        maksutiedot_query = None
-
-        query_params = self.request.query_params
-        filter_status = query_params.get('filter_status', '')
-        filter_object = query_params.get('filter_object', '')
-
-        if filter_status != '' and filter_object != '':
-
-            # Vakapaatokset
-            if filter_object == 'vakapaatokset':
-                varhaiskasvatuspaatokset_query = self.filter_status_generic(varhaiskasvatuspaatokset_query,
-                                                                            filter_status)
-
-            # Vakasuhteet
-            if filter_object == 'vakasuhteet':
-                varhaiskasvatussuhteet_query = self.filter_status_generic(varhaiskasvatussuhteet_query, filter_status)
-
-            # Maksutiedot
-            if filter_object == 'maksutiedot':
-                maksutiedot_query = (Maksutieto
-                                     .objects
-                                     .filter(**{'huoltajuussuhteet__lapsi__varhaiskasvatuspaatokset'
-                                                '__varhaiskasvatussuhteet__toimipaikka__id__in':
-                                                list_of_toimipaikka_ids}))
-                maksutiedot_query = self.filter_status_generic(maksutiedot_query, filter_status)
-
-        self.kwargs['varhaiskasvatuspaatokset_query'] = varhaiskasvatuspaatokset_query
-        self.kwargs['varhaiskasvatussuhteet_query'] = varhaiskasvatussuhteet_query
-        self.kwargs['maksutiedot_query'] = maksutiedot_query
-
-        lapsi_filter = (Q(varhaiskasvatuspaatokset__in=varhaiskasvatuspaatokset_query) &
-                        Q(varhaiskasvatuspaatokset__varhaiskasvatussuhteet__in=varhaiskasvatussuhteet_query))
-
-        if maksutiedot_query is not None:
-            lapsi_filter = lapsi_filter & Q(huoltajuussuhteet__maksutiedot__in=maksutiedot_query)
-
-        return lapsi_filter
-
-    def add_order_by(self, query):
-        return query.order_by('henkilo__sukunimi', 'henkilo__etunimet')
+        self.queryset = paos_toiminta_qs
+        return super().list(request, *args, **kwargs)

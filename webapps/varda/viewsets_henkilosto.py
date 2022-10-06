@@ -16,12 +16,12 @@ from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet, GenericViewSet
 
 from varda import filters
-from varda.cache import (delete_cache_keys_related_model, cached_list_response, delete_organisaatio_yhteenveto_cache,
-                         get_object_ids_for_user_by_model)
+from varda.cache import (delete_cache_keys_related_model, delete_organisaatio_yhteenveto_cache,
+                         get_object_ids_user_has_permissions)
 from varda.enums.error_messages import ErrorMessages
 from varda.exceptions.conflict_error import ConflictError
 from varda.misc_queries import get_organisaatio_oid_for_taydennyskoulutus
-from varda.misc_viewsets import IncreasedModifyThrottleMixin, ObjectByTunnisteMixin
+from varda.misc_viewsets import IncreasedModifyThrottleMixin, ObjectByTunnisteMixin, PermissionListMixin
 from varda.models import (Henkilo, Organisaatio, TilapainenHenkilosto, Toimipaikka, Tutkinto, Tyontekija, Palvelussuhde,
                           Tyoskentelypaikka, PidempiPoissaolo, Taydennyskoulutus, TaydennyskoulutusTyontekija,
                           Z4_CasKayttoOikeudet)
@@ -51,7 +51,7 @@ logger = logging.getLogger(__name__)
 
 @auditlogclass
 @request_log_viewset_decorator_factory(target_path=[])
-class TyontekijaViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMixin, ModelViewSet):
+class TyontekijaViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMixin, PermissionListMixin, ModelViewSet):
     """
     list:
         Nouda kaikki tyontekijät.
@@ -102,9 +102,6 @@ class TyontekijaViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMixin, Mod
                 (henkilo.kotikunta_koodi or henkilo.katuosoite or henkilo.postinumero or henkilo.postitoimipaikka)):
             henkilo.remove_address_information()
             henkilo.save()
-
-    def list(self, request, *args, **kwargs):
-        return cached_list_response(self, request.user, request.get_full_path())
 
     def perform_create(self, serializer):
         validated_data = serializer.validated_data
@@ -240,7 +237,7 @@ class NestedTyontekijaKoosteViewSet(ObjectByTunnisteMixin, GenericViewSet, ListM
                                                                                    [Z4_CasKayttoOikeudet.HENKILOSTO_TYONTEKIJA_KATSELIJA,
                                                                                     Z4_CasKayttoOikeudet.HENKILOSTO_TYONTEKIJA_TALLENTAJA])
         if not is_superuser_or_oph_staff and not tyontekija_organization_groups_qs.exists():
-            palvelussuhde_filter = palvelussuhde_filter & Q(id__in=get_object_ids_for_user_by_model(user, 'palvelussuhde'))
+            palvelussuhde_filter = palvelussuhde_filter & Q(id__in=get_object_ids_user_has_permissions(user, Palvelussuhde))
 
         palvelussuhteet = Palvelussuhde.objects.filter(palvelussuhde_filter).distinct().order_by('-alkamis_pvm')
         tyontekija_data['palvelussuhteet'] = palvelussuhteet
@@ -252,7 +249,7 @@ class NestedTyontekijaKoosteViewSet(ObjectByTunnisteMixin, GenericViewSet, ListM
                                                                                            Z4_CasKayttoOikeudet.HENKILOSTO_TAYDENNYSKOULUTUS_TALLENTAJA])
         available_tehtavanimike_codes = [code.lower() for code in get_available_tehtavanimike_codes_for_user(user, tyontekija)]
         if not is_superuser_or_oph_staff and not taydennyskoulutus_organization_groups_qs.exists():
-            taydennyskoulutus_id_list = get_object_ids_for_user_by_model(user, 'taydennyskoulutus')
+            taydennyskoulutus_id_list = get_object_ids_user_has_permissions(user, Taydennyskoulutus)
             taydennyskoulutus_filter &= Q(taydennyskoulutus__id__in=taydennyskoulutus_id_list)
             if not user_belongs_to_correct_groups(user, tyontekija.vakajarjestaja, accept_toimipaikka_permission=True,
                                                   permission_groups=[Z4_CasKayttoOikeudet.HENKILOSTO_TAYDENNYSKOULUTUS_TALLENTAJA]):
@@ -284,7 +281,7 @@ class NestedTyontekijaKoosteViewSet(ObjectByTunnisteMixin, GenericViewSet, ListM
         # Get tutkinnot
         tutkinto_filter = Q(henkilo=tyontekija.henkilo) & Q(vakajarjestaja=tyontekija.vakajarjestaja)
         if not is_superuser_or_oph_staff and not tyontekija_organization_groups_qs.exists():
-            tutkinto_filter = tutkinto_filter & Q(id__in=get_object_ids_for_user_by_model(user, 'tutkinto'))
+            tutkinto_filter = tutkinto_filter & Q(id__in=get_object_ids_user_has_permissions(user, Tutkinto))
 
         tutkinnot = set(Tutkinto.objects
                         .filter(tutkinto_filter)
@@ -297,7 +294,8 @@ class NestedTyontekijaKoosteViewSet(ObjectByTunnisteMixin, GenericViewSet, ListM
 
 @auditlogclass
 @request_log_viewset_decorator_factory()
-class TilapainenHenkilostoViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMixin, ModelViewSet):
+class TilapainenHenkilostoViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMixin, PermissionListMixin,
+                                  ModelViewSet):
     """
     list:
         Nouda kaikki tilapaiset henkilöstötiedot.
@@ -323,9 +321,6 @@ class TilapainenHenkilostoViewSet(IncreasedModifyThrottleMixin, ObjectByTunniste
     filterset_class = filters.TilapainenHenkilostoFilter
     queryset = TilapainenHenkilosto.objects.all().order_by('id')
 
-    def list(self, request, *args, **kwargs):
-        return cached_list_response(self, request.user, request.get_full_path())
-
     def perform_create(self, serializer):
         with transaction.atomic():
             tilapainenhenkilosto = serializer.save()
@@ -345,8 +340,8 @@ class TilapainenHenkilostoViewSet(IncreasedModifyThrottleMixin, ObjectByTunniste
 
 @auditlogclass
 @request_log_viewset_decorator_factory(target_path=['henkilo'])
-class TutkintoViewSet(IncreasedModifyThrottleMixin, CreateModelMixin, RetrieveModelMixin, DestroyModelMixin,
-                      ListModelMixin, GenericViewSet):
+class TutkintoViewSet(IncreasedModifyThrottleMixin, PermissionListMixin, CreateModelMixin, RetrieveModelMixin,
+                      DestroyModelMixin, ListModelMixin, GenericViewSet):
     """
     list:
         Nouda kaikki tutkinnot joita käyttäjä pystyy muokkaamaan.
@@ -365,9 +360,6 @@ class TutkintoViewSet(IncreasedModifyThrottleMixin, CreateModelMixin, RetrieveMo
     filter_backends = (DjangoFilterBackend,)
     filterset_class = filters.TutkintoFilter
     queryset = Tutkinto.objects.all().order_by('id')
-
-    def list(self, request, *args, **kwargs):
-        return cached_list_response(self, request.user, request.get_full_path())
 
     def return_henkilo_already_has_tutkinto(self, validated_data, toimipaikka_oid):
         tutkinto_condition = Q(henkilo=validated_data['henkilo'],
@@ -462,7 +454,7 @@ class TutkintoViewSet(IncreasedModifyThrottleMixin, CreateModelMixin, RetrieveMo
 
 @auditlogclass
 @request_log_viewset_decorator_factory(target_path=['tyontekija'])
-class PalvelussuhdeViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMixin, ModelViewSet):
+class PalvelussuhdeViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMixin, PermissionListMixin, ModelViewSet):
     """
     list:
         Nouda kaikki palvelussuhteet.
@@ -487,9 +479,6 @@ class PalvelussuhdeViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMixin, 
     filter_backends = (DjangoFilterBackend,)
     filterset_class = filters.PalvelussuhdeFilter
     queryset = Palvelussuhde.objects.all().order_by('id')
-
-    def list(self, request, *args, **kwargs):
-        return cached_list_response(self, request.user, request.get_full_path())
 
     @transaction.atomic
     def perform_create(self, serializer):
@@ -533,7 +522,7 @@ class PalvelussuhdeViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMixin, 
 
 @auditlogclass
 @request_log_viewset_decorator_factory(target_path=['palvelussuhde', 'tyontekija'])
-class TyoskentelypaikkaViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMixin, ModelViewSet):
+class TyoskentelypaikkaViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMixin, PermissionListMixin, ModelViewSet):
     """
     list:
         Nouda kaikki tyoskentelypaikat.
@@ -578,9 +567,6 @@ class TyoskentelypaikkaViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMix
             return TyoskentelypaikkaUpdateSerializer
         else:
             return TyoskentelypaikkaSerializer
-
-    def list(self, request, *args, **kwargs):
-        return cached_list_response(self, request.user, request.get_full_path())
 
     def perform_create(self, serializer):
         user = self.request.user
@@ -629,7 +615,7 @@ class TyoskentelypaikkaViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMix
 
 @auditlogclass
 @request_log_viewset_decorator_factory(target_path=['palvelussuhde', 'tyontekija'])
-class PidempiPoissaoloViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMixin, ModelViewSet):
+class PidempiPoissaoloViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMixin, PermissionListMixin, ModelViewSet):
     """
     list:
         Nouda kaikki pidemmatpoissaolot.
@@ -653,10 +639,7 @@ class PidempiPoissaoloViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMixi
     permission_classes = (CustomModelPermissions, CustomObjectPermissions,)
     filter_backends = (DjangoFilterBackend,)
     filterset_class = filters.PidempiPoissaoloFilter
-    queryset = PidempiPoissaolo.objects.all()
-
-    def list(self, request, *args, **kwargs):
-        return cached_list_response(self, request.user, request.get_full_path())
+    queryset = PidempiPoissaolo.objects.all().order_by('id')
 
     @transaction.atomic
     def perform_create(self, serializer):
@@ -692,7 +675,7 @@ class PidempiPoissaoloViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMixi
 
 @auditlogclass
 @request_log_viewset_decorator_factory()
-class TaydennyskoulutusViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMixin, ModelViewSet):
+class TaydennyskoulutusViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMixin, PermissionListMixin, ModelViewSet):
     """
     list:
         Nouda kaikki taydennyskoulutukset.
@@ -734,9 +717,6 @@ class TaydennyskoulutusViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMix
         else:
             self.filterset_class = filters.TaydennyskoulutusFilter
         return self.queryset
-
-    def list(self, request, *args, **kwargs):
-        return cached_list_response(self, request.user, request.get_full_path())
 
     @auditlog
     @action(methods=['get'], detail=False, url_path='tyontekija-list', url_name='tyontekija_list')
