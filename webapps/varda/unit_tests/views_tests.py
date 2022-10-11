@@ -3130,7 +3130,7 @@ class VardaViewsTests(TestCase):
         self.assertEqual(resp_paos_toiminnat_count, 0)
 
     def test_nested_paos_toimipaikat_filter(self):
-        client = SetUpTestClient('tester4').client()
+        client = SetUpTestClient('pkvakajarjestaja1').client()
         resp_paos_toimipaikat = client.get('/api/v1/vakajarjestajat/1/paos-toimipaikat/?toimija_nimi=Tester')
         resp_paos_toimipaikat_count = json.loads(resp_paos_toimipaikat.content)['count']
         self.assertEqual(resp_paos_toimipaikat_count, 1)

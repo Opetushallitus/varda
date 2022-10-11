@@ -30,8 +30,8 @@ logger = logging.getLogger(__name__)
 VAKA_GROUPS = (Z4_CasKayttoOikeudet.PAAKAYTTAJA, Z4_CasKayttoOikeudet.PALVELUKAYTTAJA, Z4_CasKayttoOikeudet.KATSELIJA,
                Z4_CasKayttoOikeudet.TALLENTAJA, Z4_CasKayttoOikeudet.HUOLTAJATIEDOT_KATSELIJA,
                Z4_CasKayttoOikeudet.HUOLTAJATIEDOT_TALLENTAJA,)
-VAKA_PAOS_TUOTTAJA_GROUPS = (Z4_CasKayttoOikeudet.PAAKAYTTAJA, Z4_CasKayttoOikeudet.PALVELUKAYTTAJA,
-                             Z4_CasKayttoOikeudet.KATSELIJA, Z4_CasKayttoOikeudet.TALLENTAJA,)
+VAKA_LAPSI_GROUPS = (Z4_CasKayttoOikeudet.PAAKAYTTAJA, Z4_CasKayttoOikeudet.PALVELUKAYTTAJA,
+                     Z4_CasKayttoOikeudet.KATSELIJA, Z4_CasKayttoOikeudet.TALLENTAJA,)
 HENKILOSTO_GROUPS = (Z4_CasKayttoOikeudet.HENKILOSTO_TYONTEKIJA_KATSELIJA,
                      Z4_CasKayttoOikeudet.HENKILOSTO_TYONTEKIJA_TALLENTAJA,
                      Z4_CasKayttoOikeudet.HENKILOSTO_TAYDENNYSKOULUTUS_KATSELIJA,
@@ -744,7 +744,7 @@ def assign_general_object_permissions(instance, oid_list, view_only=False):
 
 def assign_vaka_object_permissions(instance, oid_list, view_only=False, paos_tuottaja=False):
     # Huoltajatieto groups of PAOS tuottaja does not have any permissions to PAOS lapsi
-    permission_groups = VAKA_PAOS_TUOTTAJA_GROUPS if paos_tuottaja else VAKA_GROUPS
+    permission_groups = VAKA_LAPSI_GROUPS if paos_tuottaja else VAKA_GROUPS
     assign_or_remove_object_permissions(instance, oid_list, permission_groups, view_only=view_only, assign=True)
 
 

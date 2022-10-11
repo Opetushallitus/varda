@@ -57,11 +57,12 @@ from varda.permissions import (assign_henkilo_permissions, assign_kielipainotus_
                                remove_paos_toiminta_permissions, throw_if_not_tallentaja_permissions,
                                check_if_oma_organisaatio_and_paos_organisaatio_have_paos_agreement,
                                check_if_user_has_paakayttaja_permissions, ReadAdminOrOPHUser, CustomModelPermissions,
+                               user_belongs_to_correct_groups,
                                user_has_huoltajatieto_tallennus_permissions_to_correct_organization,
                                user_has_tallentaja_permission_in_organization, auditlogclass, save_audit_log,
                                ToimipaikkaPermissions, auditlog, is_oph_staff,
                                user_permission_groups_in_organizations, user_permission_groups_in_organization,
-                               CustomObjectPermissions)
+                               CustomObjectPermissions, VAKA_LAPSI_GROUPS)
 from varda.request_logging import request_log_viewset_decorator_factory
 from varda.serializers import (ExternalPermissionsSerializer, GroupSerializer, UpdateHenkiloWithOidSerializer,
                                ClearCacheSerializer, ActiveUserSerializer, AuthTokenSerializer,
@@ -2139,16 +2140,19 @@ class NestedVakajarjestajaPaosToimijatViewSet(ParentObjectMixin, GenericViewSet,
     list:
         Nouda varhaiskasvatustoimijan paos-järjestäjät
     """
-    filter_backends = (ObjectPermissionsFilter,)
-    queryset = Organisaatio.objects.none()
+    queryset = PaosToiminta.objects.none()
     serializer_class = PaosToimijatSerializer
-    permission_classes = (CustomModelPermissions,)
-    today = datetime.datetime.now()
     swagger_schema = IntegerIdSchema
     parent_model = Organisaatio
 
     def list(self, request, *args, **kwargs):
         vakajarjestaja_obj = self.get_parent_object()
+
+        if not user_belongs_to_correct_groups(request.user, vakajarjestaja_obj, permission_groups=VAKA_LAPSI_GROUPS):
+            # User must belong to correct permission groups
+            # (PALVELUKAYTTAJA, TALLENTAJA, KATSELIJA do not have permissions to PaosToiminta-objects)
+            raise Http404
+
         self.queryset = PaosToiminta.objects.filter(
             Q(voimassa_kytkin=True) &
             Q(oma_organisaatio=vakajarjestaja_obj, paos_organisaatio__isnull=False)
@@ -2167,16 +2171,18 @@ class NestedVakajarjestajaPaosToimipaikatViewSet(ParentObjectMixin, GenericViewS
         organisaatio_oid: suodata toimipaikan organisaatio_oid:n perusteella
         toimija_nimi: suodata toimijan nimen perusteella
     """
-    filter_backends = (ObjectPermissionsFilter,)
-    queryset = Organisaatio.objects.none()
+    queryset = PaosToiminta.objects.none()
     serializer_class = PaosToimipaikatSerializer
-    permission_classes = (CustomModelPermissions,)
-    today = datetime.datetime.now()
     swagger_schema = IntegerIdSchema
     parent_model = Organisaatio
 
     def list(self, request, *args, **kwargs):
         vakajarjestaja_obj = self.get_parent_object()
+
+        if not user_belongs_to_correct_groups(request.user, vakajarjestaja_obj, permission_groups=VAKA_LAPSI_GROUPS):
+            # User must belong to correct permission groups
+            # (PALVELUKAYTTAJA, TALLENTAJA, KATSELIJA do not have permissions to PaosToiminta-objects)
+            raise Http404
 
         query_params = self.request.query_params
         toimipaikka_nimi_filter = query_params.get('toimipaikka_nimi')
