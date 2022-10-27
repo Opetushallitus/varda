@@ -220,6 +220,7 @@ export class VardaSearchLapsiComponent extends VardaSearchAbstractComponent impl
     }
 
     stringParams.push({ value: this.getCodeUiString(this.filterParams.jarjestamismuoto), type: FilterStringType.RAW, lowercase: true});
+    stringParams.push({ value: this.getCodeUiString(this.filterParams.toimintamuoto), type: FilterStringType.RAW, lowercase: true});
 
     setTimeout(() => {
       this.filterString = this.getFilterString(stringParams);

@@ -1,6 +1,9 @@
 # Release notes
 Varda-käyttöliittymä release notes
 
+1.6.8 (27.10.2022)
+- OPHVARDA-2467: Vuosiraportin jatkokehitys
+
 1.6.7 (06.10.2022)
 - OPHVARDA-2521: Tiedonsiirron minimipäivämäärärajaus
 - OPHVARDA-2500: Vuosiraportin uudet kentät
