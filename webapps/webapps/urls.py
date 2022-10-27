@@ -154,8 +154,6 @@ router_reporting.register(r'excel-reports', viewsets_reporting.ExcelReportViewSe
 router_reporting.register(r'transfer-outage', viewsets_reporting.TransferOutageReportViewSet, basename='transfer-outage')
 # /api/reporting/v1/request-summary/
 router_reporting.register(r'request-summary', viewsets_reporting.RequestSummaryViewSet, basename='request-summary')
-# /api/reporting/v1/yearly-reporting-summary/
-router_reporting.register(r'yearly-reporting-summary', viewsets_reporting.YearlyReportingDataSummaryViewSet, basename='yearly-reporting-summary')
 
 router_kela_reporting = routers.DefaultRouter()
 # /api/reporting/v1/kela/etuusmaksatus/aloittaneet
@@ -233,8 +231,7 @@ public_swagger_view = xframe_options(
                                       renderer_classes=(PublicSwaggerRenderer,) + schema_view_public.renderer_classes)
 )
 
-excluded_model_regex = re.compile(r'^(historical.*)|(z\d.*)|(logdata)|(aikaleima)|(batcherror)|(logincertificate)|'
-                                  r'(yearlyreportsummary)$')
+excluded_model_regex = re.compile(r'^(historical.*)|(z\d.*)|(logdata)|(aikaleima)|(batcherror)|(logincertificate)$')
 model_visualization_view = xframe_options(
     Plate.as_view(
         settings={

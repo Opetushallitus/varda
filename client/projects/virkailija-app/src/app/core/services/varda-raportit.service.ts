@@ -15,10 +15,6 @@ import { PuutteellinenToimipaikkaListDTO } from '../../utilities/models/dto/vard
 import { TransferOutage } from '../../utilities/models/dto/varda-transfer-outage-dto.model';
 import { VardaPaginatorParams } from '../../utilities/models/varda-paginator-params.model';
 import { RequestSummary } from '../../utilities/models/dto/varda-request-summary-dto.model';
-import {
-  VardaYearlyReportDTO,
-  VardaYearlyReportPostDTO
-} from '../../utilities/models/dto/varda-yearly-report-dto.model';
 
 @Injectable()
 export class VardaRaportitService {
@@ -83,7 +79,7 @@ export class VardaRaportitService {
   }
 
   getExcelReportList(vakajarjestajaId: number, searchParams: VardaPaginatorParams): Observable<VardaPageDto<VardaExcelReportDTO>> {
-    return this.http.get(`${this.reportingApi}/v1/excel-reports/?vakajarjestaja=${vakajarjestajaId}`, searchParams);
+    return this.http.get(`${this.reportingApi}/v1/excel-reports/?organisaatio=${vakajarjestajaId}`, searchParams);
   }
 
   getExcelReport(reportId: number): Observable<VardaExcelReportDTO> {
@@ -104,9 +100,5 @@ export class VardaRaportitService {
 
   getRequestSummary(searchFilter: Record<string, unknown>): Observable<VardaPageDto<RequestSummary>> {
     return this.http.get(`${this.reportingApi}/v1/request-summary/`, searchFilter);
-  }
-
-  postYearlyReport(report: VardaYearlyReportPostDTO): Observable<VardaYearlyReportDTO> {
-    return this.http.post(`${this.reportingApi}/v1/yearly-reporting-summary/`, report);
   }
 }

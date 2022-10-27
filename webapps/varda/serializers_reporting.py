@@ -6,7 +6,6 @@ from django.contrib.postgres.aggregates import StringAgg
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import connection
 from django.db.models import OuterRef, Q, Subquery, Sum
-from drf_yasg import openapi
 from drf_yasg.utils import swagger_serializer_method
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
@@ -15,18 +14,17 @@ from rest_framework.reverse import reverse
 from varda import validators
 from varda.clients.allas_s3_client import Client as S3Client
 from varda.constants import SUCCESSFUL_STATUS_CODE_LIST
-from varda.custom_swagger import CustomSchemaField
 from varda.enums.change_type import ChangeType
 from varda.enums.error_messages import ErrorMessages
-from varda.excel_export import ReportStatus, ExcelReportType, get_s3_object_name
+from varda.excel_export import ExcelReportSubtype, ReportStatus, ExcelReportType, get_s3_object_name
 from varda.misc import CustomServerErrorException, decrypt_excel_report_password, decrypt_henkilotunnus
 from varda.misc_queries import get_history_value_subquery, get_related_object_changed_id_qs
 from varda.models import (Henkilo, Huoltajuussuhde, KieliPainotus, Lapsi, Maksutieto, MaksutietoHuoltajuussuhde,
                           Palvelussuhde, PidempiPoissaolo, Taydennyskoulutus, TaydennyskoulutusTyontekija, Tutkinto,
                           Tyoskentelypaikka, TilapainenHenkilosto, ToiminnallinenPainotus, Toimipaikka, Tyontekija,
-                          Organisaatio, Varhaiskasvatuspaatos, Varhaiskasvatussuhde, YearlyReportSummary,
-                          Z10_KelaVarhaiskasvatussuhde, Z4_CasKayttoOikeudet, Z6_RequestCount, Z6_RequestLog,
-                          Z6_RequestSummary, Z8_ExcelReport, Z9_RelatedObjectChanged)
+                          Organisaatio, Varhaiskasvatuspaatos, Varhaiskasvatussuhde, Z10_KelaVarhaiskasvatussuhde,
+                          Z4_CasKayttoOikeudet, Z6_RequestCount, Z6_RequestLog, Z6_RequestSummary, Z8_ExcelReport,
+                          Z9_RelatedObjectChanged)
 from varda.serializers import ToimipaikkaHLField, OrganisaatioPermissionCheckedHLField
 from varda.serializers_common import OidRelatedField
 
@@ -276,15 +274,13 @@ class TiedonsiirtoYhteenvetoSerializer(serializers.Serializer):
 
 
 class ExcelReportSerializer(serializers.ModelSerializer):
-    report_type = serializers.CharField()
-    language = serializers.CharField()
-    vakajarjestaja = OrganisaatioPermissionCheckedHLField(view_name='organisaatio-detail', required=False,
-                                                          permission_groups=[Z4_CasKayttoOikeudet.RAPORTTIEN_KATSELIJA])
-    vakajarjestaja_oid = OidRelatedField(object_type=Organisaatio,
-                                         parent_field='vakajarjestaja',
-                                         parent_attribute='organisaatio_oid',
-                                         prevalidator=validators.validate_organisaatio_oid,
-                                         either_required=True)
+    organisaatio = OrganisaatioPermissionCheckedHLField(view_name='organisaatio-detail', required=False,
+                                                        permission_groups=[Z4_CasKayttoOikeudet.RAPORTTIEN_KATSELIJA])
+    organisaatio_oid = OidRelatedField(object_type=Organisaatio,
+                                       parent_field='organisaatio',
+                                       parent_attribute='organisaatio_oid',
+                                       prevalidator=validators.validate_organisaatio_oid,
+                                       either_required=False)
     toimipaikka = ToimipaikkaHLField(view_name='toimipaikka-detail', required=False)
     toimipaikka_oid = OidRelatedField(object_type=Toimipaikka,
                                       parent_field='toimipaikka',
@@ -304,6 +300,16 @@ class ExcelReportSerializer(serializers.ModelSerializer):
         if value not in [report_type.value for report_type in ExcelReportType]:
             raise ValidationError([ErrorMessages.ER002.value])
         return value
+
+    def validate_report_subtype(self, value):
+        if value and value not in [report_subtype.value for report_subtype in ExcelReportSubtype]:
+            raise ValidationError([ErrorMessages.ER002.value])
+        return value
+
+    def validate(self, data):
+        if not data.get('organisaatio', None) and data['report_type'] not in [ExcelReportType.VUOSIRAPORTTI.value]:
+            raise ValidationError({'organisaatio': [ErrorMessages.GE001.value]})
+        return data
 
     @swagger_serializer_method(serializer_or_field=serializers.URLField)
     def get_url(self, instance):
@@ -936,33 +942,3 @@ class TkHenkilostotiedotSerializer(TkBaseSerializer, serializers.ModelSerializer
                                 .filter(id__in=Subquery(id_qs), history_date__lte=self.datetime_lte)
                                 .distinct('id').order_by('id', '-history_date'))
         return TkTaydennyskoulutusSerializer(taydennyskoulutus_qs, many=True, context=self.context).data
-
-
-class YearlyReportingDataSummarySerializer(serializers.ModelSerializer):
-    id = serializers.IntegerField(read_only=True)
-    vakajarjestaja = serializers.ReadOnlyField()
-    vakajarjestaja_input = serializers.CharField(required=True, write_only=True)
-    status = serializers.CharField(read_only=True)
-    tilasto_pvm = serializers.DateField(read_only=True)
-    tilastovuosi = serializers.IntegerField(write_only=True, required=False, allow_null=False)
-    toimipaikka_by_toimintamuoto_count = CustomSchemaField({
-        'type': openapi.TYPE_OBJECT,
-        'additionalProperties': {'type': openapi.TYPE_INTEGER}
-    }, read_only=True)
-
-    class Meta:
-        model = YearlyReportSummary
-        read_only_fields = (
-            'vakajarjestaja_count', 'vakajarjestaja_is_active', 'toimipaikka_count',
-            'toimipaikka_by_toimintamuoto_count', 'varhaiskasvatuspaikat_sum', 'toimintapainotus_count',
-            'kielipainotus_count', 'yhteensa_henkilo_count', 'yhteensa_lapsi_count',
-            'yhteensa_varhaiskasvatussuhde_count', 'yhteensa_varhaiskasvatuspaatos_count', 'yhteensa_vuorohoito_count',
-            'oma_henkilo_count', 'oma_lapsi_count', 'oma_varhaiskasvatussuhde_count', 'oma_varhaiskasvatuspaatos_count',
-            'oma_vuorohoito_count', 'paos_henkilo_count', 'paos_lapsi_count', 'paos_varhaiskasvatussuhde_count',
-            'paos_varhaiskasvatuspaatos_count', 'paos_vuorohoito_count', 'yhteensa_maksutieto_count',
-            'yhteensa_maksutieto_mp01_count', 'yhteensa_maksutieto_mp02_count', 'yhteensa_maksutieto_mp03_count',
-            'oma_maksutieto_count', 'oma_maksutieto_mp01_count', 'oma_maksutieto_mp02_count',
-            'oma_maksutieto_mp03_count', 'paos_maksutieto_count', 'paos_maksutieto_mp01_count',
-            'paos_maksutieto_mp02_count', 'paos_maksutieto_mp03_count',
-        )
-        exclude = ('luonti_pvm', 'muutos_pvm',)

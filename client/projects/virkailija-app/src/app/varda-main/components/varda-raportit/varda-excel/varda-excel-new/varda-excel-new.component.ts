@@ -1,4 +1,4 @@
-import { Component, OnInit, ViewChild } from '@angular/core';
+import { Component, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { VirkailijaTranslations } from '../../../../../../assets/i18n/virkailija-translations.enum';
 import { VardaVakajarjestajaService } from '../../../../../core/services/varda-vakajarjestaja.service';
 import { VardaRaportitService } from '../../../../../core/services/varda-raportit.service';
@@ -7,7 +7,7 @@ import { VardaToimipaikkaMinimalDto } from '../../../../../utilities/models/dto/
 import { ViewAccess } from '../../../../../utilities/models/varda-user-access.model';
 import { AuthService } from '../../../../../core/auth/auth.service';
 import { VardaExcelReportPostDTO } from '../../../../../utilities/models/dto/varda-excel-report-dto.model';
-import { ReportType, ReportTypeTranslations } from '../varda-excel.component';
+import { ReportSubtype, ReportSubtypeTranslations, ReportType, ReportTypeTranslations } from '../varda-excel.component';
 import { VardaAutocompleteSelectorComponent } from '../../../../../shared/components/varda-autocomplete-selector/varda-autocomplete-selector.component';
 import { VardaSnackBarService } from '../../../../../core/services/varda-snackbar.service';
 import { TranslateService } from '@ngx-translate/core';
@@ -16,6 +16,7 @@ import { Observable } from 'rxjs';
 import { ActivatedRoute, Router } from '@angular/router';
 import * as moment from 'moment';
 import { VardaDateService } from 'varda-shared';
+import { FormControl, FormGroup } from '@angular/forms';
 
 const TooltipTranslations = {
   [ReportType.VAKATIEDOT_VOIMASSA]: VirkailijaTranslations.excel_report_type_description_vakatiedot_voimassa,
@@ -24,7 +25,8 @@ const TooltipTranslations = {
   [ReportType.PUUTTEELLISET_TYONTEKIJA]: VirkailijaTranslations.excel_report_type_description_puutteelliset_tyontekija,
   [ReportType.TYONTEKIJATIEDOT_VOIMASSA]: VirkailijaTranslations.excel_report_type_description_tyontekijatiedot_voimassa,
   [ReportType.TAYDENNYSKOULUTUSTIEDOT]: VirkailijaTranslations.excel_report_type_description_taydennyskoulutustiedot,
-  [ReportType.TOIMIPAIKAT_VOIMASSA]: VirkailijaTranslations.excel_report_type_description_toimipaikat_voimassa
+  [ReportType.TOIMIPAIKAT_VOIMASSA]: VirkailijaTranslations.excel_report_type_description_toimipaikat_voimassa,
+  [ReportType.VUOSIRAPORTTI]: VirkailijaTranslations.excel_report_type_description_vuosiraportti
 };
 
 @Component({
@@ -38,38 +40,59 @@ export class VardaExcelNewComponent implements OnInit {
 
   i18n = VirkailijaTranslations;
 
-  selectedVakajarjestaja: VardaVakajarjestajaUi;
-
   toimipaikkaList: Array<VardaToimipaikkaMinimalDto> = [];
   henkilostoToimipaikkaList: Array<VardaToimipaikkaMinimalDto> = [];
   toimipaikkaOptions: Array<VardaToimipaikkaMinimalDto> = [];
 
-  reportTypeOptions: Array<Array<string>>;
-
-  newReport: VardaExcelReportPostDTO = {
-    report_type: ReportType.VAKATIEDOT_VOIMASSA,
-    language: 'FI',
-    vakajarjestaja_oid: null,
-    toimipaikka_oid: null,
-    target_date: null,
-    target_date_start: null,
-    target_date_end: null
+  reportSubtypes = {
+    [ReportType.VUOSIRAPORTTI]: [ReportSubtype.ALL, ReportSubtype.VARHAISKASVATUS, ReportSubtype.HENKILOSTO]
+  };
+  reportYears = {
+    [ReportType.VUOSIRAPORTTI]: []
+  };
+  reportDatepickerOptions = {
+    [ReportType.VUOSIRAPORTTI]: {
+      datepickerMin: null,
+      datepickerMax: null,
+      datepickerSecondaryMin: null,
+      datepickerSecondaryMax: new Date()
+    }
   };
 
-  targetDate = moment();
-  targetDateStart = moment();
-  targetDateEnd = moment();
+  datepickerMin: null;
+  datepickerMax: null;
+  datepickerSecondaryMin: null;
+  datepickerSecondaryMax: null;
 
-  vakajarjestajaLevel = true;
-  selectedToimipaikka: VardaToimipaikkaMinimalDto = null;
+  reportTypeOptions: Array<Array<string>>;
+  reportSubtypeOptions: Array<Array<string>>;
+  yearOptions: Array<number>;
+
+  newReport: VardaExcelReportPostDTO = {
+    report_type: ReportType.VUOSIRAPORTTI,
+    report_subtype: null,
+    language: 'FI',
+    organisaatio_oid: null,
+    toimipaikka_oid: null,
+    target_date: null,
+    target_date_secondary: null
+  };
 
   toimipaikkaSelectorReports = [ReportType.VAKATIEDOT_VOIMASSA.toString(), ReportType.TYONTEKIJATIEDOT_VOIMASSA.toString(),
     ReportType.TAYDENNYSKOULUTUSTIEDOT.toString(), ReportType.TOIMIPAIKAT_VOIMASSA.toString()];
   dateSelectorReports = [ReportType.VAKATIEDOT_VOIMASSA.toString(), ReportType.TYONTEKIJATIEDOT_VOIMASSA.toString(),
     ReportType.TOIMIPAIKAT_VOIMASSA.toString()];
   dateRangeSelectorReports = [ReportType.TAYDENNYSKOULUTUSTIEDOT.toString()];
+  organisaatioSelectorReports = [ReportType.VUOSIRAPORTTI.toString()];
+  subtypeReports = [ReportType.VUOSIRAPORTTI.toString()];
+  yearSelectorReports = [ReportType.VUOSIRAPORTTI.toString()];
+  dateSecondarySelectorReports = [ReportType.VUOSIRAPORTTI.toString()];
+
+  formGroup: FormGroup;
 
   isLoading = false;
+  isOPHUser = false;
+
   private errorService: VardaErrorMessageService;
 
   constructor(
@@ -81,29 +104,45 @@ export class VardaExcelNewComponent implements OnInit {
     private router: Router,
     private activatedRoute: ActivatedRoute,
     private dateService: VardaDateService,
-  ) { }
+  ) {
+    this.initReportYears();
+  }
 
   ngOnInit() {
+    this.isOPHUser = this.authService.isOPHUser || this.authService.isAdminUser;
     this.errorService = new VardaErrorMessageService(this.translateService);
     this.errors = this.errorService.initErrorList();
 
-    this.selectedVakajarjestaja = this.vakajarjestajaService.getSelectedVakajarjestaja();
-
     this.toimipaikkaList = this.vakajarjestajaService.getFilteredToimipaikat().katselijaToimipaikat;
-    this.henkilostoToimipaikkaList = this.authService.getAuthorizedToimipaikat(this.toimipaikkaList, ViewAccess.henkilostotiedot);
-    this.toimipaikkaOptions = this.toimipaikkaList;
-
-    this.newReport.vakajarjestaja_oid = this.selectedVakajarjestaja.organisaatio_oid;
+    this.henkilostoToimipaikkaList = this.authService.getAuthorizedToimipaikat(this.toimipaikkaList,
+      ViewAccess.henkilostotiedot);
 
     this.reportTypeOptions = Object.entries(ReportTypeTranslations).map(value => [value[0], value[1]]);
 
     this.newReport.language = this.translateService.currentLang;
+
+    this.formGroup = new FormGroup({
+      targetDate: new FormControl(moment()),
+      targetDateSecondary: new FormControl(moment()),
+      year: new FormControl(null),
+      isOrganisaatioLevel: new FormControl(true),
+      toimipaikka: new FormControl(null),
+      isAllOrganisaatio: new FormControl(false)
+    });
+
+    this.reportTypeChange();
   }
 
   create() {
-    if (!this.vakajarjestajaLevel && this.toimipaikkaSelectorReports.includes(this.newReport.report_type)) {
-      if (this.selectedToimipaikka && !this.toimipaikkaSelector.isOptionInvalid()) {
-        this.newReport.toimipaikka_oid = this.selectedToimipaikka.organisaatio_oid;
+    const targetDateControl = this.formGroup.controls.targetDate;
+    const targetDateSecondaryControl = this.formGroup.controls.targetDateSecondary;
+
+    this.newReport.organisaatio_oid = this.vakajarjestajaService.getSelectedVakajarjestaja().organisaatio_oid;
+
+    if (!this.formGroup.value.isOrganisaatioLevel && this.toimipaikkaSelectorReports.includes(this.newReport.report_type)) {
+      const selectedToimipaikka = this.formGroup.value.toimipaikka;
+      if (selectedToimipaikka && !this.toimipaikkaSelector.isOptionInvalid()) {
+        this.newReport.toimipaikka_oid = selectedToimipaikka.organisaatio_oid;
       } else {
         this.newReport.toimipaikka_oid = null;
         this.toimipaikkaSelector.setInvalid();
@@ -112,20 +151,41 @@ export class VardaExcelNewComponent implements OnInit {
     }
 
     if (this.dateSelectorReports.includes(this.newReport.report_type)) {
-      if (!this.targetDate?.isValid()) {
+      if (!targetDateControl.valid) {
+        targetDateControl.markAsTouched();
         return;
       } else {
-        this.newReport.target_date = this.dateService.momentToVardaDate(this.targetDate);
+        this.newReport.target_date = this.dateService.momentToVardaDate(targetDateControl.value);
       }
     }
 
     if (this.dateRangeSelectorReports.includes(this.newReport.report_type)) {
-      if (!this.targetDateStart?.isValid() || !this.targetDateEnd?.isValid()) {
+      if (!targetDateControl.valid || !targetDateSecondaryControl.valid) {
+        targetDateControl.markAsTouched();
+        targetDateSecondaryControl.markAsTouched();
         return;
       } else {
-        this.newReport.target_date_start = this.dateService.momentToVardaDate(this.targetDateStart);
-        this.newReport.target_date_end = this.dateService.momentToVardaDate(this.targetDateEnd);
+        this.newReport.target_date = this.dateService.momentToVardaDate(targetDateControl.value);
+        this.newReport.target_date_secondary = this.dateService.momentToVardaDate(targetDateSecondaryControl.value);
       }
+    }
+
+    if (this.yearSelectorReports.includes(this.newReport.report_type)) {
+      this.newReport.target_date = `${this.formGroup.controls.year.value}-12-31`;
+    }
+
+    if (this.dateSecondarySelectorReports.includes(this.newReport.report_type)) {
+      if (!targetDateSecondaryControl.valid) {
+        targetDateSecondaryControl.markAsTouched();
+        return;
+      } else {
+        this.newReport.target_date_secondary = this.dateService.momentToVardaDate(targetDateSecondaryControl.value);
+      }
+    }
+
+    if (this.organisaatioSelectorReports.includes(this.newReport.report_type) &&
+      this.formGroup.value.isAllOrganisaatio) {
+      this.newReport.organisaatio_oid = null;
     }
 
     this.isLoading = true;
@@ -141,10 +201,62 @@ export class VardaExcelNewComponent implements OnInit {
     });
   }
 
-  updateToimipaikat() {
-    this.vakajarjestajaLevel = true;
-    this.selectedToimipaikka = null;
+  reportTypeChange() {
+    this.formGroup.patchValue({
+      isAllOrganisaatio: false,
+      isOrganisaatioLevel: true,
+      toimipaikka: null
+    });
+
     this.newReport.toimipaikka_oid = null;
+    this.newReport.report_subtype = null;
+    this.newReport.target_date = null;
+    this.newReport.target_date_secondary = null;
+
+    this.setToimipaikkaOptions();
+    this.setReportSubtypeOptions();
+    this.setYearOptions();
+    this.setDatePickerOptions();
+
+    // Revalidate datepicker controls as different report types can have different validations
+    setTimeout(() => {
+      const targetDateControl = this.formGroup.controls.targetDate;
+      const targetDateSecondaryControl = this.formGroup.controls.targetDateSecondary;
+      targetDateControl.updateValueAndValidity();
+      targetDateSecondaryControl.updateValueAndValidity();
+      if (targetDateControl.invalid) {
+        targetDateControl.markAsTouched();
+      }
+      if (targetDateSecondaryControl.invalid) {
+        targetDateSecondaryControl.markAsTouched();
+      }
+    });
+  }
+
+  getTooltipTranslation(reportType: string) {
+    return TooltipTranslations[reportType];
+  }
+
+  private initReportYears() {
+    const currentYear = moment().year();
+    const startYear = currentYear - 5;
+    for (let i = startYear; i <= currentYear; i++) {
+      if (i > 2019) {
+        // Cannot create VUOSIRAPORTTI before 2019
+        this.reportYears[ReportType.VUOSIRAPORTTI].push(i);
+      }
+    }
+  }
+
+  private setYearOptions() {
+    this.yearOptions = [];
+    if (this.reportYears[this.newReport.report_type]) {
+      this.yearOptions = this.reportYears[this.newReport.report_type];
+      this.formGroup.controls.year.setValue(this.yearOptions[this.yearOptions.length - 1]);
+    }
+  }
+
+  private setToimipaikkaOptions() {
     switch (this.newReport.report_type) {
       case ReportType.VAKATIEDOT_VOIMASSA:
       case ReportType.TOIMIPAIKAT_VOIMASSA:
@@ -159,7 +271,26 @@ export class VardaExcelNewComponent implements OnInit {
     }
   }
 
-  getTooltipTranslation(reportType: string) {
-    return TooltipTranslations[reportType];
+  private setReportSubtypeOptions() {
+    this.reportSubtypeOptions = [];
+    if (this.reportSubtypes[this.newReport.report_type]) {
+      this.reportSubtypeOptions = this.reportSubtypes[this.newReport.report_type]
+        .map(value => [value, ReportSubtypeTranslations[value]]);
+      this.newReport.report_subtype = this.reportSubtypeOptions[0][0];
+    }
+  }
+
+  private setDatePickerOptions() {
+    this.datepickerMin = null;
+    this.datepickerMax = null;
+    this.datepickerSecondaryMin = null;
+    this.datepickerSecondaryMax = null;
+
+    if (this.reportDatepickerOptions[this.newReport.report_type]) {
+      this.datepickerMin = this.reportDatepickerOptions[this.newReport.report_type].datepickerMin;
+      this.datepickerMax = this.reportDatepickerOptions[this.newReport.report_type].datepickerMax;
+      this.datepickerSecondaryMin = this.reportDatepickerOptions[this.newReport.report_type].datepickerSecondaryMin;
+      this.datepickerSecondaryMax = this.reportDatepickerOptions[this.newReport.report_type].datepickerSecondaryMax;
+    }
   }
 }

@@ -82,7 +82,8 @@ def _execute_yearly_report_query(cursor, query, params, format_args=(), organisa
                     temp_dict[cursor.description[index][0]] = value
         return result_dict
     else:
-        return cursor.fetchone()[0]
+        row = cursor.fetchone()
+        return row[0] if len(row) == 1 else row
 
 
 def get_yearly_report_organisaatio_count(poiminta_pvm, tilasto_pvm):
@@ -99,10 +100,7 @@ def get_yearly_report_organisaatio_count(poiminta_pvm, tilasto_pvm):
 
 
 def get_yearly_report_toimipaikka_data(poiminta_pvm, tilasto_pvm, organisaatio_id):
-    tm_codes = (Z2_Code.objects
-                .filter(koodisto__name=Koodistot.toimintamuoto_koodit.value)
-                .annotate(code_lower=Lower('code_value'))
-                .values_list('code_lower', flat=True).order_by('code_lower'))
+    tm_codes = get_koodisto_codes_lower(Koodistot.toimintamuoto_koodit.value)
     tm_annotations = ''
     format_args = []
     for tm_code in tm_codes:
@@ -165,41 +163,61 @@ def get_yearly_report_toiminnallinen_painotus_count(poiminta_pvm, tilasto_pvm, o
                                             organisaatio_field_list=['vakajarjestaja_id'])
 
 
+active_lapsi_base_query = '''
+    (SELECT DISTINCT ON (id) * FROM varda_historicalvarhaiskasvatussuhde
+        WHERE history_date <= %s ORDER BY id, history_date DESC) su
+    JOIN LATERAL
+    (SELECT DISTINCT ON(id) * FROM varda_historicaltoimipaikka
+        WHERE history_date <= %s AND id = su.toimipaikka_id ORDER BY id, history_date DESC) tp
+    ON tp.history_type != '-'
+    JOIN LATERAL
+    (SELECT DISTINCT ON (id) * FROM varda_historicalvarhaiskasvatuspaatos
+        WHERE history_date <= %s AND id = su.varhaiskasvatuspaatos_id ORDER BY id, history_date DESC) pa
+    ON pa.history_type != '-'
+    JOIN LATERAL
+    (SELECT DISTINCT ON (id) * FROM varda_historicallapsi
+        WHERE history_date <= %s AND id = pa.lapsi_id ORDER BY id, history_date DESC) la
+    ON la.history_type != '-'
+    /* left join since varda_historicalhenkilo is not complete in test environments */
+    LEFT JOIN LATERAL
+    (SELECT DISTINCT ON (id) * FROM varda_historicalhenkilo
+        WHERE history_date <= %s AND id = la.henkilo_id ORDER BY id, history_date DESC) he
+    ON he.history_type != '-'
+'''
+active_lapsi_base_where_clause = '''
+    WHERE su.history_type != '-' AND su.alkamis_pvm <= %s AND
+        (su.paattymis_pvm >= %s OR su.paattymis_pvm IS NULL) AND
+        pa.alkamis_pvm <= %s AND (pa.paattymis_pvm >= %s OR pa.paattymis_pvm IS NULL) AND
+        tp.alkamis_pvm <= %s AND (tp.paattymis_pvm >= %s OR tp.paattymis_pvm IS NULL) AND
+        (he.id IS NULL OR he.syntyma_pvm > %s - interval '11 years')
+'''
+
+
 def get_yearly_report_vaka_data(poiminta_pvm, tilasto_pvm, organisaatio_id):
-    # In Vipunen Lapsi has to be under 11 years old and Varhaiskasvatussuhde related Toimipaikka, and Lapsi related
-    # Organisaatio objects must be active, but let's simplify here because they are edge cases and make the query
-    # too heavy
     with connection.cursor() as cursor:
-        query = '''
+        query = f'''
             SELECT
             CASE
                 WHEN la.vakatoimija_id IS NOT NULL THEN false
                 WHEN la.oma_organisaatio_id IS NOT NULL AND la.paos_organisaatio_id IS NOT NULL THEN true
                 ELSE NULL
             END AS is_paos,
-            pa.vuorohoito_kytkin AS vuorohoito,
+            lower(tp.toimintamuoto_koodi) AS toimintamuoto,
             count(DISTINCT su.id) AS suhde_count,
             count(DISTINCT pa.id) AS paatos_count,
             count(DISTINCT la.id) AS lapsi_count,
-            count(DISTINCT la.henkilo_id) AS henkilo_count
+            count(DISTINCT la.henkilo_id) AS henkilo_count,
+            count(DISTINCT la.id) filter(WHERE pa.vuorohoito_kytkin = true) AS vuorohoito_count,
+            count(DISTINCT la.id) filter(WHERE pa.kokopaivainen_vaka_kytkin = false) AS osapaivainen_count,
+            count(DISTINCT la.id) filter(WHERE pa.kokopaivainen_vaka_kytkin = true) AS kokopaivainen_count
             FROM
-            (SELECT DISTINCT ON (id) * FROM varda_historicalvarhaiskasvatussuhde
-                WHERE history_date <= %s ORDER BY id, history_date DESC) su
-            JOIN
-            (SELECT DISTINCT ON (id) * FROM varda_historicalvarhaiskasvatuspaatos
-                WHERE history_date <= %s ORDER BY id, history_date DESC) pa
-            ON pa.id = su.varhaiskasvatuspaatos_id AND pa.history_type != '-'
-            JOIN
-            (SELECT DISTINCT ON (id) * FROM varda_historicallapsi
-                WHERE history_date <= %s ORDER BY id, history_date DESC) la
-            ON la.id = pa.lapsi_id AND la.history_type != '-'
-            WHERE su.history_type != '-' AND su.alkamis_pvm <= %s AND
-                (su.paattymis_pvm >= %s OR su.paattymis_pvm IS NULL) AND
-                pa.alkamis_pvm <= %s AND (pa.paattymis_pvm >= %s OR pa.paattymis_pvm IS NULL)
+            {active_lapsi_base_query}
+            {active_lapsi_base_where_clause}
         '''
-        params = [poiminta_pvm, poiminta_pvm, poiminta_pvm, tilasto_pvm, tilasto_pvm, tilasto_pvm, tilasto_pvm]
+        params = [poiminta_pvm, poiminta_pvm, poiminta_pvm, poiminta_pvm, poiminta_pvm, tilasto_pvm, tilasto_pvm,
+                  tilasto_pvm, tilasto_pvm, tilasto_pvm, tilasto_pvm, tilasto_pvm]
         organisaatio_field_list = ['la.vakatoimija_id', 'la.oma_organisaatio_id', 'la.paos_organisaatio_id']
-        group_by_list = ['is_paos', 'vuorohoito']
+        group_by_list = ['is_paos', 'toimintamuoto']
 
         return _execute_yearly_report_query(cursor, query, params, organisaatio_id=organisaatio_id,
                                             organisaatio_field_list=organisaatio_field_list,
@@ -207,44 +225,216 @@ def get_yearly_report_vaka_data(poiminta_pvm, tilasto_pvm, organisaatio_id):
 
 
 def get_yearly_report_maksutieto_data(poiminta_pvm, tilasto_pvm, organisaatio_id):
-    # In Vipunen Lapsi has to be under 11 years old and Varhaiskasvatussuhde related Toimipaikka, and Lapsi related
-    # Organisaatio objects must be active, and Lapsi has to have an active Varhaisaksvatuspaatos with an active
-    # Varhaiskasvatussuhde, but let's simplify here because they are edge cases and make the query too heavy
     with connection.cursor() as cursor:
-        query = '''
+        query = f'''
             SELECT
             CASE
                 WHEN la.vakatoimija_id IS NOT NULL THEN false
                 WHEN la.oma_organisaatio_id IS NOT NULL AND la.paos_organisaatio_id IS NOT NULL THEN true
                 ELSE NULL
             END AS is_paos,
-            lower(ma.maksun_peruste_koodi) as maksun_peruste,
-            count(DISTINCT ma.id) AS maksutieto_count
+            lower(ma.maksun_peruste_koodi) AS maksun_peruste,
+            count(DISTINCT ma.id) AS count
             FROM
-            (SELECT DISTINCT ON (id) * FROM varda_historicalmaksutieto
-                WHERE history_date <= %s ORDER BY id, history_date DESC) ma
-            JOIN
-            (SELECT DISTINCT ON (id) * FROM varda_historicalmaksutietohuoltajuussuhde
-                WHERE history_date <= %s ORDER BY id, history_date DESC) mahu
-            ON mahu.maksutieto_id = ma.id AND mahu.history_type != '-'
+            {active_lapsi_base_query}
             JOIN
             (SELECT DISTINCT ON (id) * FROM varda_historicalhuoltajuussuhde
                 WHERE history_date <= %s ORDER BY id, history_date DESC) hu
-            ON hu.id = mahu.huoltajuussuhde_id AND hu.history_type != '-'
+            ON hu.history_type != '-' AND hu.lapsi_id = la.id
             JOIN
-            (SELECT DISTINCT ON (id) * FROM varda_historicallapsi
-                WHERE history_date <= %s ORDER BY id, history_date DESC) la
-            ON la.id = hu.lapsi_id AND la.history_type != '-'
-            WHERE ma.history_type != '-' AND ma.alkamis_pvm <= %s AND
-                (ma.paattymis_pvm >= %s OR ma.paattymis_pvm IS NULL)
+            (SELECT DISTINCT ON (id) * FROM varda_historicalmaksutietohuoltajuussuhde
+                WHERE history_date <= %s ORDER BY id, history_date DESC) mahu
+            ON mahu.history_type != '-' AND mahu.huoltajuussuhde_id = hu.id
+            JOIN LATERAL
+            (SELECT DISTINCT ON (id) * FROM varda_historicalmaksutieto
+                WHERE history_date <= %s AND id = mahu.maksutieto_id ORDER BY id, history_date DESC) ma
+            ON ma.history_type != '-'
+            {active_lapsi_base_where_clause} AND
+                ma.alkamis_pvm <= %s AND (ma.paattymis_pvm >= %s OR ma.paattymis_pvm IS NULL)
         '''
-        params = [poiminta_pvm, poiminta_pvm, poiminta_pvm, poiminta_pvm, tilasto_pvm, tilasto_pvm]
-        organisaatio_field_list = ['la.vakatoimija_id', 'la.oma_organisaatio_id', 'la.paos_organisaatio_id']
+        params = [poiminta_pvm, poiminta_pvm, poiminta_pvm, poiminta_pvm, poiminta_pvm, poiminta_pvm, poiminta_pvm,
+                  poiminta_pvm, tilasto_pvm, tilasto_pvm, tilasto_pvm, tilasto_pvm, tilasto_pvm, tilasto_pvm,
+                  tilasto_pvm, tilasto_pvm, tilasto_pvm]
+        organisaatio_field_list = ['la.vakatoimija_id', 'la.oma_organisaatio_id']
         group_by_list = ['is_paos', 'maksun_peruste']
 
         return _execute_yearly_report_query(cursor, query, params, organisaatio_id=organisaatio_id,
                                             organisaatio_field_list=organisaatio_field_list,
                                             group_by_list=group_by_list)
+
+
+active_tyontekija_base_query = '''
+    (SELECT DISTINCT ON (id) * FROM varda_historicaltyoskentelypaikka
+        WHERE history_date <= %s ORDER BY id, history_date DESC) tp
+    JOIN LATERAL
+    (SELECT DISTINCT ON (id) * FROM varda_historicalpalvelussuhde
+        WHERE history_date <= %s AND id = tp.palvelussuhde_id ORDER BY id, history_date DESC) pa
+    ON pa.history_type != '-'
+    JOIN LATERAL
+    (SELECT DISTINCT ON (id) * FROM varda_historicaltyontekija
+        WHERE history_date <= %s AND id = pa.tyontekija_id ORDER BY id, history_date DESC) ty
+    ON ty.history_type != '-'
+    WHERE tp.history_type != '-' AND tp.alkamis_pvm <= %s AND
+    (tp.paattymis_pvm >= %s OR tp.paattymis_pvm IS NULL) AND
+    pa.alkamis_pvm <= %s AND (pa.paattymis_pvm >= %s OR pa.paattymis_pvm IS NULL) AND
+    /* Filter out Palvelussuhde objects which have an active PidempiPoissaolo object */
+    NOT EXISTS
+    (SELECT 1 FROM
+        (SELECT DISTINCT ON (id) * FROM varda_historicalpidempipoissaolo
+            WHERE history_date <= %s ORDER BY id, history_date DESC) pp
+    WHERE history_type != '-' AND palvelussuhde_id = pa.id AND
+        alkamis_pvm <= %s AND paattymis_pvm >= %s)
+'''
+
+
+def get_yearly_report_tehtavanimike_data(poiminta_pvm, tilasto_pvm, organisaatio_id):
+    # Filter organisaatio here instead of _execute_yearly_report_query because the query contains a subquery
+    if organisaatio_id:
+        organisaatio_filter = 'AND ty.vakajarjestaja_id = %s'
+        organisaatio_params = [organisaatio_id]
+    else:
+        organisaatio_filter = ''
+        organisaatio_params = []
+
+    with connection.cursor() as cursor:
+        query = f'''
+            SELECT
+            lower(tehtavanimike_koodi) AS tehtavanimike,
+            kelpoisuus_kytkin AS kelpoisuus,
+            count(DISTINCT tyoskentelypaikka_id) AS tyoskentelypaikka_count,
+            count(DISTINCT henkilo_id) AS henkilo_count
+            FROM
+            /* Get Tyoskentelypaikka objects so that each Tyontekija has only 0 or 1 instance of
+            each tehtavanimike_koodi */
+            (SELECT DISTINCT ON (ty.henkilo_id, tp.tehtavanimike_koodi)
+            tp.tehtavanimike_koodi, tp.kelpoisuus_kytkin, tp.id AS tyoskentelypaikka_id, ty.henkilo_id AS henkilo_id
+            FROM
+            {active_tyontekija_base_query}
+            {organisaatio_filter}
+            ORDER BY ty.henkilo_id, tp.tehtavanimike_koodi, tp.kelpoisuus_kytkin DESC) sq
+        '''
+        params = [poiminta_pvm, poiminta_pvm, poiminta_pvm, tilasto_pvm, tilasto_pvm, tilasto_pvm, tilasto_pvm,
+                  poiminta_pvm, tilasto_pvm, tilasto_pvm, *organisaatio_params]
+
+        return _execute_yearly_report_query(cursor, query, params, group_by_list=['tehtavanimike', 'kelpoisuus'])
+
+
+def get_yearly_report_palvelussuhde_data(poiminta_pvm, tilasto_pvm, organisaatio_id):
+    with connection.cursor() as cursor:
+        query = f'''
+            SELECT
+            lower(tyosuhde_koodi) AS tyosuhde,
+            lower(tyoaika_koodi) AS tyoaika,
+            count(DISTINCT palvelussuhde_id) AS palvelussuhde_count
+            FROM
+            {active_tyontekija_base_query}
+        '''
+        params = [poiminta_pvm, poiminta_pvm, poiminta_pvm, tilasto_pvm, tilasto_pvm, tilasto_pvm, tilasto_pvm,
+                  poiminta_pvm, tilasto_pvm, tilasto_pvm]
+
+        return _execute_yearly_report_query(cursor, query, params, organisaatio_id=organisaatio_id,
+                                            group_by_list=['tyosuhde', 'tyoaika'],
+                                            organisaatio_field_list=['ty.vakajarjestaja_id'])
+
+
+def get_yearly_report_kiertava_count(poiminta_pvm, tilasto_pvm, organisaatio_id):
+    with connection.cursor() as cursor:
+        query = f'''
+            SELECT count(DISTINCT ty.henkilo_id)
+            FROM
+            {active_tyontekija_base_query}
+            AND tp.kiertava_tyontekija_kytkin = true
+        '''
+        params = [poiminta_pvm, poiminta_pvm, poiminta_pvm, tilasto_pvm, tilasto_pvm, tilasto_pvm, tilasto_pvm,
+                  poiminta_pvm, tilasto_pvm, tilasto_pvm]
+
+        return _execute_yearly_report_query(cursor, query, params, organisaatio_id=organisaatio_id,
+                                            organisaatio_field_list=['ty.vakajarjestaja_id'])
+
+
+def get_yearly_report_tyontekija_multiple_tehtavanimike_count(poiminta_pvm, tilasto_pvm, organisaatio_id):
+    # Filter organisaatio here instead of _execute_yearly_report_query because the query contains a subquery
+    if organisaatio_id:
+        organisaatio_filter = 'AND ty.vakajarjestaja_id = %s'
+        organisaatio_params = [organisaatio_id]
+    else:
+        organisaatio_filter = ''
+        organisaatio_params = []
+
+    with connection.cursor() as cursor:
+        query = f'''
+            SELECT count(DISTINCT henkilo_id)
+            FROM
+            (SELECT henkilo_id
+            FROM
+            {active_tyontekija_base_query}
+            {organisaatio_filter}
+            GROUP BY ty.henkilo_id
+            HAVING count(DISTINCT tp.tehtavanimike_koodi) > 1) sq
+        '''
+        params = [poiminta_pvm, poiminta_pvm, poiminta_pvm, tilasto_pvm, tilasto_pvm, tilasto_pvm, tilasto_pvm,
+                  poiminta_pvm, tilasto_pvm, tilasto_pvm, *organisaatio_params]
+
+        return _execute_yearly_report_query(cursor, query, params)
+
+
+def get_yearly_report_taydennyskoulutus_data(poiminta_pvm, tilasto_pvm, organisaatio_id):
+    # Filter organisaatio here instead of _execute_yearly_report_query because the query contains a subquery
+    if organisaatio_id:
+        organisaatio_filter = 'AND ty.vakajarjestaja_id = %s'
+        organisaatio_params = [organisaatio_id]
+    else:
+        organisaatio_filter = ''
+        organisaatio_params = []
+
+    with connection.cursor() as cursor:
+        query = f'''
+            SELECT
+            lower(sq.tehtavanimike_koodi) AS tehtavanimike,
+            count(DISTINCT sq.henkilo_id) AS tyontekija_count,
+            sum(ta.koulutuspaivia) AS koulutuspaiva_sum
+            FROM
+            /* Get Tyoskentelypaikka objects so that each Tyontekija has only 0 or 1 instance of
+            each tehtavanimike_koodi */
+            (SELECT DISTINCT ON (ty.henkilo_id, tp.tehtavanimike_koodi)
+            ty.henkilo_id AS henkilo_id, tp.tehtavanimike_koodi, ty.id AS tyontekija_id
+            FROM
+            {active_tyontekija_base_query}
+            {organisaatio_filter}) sq
+            JOIN
+            /* Associate Tyontekija object only once per Taydennyskoulutus */
+            (SELECT DISTINCT ON (sq_taty.tyontekija_id, sq_taty.taydennyskoulutus_id) *
+            FROM
+            (SELECT DISTINCT ON (id) * FROM varda_historicaltaydennyskoulutustyontekija
+                WHERE history_date <= %s ORDER BY id, history_date DESC) sq_taty
+            WHERE sq_taty.history_type != '-') taty
+            ON taty.tyontekija_id = sq.tyontekija_id
+            JOIN LATERAL
+            (SELECT DISTINCT ON (id) * FROM varda_historicaltaydennyskoulutus
+                WHERE history_date <= %s AND id = taty.taydennyskoulutus_id ORDER BY id, history_date DESC) ta
+            ON ta.history_type != '-'
+            WHERE taty.history_type != '-' AND date_part('year', ta.suoritus_pvm) = %s
+        '''
+        params = [poiminta_pvm, poiminta_pvm, poiminta_pvm, tilasto_pvm, tilasto_pvm, tilasto_pvm, tilasto_pvm,
+                  poiminta_pvm, tilasto_pvm, tilasto_pvm, *organisaatio_params, poiminta_pvm, poiminta_pvm,
+                  tilasto_pvm.year]
+
+        return _execute_yearly_report_query(cursor, query, params, group_by_list=['tehtavanimike'])
+
+
+def get_yearly_report_tilapainen_henkilosto_data(poiminta_pvm, tilasto_pvm, organisaatio_id):
+    with connection.cursor() as cursor:
+        query = '''
+            SELECT COALESCE(sum(tyontekijamaara), 0), COALESCE(sum(tuntimaara), 0)
+            FROM
+            (SELECT DISTINCT ON (id) * FROM varda_historicaltilapainenhenkilosto
+                WHERE history_date <= %s ORDER BY id, history_date DESC) sq
+            WHERE history_type != '-' AND date_part('year', kuukausi) = %s
+        '''
+        params = [poiminta_pvm, tilasto_pvm.year]
+
+        return _execute_yearly_report_query(cursor, query, params, organisaatio_id=organisaatio_id,
+                                            organisaatio_field_list=['vakajarjestaja_id'])
 
 
 def get_top_results(request, queryset, permission_group_list, oid_list):
@@ -330,3 +520,10 @@ def get_organisaatio_oid_for_taydennyskoulutus(taydennyskoulutus):
         logger.error(f'Could not find just one related Organisaatio for Taydennyskoulutus with ID: {taydennyskoulutus.id}')
         raise APIException
     return vakajarjestaja_oid_qs.first()
+
+
+def get_koodisto_codes_lower(koodisto_name):
+    return (Z2_Code.objects
+            .filter(koodisto__name=koodisto_name)
+            .annotate(code_lower=Lower('code_value'))
+            .values_list('code_lower', flat=True).order_by('code_lower'))

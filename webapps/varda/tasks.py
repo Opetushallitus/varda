@@ -29,8 +29,8 @@ from varda.migrations.testing.setup import create_onr_lapsi_huoltajat
 from varda.misc import list_to_chunks, memory_efficient_queryset_iterator, single_instance_task
 from varda.misc_operations import set_paattymis_pvm_for_vakajarjestaja_data
 from varda.models import (Aikaleima, BatchError, Henkilo, Huoltaja, Lapsi, MaksutietoHuoltajuussuhde, Toimipaikka,
-                          Organisaatio, YearlyReportSummary, Z2_CodeTranslation, Z4_CasKayttoOikeudet, Z5_AuditLog,
-                          Z6_LastRequest, Z6_RequestCount, Z6_RequestLog, Z6_RequestSummary,)
+                          Organisaatio, Z2_CodeTranslation, Z4_CasKayttoOikeudet, Z5_AuditLog, Z6_LastRequest,
+                          Z6_RequestCount, Z6_RequestLog, Z6_RequestSummary,)
 from varda.organisation_transformations import transfer_vaka_data_to_different_lapsi
 from varda.permission_groups import get_oph_yllapitaja_group_name
 from varda.permissions import reassign_all_lapsi_permissions
@@ -541,122 +541,6 @@ def general_monitoring_task():
                      .filter(page_number_count__gt=20))
     if page_queryset.exists():
         logger.error(f'The following APIs are browsed through: {page_queryset}')
-
-
-@shared_task
-@single_instance_task(timeout_in_minutes=8 * 60)
-def create_yearly_reporting_summary(tilasto_pvm, poiminta_pvm, organisaatio_id):
-    from varda.misc_queries import (get_yearly_report_organisaatio_count, get_yearly_report_toimipaikka_data,
-                                    get_yearly_report_kielipainotus_count,
-                                    get_yearly_report_toiminnallinen_painotus_count, get_yearly_report_vaka_data,
-                                    get_yearly_report_maksutieto_data)
-
-    tilasto_pvm = datetime.datetime.strptime(tilasto_pvm, '%Y-%m-%dT%H:%M:%S').date()
-
-    if organisaatio_id:
-        organisaatio_obj = Organisaatio.objects.get(id=organisaatio_id)
-        vakajarjestaja_count = 1
-    else:
-        organisaatio_obj = None
-        vakajarjestaja_count = get_yearly_report_organisaatio_count(poiminta_pvm, tilasto_pvm)
-
-    vakajarjestaja_active = True
-    if organisaatio_obj:
-        if organisaatio_obj.paattymis_pvm is None:
-            vakajarjestaja_active = organisaatio_obj.alkamis_pvm <= tilasto_pvm
-        else:
-            vakajarjestaja_active = organisaatio_obj.alkamis_pvm <= tilasto_pvm <= organisaatio_obj.paattymis_pvm
-
-    toimipaikka_data = get_yearly_report_toimipaikka_data(poiminta_pvm, tilasto_pvm, organisaatio_id)
-    toimipaikka_count = toimipaikka_data.pop('toimipaikka_count')
-    varhaiskasvatuspaikat_sum = toimipaikka_data.pop('varhaiskasvatuspaikat_sum')
-    toimipaikka_by_toimintamuoto_count = toimipaikka_data
-    kielipainotus_count = get_yearly_report_kielipainotus_count(poiminta_pvm, tilasto_pvm, organisaatio_id)
-    toiminnallinen_painotus_count = get_yearly_report_toiminnallinen_painotus_count(poiminta_pvm, tilasto_pvm,
-                                                                                    organisaatio_id)
-
-    # Nested dict: {paos (None, True, False): {vuorohoito (None, True, False): {...}}}
-    vaka_data = get_yearly_report_vaka_data(poiminta_pvm, tilasto_pvm, organisaatio_id)
-
-    vakasuhde_count = vaka_data.get(None, {}).get(None, {}).get('suhde_count', 0)
-    oma_vakasuhde_count = vaka_data.get(False, {}).get(None, {}).get('suhde_count', 0)
-    paos_vakasuhde_count = vaka_data.get(True, {}).get(None, {}).get('suhde_count', 0)
-
-    vakapaatos_count = vaka_data.get(None, {}).get(None, {}).get('paatos_count', 0)
-    oma_vakapaatos_count = vaka_data.get(False, {}).get(None, {}).get('paatos_count', 0)
-    paos_vakapaatos_count = vaka_data.get(True, {}).get(None, {}).get('paatos_count', 0)
-
-    vuorohoito_vakapaatos_count = vaka_data.get(None, {}).get(True, {}).get('paatos_count', 0)
-    oma_vuorohoito_vakapaatos_count = vaka_data.get(False, {}).get(True, {}).get('paatos_count', 0)
-    paos_vuorohoito_vakapaatos_count = vaka_data.get(True, {}).get(True, {}).get('paatos_count', 0)
-
-    lapsi_count = vaka_data.get(None, {}).get(None, {}).get('lapsi_count', 0)
-    oma_lapsi_count = vaka_data.get(False, {}).get(None, {}).get('lapsi_count', 0)
-    paos_lapsi_count = vaka_data.get(True, {}).get(None, {}).get('lapsi_count', 0)
-
-    henkilo_count = vaka_data.get(None, {}).get(None, {}).get('henkilo_count', 0)
-    oma_henkilo_count = vaka_data.get(False, {}).get(None, {}).get('henkilo_count', 0)
-    paos_henkilo_count = vaka_data.get(True, {}).get(None, {}).get('henkilo_count', 0)
-
-    # Nested dict: {paos (None, True, False): {maksun_peruste (None, 'mp01', 'mp02', 'mp03'): {...}}}
-    maksutieto_data = get_yearly_report_maksutieto_data(poiminta_pvm, tilasto_pvm, organisaatio_id)
-
-    maksutieto_count = maksutieto_data.get(None, {}).get(None, {}).get('maksutieto_count', 0)
-    maksutieto_mp1_count = maksutieto_data.get(None, {}).get('mp01', {}).get('maksutieto_count', 0)
-    maksutieto_mp2_count = maksutieto_data.get(None, {}).get('mp02', {}).get('maksutieto_count', 0)
-    maksutieto_mp3_count = maksutieto_data.get(None, {}).get('mp03', {}).get('maksutieto_count', 0)
-
-    oma_maksutieto_count = maksutieto_data.get(False, {}).get(None, {}).get('maksutieto_count', 0)
-    oma_maksutieto_mp1_count = maksutieto_data.get(False, {}).get('mp01', {}).get('maksutieto_count', 0)
-    oma_maksutieto_mp2_count = maksutieto_data.get(False, {}).get('mp02', {}).get('maksutieto_count', 0)
-    oma_maksutieto_mp3_count = maksutieto_data.get(False, {}).get('mp03', {}).get('maksutieto_count', 0)
-
-    paos_maksutieto_count = maksutieto_data.get(True, {}).get(None, {}).get('maksutieto_count', 0)
-    paos_maksutieto_mp1_count = maksutieto_data.get(True, {}).get('mp01', {}).get('maksutieto_count', 0)
-    paos_maksutieto_mp2_count = maksutieto_data.get(True, {}).get('mp02', {}).get('maksutieto_count', 0)
-    paos_maksutieto_mp3_count = maksutieto_data.get(True, {}).get('mp03', {}).get('maksutieto_count', 0)
-
-    updated_values = {
-        'status': ReportStatus.FINISHED.value,
-        'vakajarjestaja_count': vakajarjestaja_count,
-        'vakajarjestaja_is_active': vakajarjestaja_active,
-        'poiminta_pvm': poiminta_pvm,
-        'toimipaikka_count': toimipaikka_count,
-        'toimipaikka_by_toimintamuoto_count': toimipaikka_by_toimintamuoto_count,
-        'varhaiskasvatuspaikat_sum': varhaiskasvatuspaikat_sum,
-        'kielipainotus_count': kielipainotus_count,
-        'toimintapainotus_count': toiminnallinen_painotus_count,
-        'yhteensa_henkilo_count': henkilo_count,
-        'yhteensa_lapsi_count': lapsi_count,
-        'yhteensa_varhaiskasvatussuhde_count': vakasuhde_count,
-        'yhteensa_varhaiskasvatuspaatos_count': vakapaatos_count,
-        'yhteensa_vuorohoito_count': vuorohoito_vakapaatos_count,
-        'oma_henkilo_count': oma_henkilo_count,
-        'oma_lapsi_count': oma_lapsi_count,
-        'oma_varhaiskasvatussuhde_count': oma_vakasuhde_count,
-        'oma_varhaiskasvatuspaatos_count': oma_vakapaatos_count,
-        'oma_vuorohoito_count': oma_vuorohoito_vakapaatos_count,
-        'paos_henkilo_count': paos_henkilo_count,
-        'paos_lapsi_count': paos_lapsi_count,
-        'paos_varhaiskasvatussuhde_count': paos_vakasuhde_count,
-        'paos_varhaiskasvatuspaatos_count': paos_vakapaatos_count,
-        'paos_vuorohoito_count': paos_vuorohoito_vakapaatos_count,
-        'yhteensa_maksutieto_count': maksutieto_count,
-        'yhteensa_maksutieto_mp01_count': maksutieto_mp1_count,
-        'yhteensa_maksutieto_mp02_count': maksutieto_mp2_count,
-        'yhteensa_maksutieto_mp03_count': maksutieto_mp3_count,
-        'oma_maksutieto_count': oma_maksutieto_count,
-        'oma_maksutieto_mp01_count': oma_maksutieto_mp1_count,
-        'oma_maksutieto_mp02_count': oma_maksutieto_mp2_count,
-        'oma_maksutieto_mp03_count': oma_maksutieto_mp3_count,
-        'paos_maksutieto_count': paos_maksutieto_count,
-        'paos_maksutieto_mp01_count': paos_maksutieto_mp1_count,
-        'paos_maksutieto_mp02_count': paos_maksutieto_mp2_count,
-        'paos_maksutieto_mp03_count': paos_maksutieto_mp3_count
-    }
-
-    YearlyReportSummary.objects.update_or_create(vakajarjestaja_id=organisaatio_id, tilasto_pvm=tilasto_pvm,
-                                                 defaults=updated_values)
 
 
 @shared_task

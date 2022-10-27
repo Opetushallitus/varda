@@ -453,7 +453,8 @@ EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 # Allas s3
 ALLAS_USER_FILES_BUCKET = None
 
-# Java application
+# Excel/Java settings
+EXCEL_PATH = f'{BASE_DIR}/excel_reports/'
 JAVA_URL = 'http://localhost:8080'
 
 # POST parameters that are replaced in error messages

@@ -265,7 +265,7 @@ def collect_audit_log_and_send_to_aws():
     audit_log_models = []
     varda_models = [ct.model_class() for ct in ContentType.objects.filter(app_label='varda')]
     for varda_model in varda_models:
-        if hasattr(varda_model, 'audit_loggable') and varda_model().audit_loggable:
+        if hasattr(varda_model, 'history'):
             audit_log_models.append(varda_model.__name__.lower())
 
     for audit_log_model in audit_log_models:

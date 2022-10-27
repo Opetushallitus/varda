@@ -196,6 +196,25 @@
               </select>
             </div>
           </div>
+          <div class="col-md-6 col-lg-4 margin-top-lg">
+            <label for="lapsiToimintamuotoSelect"
+                   class="oph-bold">{{i18n.toimipaikka_toimintamuoto_koodi | translate}}</label>
+            <div class="oph-select-container">
+              <select class="oph-input oph-select"
+                      name="lapsiToimintamuotoSelect"
+                      id="lapsiToimintamuotoSelect"
+                      (change)="search()"
+                      [(ngModel)]="filterParams.toimintamuoto">
+                <option [ngValue]="null">{{i18n.katsele_tietoja_lapsi_toimintamuoto_all | translate}}</option>
+                <option *ngFor="let code of toimintamuotoCodes"
+                        [ngValue]="code"
+                        [title]="getCodeUiString(code)"
+                        [libKoodistoValue]="koodistoEnum.toimintamuoto" format="long">
+                  {{code.code_value}}
+                </option>
+              </select>
+            </div>
+          </div>
         </div>
         <div class="varda-reporting-row-wrap">
           <div class="col-md-6 col-lg-4" *ngIf="filterParams.rajaus === rajaus.MAKSUTIEDOT">

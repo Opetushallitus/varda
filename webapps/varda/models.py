@@ -60,7 +60,6 @@ def get_history_user(request, **kwargs):
 
 class HistoryAbstractModel(AbstractModel):
     history = HistoricalRecords(inherit=True, get_user=get_history_user)
-    audit_loggable = True
 
     class Meta:
         abstract = True
@@ -690,52 +689,6 @@ class LoginCertificate(AbstractModel):
         verbose_name_plural = 'Login certificates'
 
 
-class YearlyReportSummary(HistoryAbstractModel):
-    vakajarjestaja = models.ForeignKey(Organisaatio, null=True, related_name='yearlyreportsummary', on_delete=models.PROTECT)
-    status = models.CharField(max_length=50)
-    tilasto_pvm = models.DateField()
-    poiminta_pvm = models.DateTimeField(null=True)
-    vakajarjestaja_count = models.IntegerField(null=True)
-    vakajarjestaja_is_active = models.BooleanField(null=True)
-    toimipaikka_count = models.IntegerField(null=True)
-    toimipaikka_by_toimintamuoto_count = models.JSONField(null=True)
-    varhaiskasvatuspaikat_sum = models.IntegerField(null=True)
-    toimintapainotus_count = models.IntegerField(null=True)
-    kielipainotus_count = models.IntegerField(null=True)
-    yhteensa_henkilo_count = models.IntegerField(null=True)
-    yhteensa_lapsi_count = models.IntegerField(null=True)
-    yhteensa_varhaiskasvatussuhde_count = models.IntegerField(null=True)
-    yhteensa_varhaiskasvatuspaatos_count = models.IntegerField(null=True)
-    yhteensa_vuorohoito_count = models.IntegerField(null=True)
-    oma_henkilo_count = models.IntegerField(null=True)
-    oma_lapsi_count = models.IntegerField(null=True)
-    oma_varhaiskasvatussuhde_count = models.IntegerField(null=True)
-    oma_varhaiskasvatuspaatos_count = models.IntegerField(null=True)
-    oma_vuorohoito_count = models.IntegerField(null=True)
-    paos_henkilo_count = models.IntegerField(null=True)
-    paos_lapsi_count = models.IntegerField(null=True)
-    paos_varhaiskasvatussuhde_count = models.IntegerField(null=True)
-    paos_varhaiskasvatuspaatos_count = models.IntegerField(null=True)
-    paos_vuorohoito_count = models.IntegerField(null=True)
-    yhteensa_maksutieto_count = models.IntegerField(null=True)
-    yhteensa_maksutieto_mp01_count = models.IntegerField(null=True)
-    yhteensa_maksutieto_mp02_count = models.IntegerField(null=True)
-    yhteensa_maksutieto_mp03_count = models.IntegerField(null=True)
-    oma_maksutieto_count = models.IntegerField(null=True)
-    oma_maksutieto_mp01_count = models.IntegerField(null=True)
-    oma_maksutieto_mp02_count = models.IntegerField(null=True)
-    oma_maksutieto_mp03_count = models.IntegerField(null=True)
-    paos_maksutieto_count = models.IntegerField(null=True)
-    paos_maksutieto_mp01_count = models.IntegerField(null=True)
-    paos_maksutieto_mp02_count = models.IntegerField(null=True)
-    paos_maksutieto_mp03_count = models.IntegerField(null=True)
-    luonti_pvm = models.DateTimeField(auto_now_add=True)
-    muutos_pvm = models.DateTimeField(auto_now=True)
-
-    class Meta:
-        verbose_name_plural = 'yearlyreportsummaries'
-
-
 """
 Miscellaneous
 
@@ -970,16 +923,16 @@ class Z7_AdditionalUserFields(AbstractModel):
 
 
 class Z8_ExcelReport(AbstractModel):
-    filename = models.CharField(max_length=200)
+    filename = models.CharField(max_length=200, null=True)
     s3_object_path = models.CharField(max_length=200, null=True)
     password = models.CharField(max_length=150)  # Currently encrypted password length is 120 characters
     status = models.CharField(max_length=50)
     report_type = models.CharField(max_length=50)
+    report_subtype = models.CharField(max_length=50, null=True)
     target_date = models.DateField(null=True)
-    target_date_start = models.DateField(null=True)
-    target_date_end = models.DateField(null=True)
+    target_date_secondary = models.DateField(null=True)
     language = models.CharField(max_length=2)
-    vakajarjestaja = models.ForeignKey(Organisaatio, related_name='excel_reports', on_delete=models.PROTECT)
+    organisaatio = models.ForeignKey(Organisaatio, null=True, related_name='excel_reports', on_delete=models.PROTECT)
     toimipaikka = models.ForeignKey(Toimipaikka, null=True, related_name='excel_reports', on_delete=models.PROTECT)
     user = models.ForeignKey(User, related_name='excel_reports', on_delete=models.PROTECT)
     timestamp = models.DateTimeField(auto_now=True)
@@ -991,11 +944,11 @@ class Z8_ExcelReport(AbstractModel):
 class Z8_ExcelReportLog(AbstractModel):
     report_id = models.IntegerField(null=True)
     report_type = models.CharField(max_length=50)
+    report_subtype = models.CharField(max_length=50, null=True)
     target_date = models.DateField(null=True)
-    target_date_start = models.DateField(null=True)
-    target_date_end = models.DateField(null=True)
-    vakajarjestaja = models.ForeignKey(Organisaatio, related_name='excel_report_logs', on_delete=models.PROTECT)
-    toimipaikka = models.ForeignKey(Toimipaikka, null=True, related_name='excel_report_logs', on_delete=models.PROTECT)
+    target_date_secondary = models.DateField(null=True)
+    organisaatio = models.ForeignKey(Organisaatio, null=True, related_name='excel_report_logs', on_delete=models.PROTECT)
+    toimipaikka_id = models.IntegerField(null=True)
     user = models.ForeignKey(User, related_name='excel_report_logs', on_delete=models.PROTECT)
     started_timestamp = models.DateTimeField()
     finished_timestamp = models.DateTimeField()

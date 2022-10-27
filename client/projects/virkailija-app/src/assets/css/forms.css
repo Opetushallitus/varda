@@ -79,8 +79,6 @@ label.mat-checkbox-layout {
   height: 42px;
 }
 
-
-
 .oph-field-text {
   align-self: center;
   padding: 0 0.5em;
@@ -238,6 +236,10 @@ label.mat-checkbox-layout {
 
 .oph-select-container mat-select.oph-select {
   padding: 0;
+}
+
+.oph-input {
+  line-height: initial;
 }
 
 @media (max-width: 767px) {

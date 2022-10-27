@@ -604,6 +604,9 @@ class UiLapsiFilter(django_filters.FilterSet):
         if jarjestamismuoto_arg := query_params.get('jarjestamismuoto', None):
             lapsi_filter &= Q(varhaiskasvatuspaatokset__jarjestamismuoto_koodi__iexact=jarjestamismuoto_arg)
 
+        if toimintamuoto_arg := query_params.get('toimintamuoto', None):
+            lapsi_filter &= Q(varhaiskasvatuspaatokset__varhaiskasvatussuhteet__toimipaikka__toimintamuoto_koodi__iexact=toimintamuoto_arg)
+
         return queryset.filter(lapsi_filter).distinct('henkilo__sukunimi', 'henkilo__etunimet', 'id')
 
 
@@ -696,12 +699,17 @@ class TiedonsiirtoFilter(django_filters.FilterSet):
 
 
 class ExcelReportFilter(django_filters.FilterSet):
-    vakajarjestaja = OrganisaatioFieldFilter()
+    organisaatio = django_filters.CharFilter(method='filter_organisaatio')
     toimipaikka = OrganisaatioFieldFilter()
     user_id = django_filters.NumberFilter(field_name='user__id')
     username = django_filters.NumberFilter(lookup_expr='iexact', field_name='user__username')
     status = django_filters.CharFilter()
     report_type = django_filters.CharFilter()
+
+    def filter_organisaatio(self, queryset, name, value):
+        # Always return non Organisaatio specific reports (organisaatio=None)
+        return queryset.filter(Q(organisaatio_id=value) | Q(organisaatio__organisaatio_oid=value) |
+                               Q(organisaatio=None))
 
 
 class TransferOutageReportFilter(django_filters.FilterSet):

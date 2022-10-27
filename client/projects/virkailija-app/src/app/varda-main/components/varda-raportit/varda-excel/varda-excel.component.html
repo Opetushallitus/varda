@@ -29,13 +29,30 @@
       <table mat-table class="excel-table" [dataSource]="excelReportList">
         <ng-container matColumnDef="reportType">
           <th mat-header-cell *matHeaderCellDef>{{i18n.excel_report_type | translate }}</th>
-          <td mat-cell *matCellDef="let excelReport">{{getReportTypeTranslationKey(excelReport.report_type) | translate}}</td>
+          <td mat-cell *matCellDef="let excelReport">
+            {{getReportTypeTranslationKey(excelReport.report_type) | translate}}
+            <ng-container *ngIf="excelReport.report_subtype">
+              ({{getReportSubtypeTranslationKey(excelReport.report_subtype) | translate | lowercase}})
+            </ng-container>
+            <ng-container *ngIf="!excelReport.organisaatio">
+              ({{ i18n.excel_new_all_organisaatio | translate | lowercase}})
+            </ng-container>
+          </td>
         </ng-container>
         <ng-container matColumnDef="targetDate">
           <th mat-header-cell *matHeaderCellDef>{{i18n.excel_target_date | translate}}</th>
           <td mat-cell *matCellDef="let excelReport">
-            <ng-container *ngIf="excelReport.target_date">{{excelReport.target_date | vardaDate}}</ng-container>
-            <ng-container *ngIf="excelReport.target_date_start && excelReport.target_date_end">{{excelReport.target_date_start | vardaDate}} - {{excelReport.target_date_end | vardaDate}}</ng-container>
+            <ng-container *ngIf="excelReport.target_date && !excelReport.target_date_secondary">
+              {{excelReport.target_date | vardaDate}}
+            </ng-container>
+            <ng-container *ngIf="excelReport.target_date && excelReport.target_date_secondary">
+              <ng-container *ngIf="excelReport.report_type !== ReportType.VUOSIRAPORTTI">
+                {{excelReport.target_date | vardaDate}} - {{excelReport.target_date_secondary | vardaDate}}
+              </ng-container>
+              <ng-container *ngIf="excelReport.report_type === ReportType.VUOSIRAPORTTI">
+                {{excelReport.target_date | slice:0:4}} ({{excelReport.target_date_secondary | vardaDate}})
+              </ng-container>
+            </ng-container>
         </ng-container>
         <ng-container matColumnDef="toimipaikka">
           <th mat-header-cell *matHeaderCellDef>{{i18n.toimipaikka | translate }}</th>

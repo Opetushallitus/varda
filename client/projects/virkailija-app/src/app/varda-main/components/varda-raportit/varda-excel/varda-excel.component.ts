@@ -19,10 +19,18 @@ export enum ReportType {
   PUUTTEELLISET_TYONTEKIJA = 'PUUTTEELLISET_TYONTEKIJA',
   TYONTEKIJATIEDOT_VOIMASSA = 'TYONTEKIJATIEDOT_VOIMASSA',
   TAYDENNYSKOULUTUSTIEDOT = 'TAYDENNYSKOULUTUSTIEDOT',
-  TOIMIPAIKAT_VOIMASSA = 'TOIMIPAIKAT_VOIMASSA'
+  TOIMIPAIKAT_VOIMASSA = 'TOIMIPAIKAT_VOIMASSA',
+  VUOSIRAPORTTI = 'VUOSIRAPORTTI'
+}
+
+export enum ReportSubtype {
+  ALL = 'ALL',
+  VARHAISKASVATUS = 'VARHAISKASVATUS',
+  HENKILOSTO = 'HENKILOSTO'
 }
 
 export const ReportTypeTranslations = {
+  [ReportType.VUOSIRAPORTTI]: VirkailijaTranslations.excel_report_type_vuosiraportti,
   [ReportType.VAKATIEDOT_VOIMASSA]: VirkailijaTranslations.excel_report_type_vakatiedot_voimassa,
   [ReportType.PUUTTEELLISET_TOIMIPAIKKA]: VirkailijaTranslations.excel_report_type_puutteelliset_toimipaikka,
   [ReportType.PUUTTEELLISET_LAPSI]: VirkailijaTranslations.excel_report_type_puutteelliset_lapsi,
@@ -30,6 +38,12 @@ export const ReportTypeTranslations = {
   [ReportType.TYONTEKIJATIEDOT_VOIMASSA]: VirkailijaTranslations.excel_report_type_tyontekijatiedot_voimassa,
   [ReportType.TAYDENNYSKOULUTUSTIEDOT]: VirkailijaTranslations.excel_report_type_taydennyskoulutustiedot,
   [ReportType.TOIMIPAIKAT_VOIMASSA]: VirkailijaTranslations.excel_report_type_toimipaikat_voimassa
+};
+
+export const ReportSubtypeTranslations = {
+  [ReportSubtype.ALL]: VirkailijaTranslations.excel_report_subtype_all,
+  [ReportSubtype.VARHAISKASVATUS]: VirkailijaTranslations.excel_report_subtype_varhaiskasvatus,
+  [ReportSubtype.HENKILOSTO]: VirkailijaTranslations.excel_report_subtype_henkilosto
 };
 
 @Component({
@@ -54,6 +68,7 @@ export class VardaExcelComponent implements OnInit, OnDestroy {
   resultCount = 0;
 
   ReportStatus = ReportStatus;
+  ReportType = ReportType;
 
   constructor(
     private vakajarjestajaService: VardaVakajarjestajaService,
@@ -98,6 +113,10 @@ export class VardaExcelComponent implements OnInit, OnDestroy {
 
   getReportTypeTranslationKey(reportType: string): string  {
     return ReportTypeTranslations[reportType] || reportType;
+  }
+
+  getReportSubtypeTranslationKey(reportSubtype: string): string  {
+    return ReportSubtypeTranslations[reportSubtype] || reportSubtype;
   }
 
   getReportStatusTranslationKey(status: string): string {

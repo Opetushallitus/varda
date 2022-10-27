@@ -92,13 +92,17 @@ export abstract class VardaFormAccordionAbstractComponent<T extends {id?: number
 
   enableForm() {
     this.isEdit = true;
-    this.formGroup.enable();
+    setTimeout(() => {
+      this.formGroup.enable();
+    });
   }
 
   disableForm() {
     this.isEdit = false;
-    this.formGroup.disable();
     this.modalService.setFormValuesChanged(false);
+    setTimeout(() => {
+      this.formGroup.disable();
+    });
   }
 
   disableSubmit() {

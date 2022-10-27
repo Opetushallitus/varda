@@ -8,7 +8,7 @@ from .models import (Aikaleima, BatchError, Henkilo, Huoltaja, Huoltajuussuhde, 
                      Maksutieto, MaksutietoHuoltajuussuhde, TaydennyskoulutusTyontekija, Tyoskentelypaikka,
                      Palvelussuhde, PaosOikeus, PaosToiminta, TilapainenHenkilosto, ToiminnallinenPainotus, Toimipaikka,
                      Tutkinto, Tyontekija, Organisaatio, Varhaiskasvatuspaatos, Varhaiskasvatussuhde, PidempiPoissaolo,
-                     Taydennyskoulutus, YearlyReportSummary, Z3_AdditionalCasUserFields, Z7_AdditionalUserFields)
+                     Taydennyskoulutus, Z3_AdditionalCasUserFields, Z7_AdditionalUserFields)
 
 
 class AdminWithGuardianAndHistory(GuardedModelAdmin, SimpleHistoryAdmin):
@@ -292,7 +292,6 @@ admin.site.register(Tyoskentelypaikka, TyoskentelypaikkaAdmin)
 admin.site.register(PidempiPoissaolo, PidempipoissaoloAdmin)
 admin.site.register(Taydennyskoulutus, TaydennyskoulutusAdmin)
 admin.site.register(TaydennyskoulutusTyontekija, TaydennyskoulutusTyontekijaAdmin)
-admin.site.register(YearlyReportSummary, AdminWithGuardianAndHistory)
 admin.site.register(Aikaleima, AdminWithGuardianAndHistory)
 admin.site.register(BatchError, BatchErrorAdmin)
 admin.site.register(LoginCertificate, LoginCertificateAdmin)

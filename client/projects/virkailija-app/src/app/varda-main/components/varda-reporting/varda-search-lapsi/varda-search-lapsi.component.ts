@@ -39,18 +39,21 @@ export class VardaSearchLapsiComponent extends VardaSearchAbstractComponent impl
     maksunPeruste: CodeDTO;
     palveluseteli: boolean;
     jarjestamismuoto: CodeDTO;
+    toimintamuoto: CodeDTO;
   } = {
-      rajaus: this.rajaus.VAKAPAATOKSET,
-      voimassaolo: this.voimassaolo.VOIMASSA,
-      alkamisPvm: moment(),
-      paattymisPvm: moment(),
-      maksunPeruste: null,
-      palveluseteli: null,
-      jarjestamismuoto: null
-    };
+    rajaus: this.rajaus.VAKAPAATOKSET,
+    voimassaolo: this.voimassaolo.VOIMASSA,
+    alkamisPvm: moment(),
+    paattymisPvm: moment(),
+    maksunPeruste: null,
+    palveluseteli: null,
+    jarjestamismuoto: null,
+    toimintamuoto: null
+  };
 
   maksunPerusteCodes: Array<CodeDTO> = [];
   jarjestamismuotoCodes: Array<CodeDTO> = [];
+  toimintamuotoCodes: Array<CodeDTO> = [];
 
   constructor(
     koodistoService: VardaKoodistoService,
@@ -71,10 +74,12 @@ export class VardaSearchLapsiComponent extends VardaSearchAbstractComponent impl
     this.search();
     forkJoin([
       this.getKoodistoFromKoodistoService(this.koodistoEnum.maksunperuste),
-      this.getKoodistoFromKoodistoService(this.koodistoEnum.jarjestamismuoto)
+      this.getKoodistoFromKoodistoService(this.koodistoEnum.jarjestamismuoto),
+      this.getKoodistoFromKoodistoService(this.koodistoEnum.toimintamuoto)
     ]).subscribe((data: Array<KoodistoDTO>) => {
       this.maksunPerusteCodes = data[0].codes;
       this.jarjestamismuotoCodes = data[1].codes;
+      this.toimintamuotoCodes = data[2].codes;
     });
   }
 
@@ -116,6 +121,10 @@ export class VardaSearchLapsiComponent extends VardaSearchAbstractComponent impl
 
     if (this.filterParams.jarjestamismuoto) {
       searchParams.jarjestamismuoto = this.filterParams.jarjestamismuoto.code_value;
+    }
+
+    if (this.filterParams.toimintamuoto) {
+      searchParams.toimintamuoto = this.filterParams.toimintamuoto.code_value;
     }
 
     if (!this.isAllToimipaikatSelected) {

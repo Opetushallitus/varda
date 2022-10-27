@@ -38,7 +38,6 @@ import { VardaPuutteellisetToimipaikatComponent } from './components/varda-rapor
 import { VardaPuutteellisetLapsetComponent } from './components/varda-raportit/varda-puutteelliset-tiedot/puutteelliset-lapset/puutteelliset-lapset.component';
 import { VardaPuutteellisetTyontekijatComponent } from './components/varda-raportit/varda-puutteelliset-tiedot/puutteelliset-tyontekijat/puutteelliset-tyontekijat.component';
 import { VardaRequestSummaryComponent } from './components/varda-raportit/varda-request-summary/varda-request-summary.component';
-import { VardaYearlyReportComponent } from './components/varda-raportit/varda-yearly-report/varda-yearly-report.component';
 import { VardaSetPaattymisPvmComponent } from './components/varda-set-paattymis-pvm/varda-set-paattymis-pvm.component';
 
 const routes: Routes = [
@@ -304,14 +303,6 @@ const routes: Routes = [
                 component: VardaExcelComponent,
                 data: {
                   title: VirkailijaTranslations.excel,
-                  toimijaRoles: [UserAccessKeys.raportit, UserAccessKeys.oph]
-                }
-              },
-              {
-                path: 'vuosiraportti',
-                component: VardaYearlyReportComponent,
-                data: {
-                  title: VirkailijaTranslations.yearly_report,
                   toimijaRoles: [UserAccessKeys.raportit, UserAccessKeys.oph]
                 }
               },

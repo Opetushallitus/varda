@@ -34,7 +34,7 @@
                   (opened)="onCalendarOpened()"
                   (closed)="onCalendarClosed()"></mat-datepicker>
 </mat-form-field>
-<div class="oph-field-text oph-error" *ngIf="errorMap.length > 0 && !matPicker.valid && (matPicker.touched || isTouched === true) && matPicker.errors">
+<div class="oph-field-text oph-error" *ngIf="errorMap.length > 0 && !matPicker.valid && (matPicker.touched) && matPicker.errors">
   <ng-container *ngFor="let errorItem of errorMap">
     <span *ngIf="matPicker.errors.hasOwnProperty(errorItem.key)">{{ errorItem.value | translate }}</span>
   </ng-container>

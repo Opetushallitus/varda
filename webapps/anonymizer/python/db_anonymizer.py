@@ -21,9 +21,8 @@ from json.decoder import JSONDecodeError
 from pathlib import Path
 from timeit import default_timer as timer
 
-from varda.models import (Henkilo, Toimipaikka, Organisaatio, YearlyReportSummary, Z3_AdditionalCasUserFields,
-                          Z4_CasKayttoOikeudet, Z5_AuditLog, Z6_RequestLog, Z7_AdditionalUserFields, Z8_ExcelReport,
-                          Z8_ExcelReportLog)
+from varda.models import (Henkilo, Toimipaikka, Organisaatio, Z3_AdditionalCasUserFields, Z4_CasKayttoOikeudet,
+                          Z5_AuditLog, Z6_RequestLog, Z7_AdditionalUserFields, Z8_ExcelReport, Z8_ExcelReportLog)
 
 
 logger = logging.getLogger(__name__)
@@ -175,7 +174,6 @@ def finalize_data_dump():
     Z7_AdditionalUserFields.objects.all().delete()
     Z8_ExcelReport.objects.all().delete()
     Z8_ExcelReportLog.objects.all().delete()
-    YearlyReportSummary.objects.all().delete()
 
     vakajarjestaja_1 = Organisaatio.objects.get(id=1)
     vakajarjestaja_1.save()

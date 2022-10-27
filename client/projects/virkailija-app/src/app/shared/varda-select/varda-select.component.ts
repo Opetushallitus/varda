@@ -6,7 +6,6 @@ import {
   ViewEncapsulation
 } from '@angular/core';
 import { MatSelect } from '@angular/material/select';
-import { AbstractControl } from '@angular/forms';
 
 @Component({
   selector: 'app-varda-select',
@@ -17,8 +16,6 @@ import { AbstractControl } from '@angular/forms';
 export class VardaSelectComponent implements AfterViewInit {
   @ContentChild(MatSelect) matSelect!: MatSelect;
   @ContentChild(MatSelect, {read: ElementRef}) matSelectElement: ElementRef;
-
-  control: AbstractControl;
 
   constructor() { }
 
@@ -31,7 +28,5 @@ export class VardaSelectComponent implements AfterViewInit {
         }
       }
     });
-
-    setTimeout(() => this.control = this.matSelect.ngControl?.control);
   }
 }

@@ -92,7 +92,6 @@ import { VardaExcelNewComponent } from './components/varda-raportit/varda-excel/
 import { VardaPuutteellisetToimipaikatComponent } from './components/varda-raportit/varda-puutteelliset-tiedot/puutteelliset-toimipaikat/puutteelliset-toimipaikat.component';
 import { VardaTransferOutageComponent } from './components/varda-raportit/varda-transfer-outage/varda-transfer-outage.component';
 import { VardaRequestSummaryComponent } from './components/varda-raportit/varda-request-summary/varda-request-summary.component';
-import { VardaYearlyReportComponent } from './components/varda-raportit/varda-yearly-report/varda-yearly-report.component';
 import { VardaSetPaattymisPvmComponent } from './components/varda-set-paattymis-pvm/varda-set-paattymis-pvm.component';
 import { MatTableDummyComponent } from '../shared/components/mat-table-dummy/mat-table-dummy.component';
 
@@ -190,7 +189,6 @@ import { MatTableDummyComponent } from '../shared/components/mat-table-dummy/mat
     VardaExcelNewComponent,
     VardaTransferOutageComponent,
     VardaRequestSummaryComponent,
-    VardaYearlyReportComponent,
     VardaSetPaattymisPvmComponent,
     MatTableDummyComponent
   ],

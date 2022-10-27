@@ -103,7 +103,7 @@ def delete_toimipaikan_lapset_cache(toimipaikka_id):
 
 def delete_object_ids_user_has_permissions(user_id):
     """
-    Here we assume if the model is audit loggable, user has cache keys for that specific model.
+    Here we assume if the model has history attr, user has cache keys for that specific model.
     """
     from django.apps import apps
     from django.db import transaction
@@ -111,7 +111,7 @@ def delete_object_ids_user_has_permissions(user_id):
     with transaction.atomic():
         app_models = apps.get_app_config('varda').get_models()
         for model in app_models:
-            if hasattr(model, 'audit_loggable') and model.audit_loggable:
+            if hasattr(model, 'history'):
                 model_name = model.__name__.lower()
                 cache_key_objs_user_has_permissions = create_cache_key(user_id, model_name + '_obj_permissions')
                 cache_keys.append(cache_key_objs_user_has_permissions)

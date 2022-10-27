@@ -418,7 +418,9 @@ class UiNestedLapsiViewSet(GenericViewSet, ListModelMixin):
                          CustomParameter(name='palveluseteli', required=False, location='query', data_type='boolean',
                                          description='Lapsi has maksutieto with palveluseteli'),
                          CustomParameter(name='jarjestamismuoto', required=False, location='query', data_type='string',
-                                         description='Lapsi must have this jarjestamismuoto koodi'),)
+                                         description='Lapsi must have this jarjestamismuoto koodi'),
+                         CustomParameter(name='toimintamuoto', required=False, location='query', data_type='string',
+                                         description='Related Toimipaikka must have this toimintamuoto koodi'),)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

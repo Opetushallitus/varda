@@ -1,4 +1,5 @@
-<div class="full-width-row">
+<div class="full-width-row"
+     [formGroup]="formGroup">
   <div class="modal-form-intro col-12">
     {{ i18n.excel_new_instructions | translate }}
   </div>
@@ -11,8 +12,9 @@
           <select class="oph-input oph-select"
                   name="reportTypeSelect"
                   id="reportTypeSelect"
-                  (change)="updateToimipaikat()"
-                  [(ngModel)]="newReport.report_type">
+                  (change)="reportTypeChange()"
+                  [(ngModel)]="newReport.report_type"
+                  [ngModelOptions]="{standalone: true}">
             <option *ngFor="let reportTypeOption of reportTypeOptions"
                     [ngValue]="reportTypeOption[0]"
                     [title]="reportTypeOption[1] | translate">
@@ -28,20 +30,74 @@
         </button>
       </div>
     </div>
+    <div class="col-md-5 col-lg-3 margin-top-md" *ngIf="subtypeReports.includes(newReport.report_type)">
+      <label for="reportSubtypeSelect"
+             class="oph-bold">{{i18n.excel_report_subtype | translate}}</label>
+      <div class="oph-select-container">
+        <select class="oph-input oph-select"
+                name="reportSubtypeSelect"
+                id="reportSubtypeSelect"
+                [(ngModel)]="newReport.report_subtype"
+                [ngModelOptions]="{standalone: true}">
+          <option *ngFor="let reportSubtypeOption of reportSubtypeOptions"
+                  [ngValue]="reportSubtypeOption[0]"
+                  [title]="reportSubtypeOption[1] | translate">
+            {{reportSubtypeOption[1] | translate}}
+          </option>
+        </select>
+      </div>
+    </div>
     <div class="col-md-5 col-lg-3 margin-top-md datepicker-container" *ngIf="dateSelectorReports.includes(newReport.report_type)">
       <label for="targetDatePicker"
              class="oph-bold">{{i18n.excel_new_voimassa_date | translate}}</label>
-      <app-varda-datepicker #targetDatePicker="ngModel"
-                            name="targetDatePicker"
+      <app-varda-datepicker formControlName="targetDate"
                             id="targetDatePicker"
-                            [(ngModel)]="targetDate"
-                            [required]="true">
+                            [required]="true"
+                            [min]="datepickerMin"
+                            [max]="datepickerMax"
+                            [isTouched]="formGroup.controls.targetDate.touched"
+                            [errorMap]="[
+                              { key: 'required', value: i18n.required_field },
+                              { key: 'matDatepickerParse', value: i18n.katsele_tietoja_error_date_format },
+                              { key: 'matDatepickerMin', value: i18n.error_datepicker_min },
+                              { key: 'matDatepickerMax', value: i18n.error_datepicker_max }
+                            ]">
       </app-varda-datepicker>
-      <div aria-live="assertive"
-           class="varda-error-message-block"
-           role="alert"
-           *ngIf="targetDatePicker.invalid">
-        <p>{{i18n.katsele_tietoja_error_date_format | translate}}</p>
+    </div>
+    <div class="col-12"
+         *ngIf="yearSelectorReports.includes(newReport.report_type) ||
+         dateSecondarySelectorReports.includes(newReport.report_type)">
+      <div class="row">
+        <div class="col-md-3 col-lg-2 margin-top" *ngIf="yearSelectorReports.includes(newReport.report_type)">
+          <label for="yearSelect"
+                 class="oph-bold">{{i18n.excel_new_year | translate}}</label>
+          <div class="oph-select-container">
+            <select class="oph-input oph-select"
+                    name="yearSelect"
+                    id="yearSelect"
+                    formControlName="year">
+              <option *ngFor="let year of yearOptions" [ngValue]="year">{{year}}</option>
+            </select>
+          </div>
+        </div>
+        <div class="col-md-5 col-lg-3 margin-top datepicker-container"
+             *ngIf="dateSecondarySelectorReports.includes(newReport.report_type)">
+          <label for="targetDateSecondaryPicker"
+                 class="oph-bold">{{i18n.excel_new_target_date_secondary | translate}}</label>
+          <app-varda-datepicker id="targetDateSecondaryPicker"
+                                formControlName="targetDateSecondary"
+                                [required]="true"
+                                [min]="datepickerSecondaryMin"
+                                [max]="datepickerSecondaryMax"
+                                [isTouched]="formGroup.controls.targetDateSecondary.touched"
+                                [errorMap]="[
+                                  { key: 'required', value: i18n.required_field },
+                                  { key: 'matDatepickerParse', value: i18n.katsele_tietoja_error_date_format },
+                                  { key: 'matDatepickerMin', value: i18n.error_datepicker_min },
+                                  { key: 'matDatepickerMax', value: i18n.error_datepicker_max }
+                                ]">
+          </app-varda-datepicker>
+        </div>
       </div>
     </div>
     <div class="col-lg-12 varda-date-range-container margin-top-lg" *ngIf="dateRangeSelectorReports.includes(newReport.report_type)">
@@ -49,31 +105,33 @@
              class="oph-bold">{{i18n.excel_new_voimassa_date | translate}}</label>
       <div class="row varda-date-range-row">
         <div class="col">
-          <app-varda-datepicker #targetDateStartPicker="ngModel"
-                                name="targetDateStartPicker"
-                                [(ngModel)]="targetDateStart"
-                                [required]="true">
+          <app-varda-datepicker formControlName="targetDate"
+                                [required]="true"
+                                [min]="datepickerMin"
+                                [max]="datepickerMax"
+                                [isTouched]="formGroup.controls.targetDate.touched"
+                                [errorMap]="[
+                                  { key: 'required', value: i18n.required_field },
+                                  { key: 'matDatepickerParse', value: i18n.katsele_tietoja_error_date_format },
+                                  { key: 'matDatepickerMin', value: i18n.error_datepicker_min },
+                                  { key: 'matDatepickerMax', value: i18n.error_datepicker_max }
+                                ]">
           </app-varda-datepicker>
-          <div aria-live="assertive"
-               class="varda-error-message-block"
-               role="alert"
-               *ngIf="targetDateStartPicker.invalid">
-            <p>{{i18n.katsele_tietoja_error_date_format | translate}}</p>
-          </div>
         </div>
         <span class="varda-date-range-dash">–</span>
         <div class="col">
-          <app-varda-datepicker #targetDateEndPicker="ngModel"
-                                name="targetDateEndPicker"
-                                [(ngModel)]="targetDateEnd"
-                                [required]="true">
+          <app-varda-datepicker formControlName="targetDateSecondary"
+                                [required]="true"
+                                [min]="datepickerSecondaryMin"
+                                [max]="datepickerSecondaryMax"
+                                [isTouched]="formGroup.controls.targetDateSecondary.touched"
+                                [errorMap]="[
+                                  { key: 'required', value: i18n.required_field },
+                                  { key: 'matDatepickerParse', value: i18n.katsele_tietoja_error_date_format },
+                                  { key: 'matDatepickerMin', value: i18n.error_datepicker_min },
+                                  { key: 'matDatepickerMax', value: i18n.error_datepicker_max }
+                                ]">
           </app-varda-datepicker>
-          <div aria-live="assertive"
-               class="varda-error-message-block"
-               role="alert"
-               *ngIf="targetDateEndPicker.invalid">
-            <p>{{i18n.katsele_tietoja_error_date_format | translate}}</p>
-          </div>
         </div>
       </div>
     </div>
@@ -81,33 +139,43 @@
   <ng-container *ngIf="toimipaikkaSelectorReports.includes(newReport.report_type)">
     <div class="full-width-row margin-top">
       <div class="col-md-auto varda-theme">
-        <mat-checkbox name="vakajarjestajaLevelCheckbox"
+        <mat-checkbox name="isOrganisaatioLevelCheckbox"
                       class="varda-checkbox"
-                      [(ngModel)]="vakajarjestajaLevel"
+                      formControlName="isOrganisaatioLevel"
                       labelPosition="after">
           {{i18n.excel_new_vakajarjestaja_level | translate}}
         </mat-checkbox>
       </div>
     </div>
-    <div class="full-width-row margin-top" *ngIf="!vakajarjestajaLevel">
-      <div class="col-md-6" *ngIf="!vakajarjestajaLevel">
+    <div class="full-width-row margin-top" *ngIf="!formGroup.value.isOrganisaatioLevel">
+      <div class="col-md-6" *ngIf="!formGroup.value.isOrganisaatioLevel">
         <label for="toimipaikkaInput"
                class="oph-bold">{{ i18n.excel_new_toimipaikka | translate }}</label>
         <app-varda-autocomplete-selector #toimipaikkaSelector
                                          [options]="toimipaikkaOptions"
                                          id="toimipaikkaInput"
-                                         name="toimipaikkaInput"
                                          [optionFormat]="{format: '{0}', properties:['nimi']}"
                                          [nullValue]="null"
                                          [placeholder]="i18n.excel_new_toimipaikka_placeholder | translate"
                                          [nullOptionLabel]="i18n.excel_new_toimipaikka_placeholder | translate"
                                          [isNullOption]="false"
                                          [invalidInputLabel]="i18n.excel_new_toimipaikka_invalid | translate"
-                                         [(ngModel)]="selectedToimipaikka">
+                                         formControlName="toimipaikka">
         </app-varda-autocomplete-selector>
       </div>
     </div>
   </ng-container>
+  <div class="full-width-row margin-top"
+       *ngIf="organisaatioSelectorReports.includes(newReport.report_type) && isOPHUser">
+    <div class="col-md-auto varda-theme">
+      <mat-checkbox name="isOrganisaatioAllCheckbox"
+                    class="varda-checkbox"
+                    formControlName="isAllOrganisaatio"
+                    labelPosition="after">
+        {{i18n.excel_new_all_organisaatio | translate}}
+      </mat-checkbox>
+    </div>
+  </div>
   <app-varda-error-field [errors]="errors"></app-varda-error-field>
   <div class="col-md-auto margin-top-large">
     <button class="varda-button varda-button-neutral varda-icon-button"

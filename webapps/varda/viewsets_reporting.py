@@ -9,7 +9,6 @@ from django.contrib.postgres.aggregates import ArrayAgg
 from django.db import connection, transaction
 from django.db.models import Case, Count, DateField, F, FloatField, IntegerField, Max, Q, Subquery, Sum, Value, When
 from django.db.models.functions import Cast
-from django.forms.models import model_to_dict
 from django.http import Http404, HttpResponse
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
@@ -30,17 +29,17 @@ from varda.enums.error_messages import ErrorMessages
 from varda.enums.kayttajatyyppi import Kayttajatyyppi
 from varda.enums.koodistot import Koodistot
 from varda.enums.supported_language import SupportedLanguage
-from varda.excel_export import create_excel_report_task, ExcelReportType, generate_filename, get_excel_local_file_path
+from varda.excel_export import create_excel_report_task, ExcelReportType, get_excel_local_file_path
 from varda.enums.reporting import ReportStatus
 from varda.filters import (CustomParameter, CustomParametersFilterBackend, ExcelReportFilter, RequestSummaryFilter,
                            TiedonsiirtoFilter, TransferOutageReportFilter)
 from varda.misc import encrypt_string
 from varda.misc_queries import get_related_object_changed_id_qs
-from varda.misc_viewsets import parse_query_parameter, ViewSetValidator
+from varda.misc_viewsets import ViewSetValidator
 from varda.models import (KieliPainotus, Lapsi, Maksutieto, Organisaatio, Palvelussuhde, PaosOikeus, PaosToiminta,
                           ToiminnallinenPainotus, Toimipaikka, Tyontekija, Tyoskentelypaikka, Varhaiskasvatuspaatos,
-                          Varhaiskasvatussuhde, YearlyReportSummary, Z10_KelaVarhaiskasvatussuhde, Z2_Koodisto,
-                          Z4_CasKayttoOikeudet, Z6_LastRequest, Z6_RequestLog, Z6_RequestSummary, Z8_ExcelReport)
+                          Varhaiskasvatussuhde, Z10_KelaVarhaiskasvatussuhde, Z2_Koodisto, Z4_CasKayttoOikeudet,
+                          Z6_LastRequest, Z6_RequestLog, Z6_RequestSummary, Z8_ExcelReport)
 from varda.pagination import (ChangeablePageSizePagination, ChangeableReportingPageSizePagination, DateCursorPagination,
                               DateReverseCursorPagination, IdCursorPagination, IdReverseCursorPagination,
                               TkCursorPagination)
@@ -57,9 +56,7 @@ from varda.serializers_reporting import (DuplicateLapsiSerializer, ErrorReportLa
                                          RequestSummarySerializer, TiedonsiirtoSerializer,
                                          TiedonsiirtotilastoSerializer, TiedonsiirtoYhteenvetoSerializer,
                                          TkHenkilostotiedotSerializer, TkOrganisaatiotSerializer,
-                                         TkVakatiedotSerializer, TransferOutageReportSerializer,
-                                         YearlyReportingDataSummarySerializer)
-from varda.tasks import create_yearly_reporting_summary
+                                         TkVakatiedotSerializer, TransferOutageReportSerializer)
 from varda.validators import validate_kela_api_datetimefield
 
 
@@ -956,10 +953,10 @@ class ExcelReportViewSet(GenericViewSet, ListModelMixin, RetrieveModelMixin, Cre
     permission_classes = (RaportitPermissions,)
     pagination_class = ChangeablePageSizePagination
 
-    def _validate_toimipaikka_belongs_to_vakajarjestaja(self, vakajarjestaja, toimipaikka, accept_paos=False):
-        paos_qs = PaosToiminta.objects.filter(Q(oma_organisaatio=vakajarjestaja) & Q(paos_toimipaikka=toimipaikka))
-        if ((not toimipaikka.vakajarjestaja == vakajarjestaja and not accept_paos) or
-                (not toimipaikka.vakajarjestaja == vakajarjestaja and not paos_qs.exists())):
+    def _validate_toimipaikka_belongs_to_vakajarjestaja(self, organisaatio, toimipaikka, accept_paos=False):
+        paos_qs = PaosToiminta.objects.filter(Q(oma_organisaatio=organisaatio) & Q(paos_toimipaikka=toimipaikka))
+        if ((not toimipaikka.vakajarjestaja == organisaatio and not accept_paos) or
+                (not toimipaikka.vakajarjestaja == organisaatio and not paos_qs.exists())):
             # Toimipaikka should be one of vakajarjestaja, or PAOS-toimipaikka of vakajarjestaja
             raise ValidationError({'toimipaikka': [ErrorMessages.ER001.value]})
 
@@ -979,24 +976,21 @@ class ExcelReportViewSet(GenericViewSet, ListModelMixin, RetrieveModelMixin, Cre
         user = self.request.user
         data = serializer.validated_data
 
-        vakajarjestaja = data.get('vakajarjestaja')
+        if not (organisaatio := data.get('organisaatio')) and not user.is_superuser and not is_oph_staff(user):
+            # Organisaatio is required for non admin/OPH users
+            raise ValidationError({'organisaatio': [ErrorMessages.GE001.value]})
         if toimipaikka := data.get('toimipaikka'):
             accept_paos_list = [ExcelReportType.VAKATIEDOT_VOIMASSA.value, ExcelReportType.TOIMIPAIKAT_VOIMASSA.value]
-            self._validate_toimipaikka_belongs_to_vakajarjestaja(vakajarjestaja, toimipaikka,
+            self._validate_toimipaikka_belongs_to_vakajarjestaja(organisaatio, toimipaikka,
                                                                  accept_paos=data.get('report_type') in accept_paos_list)
 
         language = (SupportedLanguage.SV.value if data.get('language').upper() == SupportedLanguage.SV.value
                     else SupportedLanguage.FI.value)
 
         with transaction.atomic():
-            filename = generate_filename(data.get('report_type'), language)
-            while Z8_ExcelReport.objects.filter(filename=filename).exists():
-                # Ensure filename is unique
-                filename = generate_filename(data.get('report_type'), language)
-
             password = encrypt_string(User.objects.make_random_password(length=16))
             excel_report = serializer.save(user=user, password=password, status=ReportStatus.PENDING.value,
-                                           filename=filename, language=language)
+                                           language=language)
             transaction.on_commit(lambda: create_excel_report_task.delay(excel_report.id))
 
     @action(methods=['get'], detail=True, url_path='download', url_name='download')
@@ -1236,74 +1230,3 @@ class TkHenkilostotiedot(TkBaseViewSet):
         return (Tyontekija.history
                 .filter(id__in=Subquery(id_qs), history_date__lte=self.datetime_lte)
                 .distinct('id').order_by('id', '-history_date'))
-
-
-class YearlyReportingDataSummaryViewSet(GenericViewSet, CreateModelMixin):
-    filter_backends = (DjangoFilterBackend,)
-    permission_classes = (RaportitPermissions,)
-    queryset = YearlyReportSummary.objects.none()
-    serializer_class = YearlyReportingDataSummarySerializer
-
-    def check_user_permissions(self, user, vakajarjestaja_obj, full_query):
-        if not user.is_superuser and not is_oph_staff(user):
-            if full_query:
-                raise ValidationError({'vakajarjestaja': [ErrorMessages.PE003.value]})
-            if (vakajarjestaja_obj and
-                    not user_permission_groups_in_organization(user, vakajarjestaja_obj.organisaatio_oid,
-                                                               [Z4_CasKayttoOikeudet.RAPORTTIEN_KATSELIJA]).exists()):
-                raise ValidationError({'vakajarjestaja': [ErrorMessages.PE003.value]})
-
-    def create(self, request, *args, **kwargs):
-        data = self.request.data
-        # Validate input data, raise exceptions
-        serializer = self.get_serializer(data=data)
-        serializer.is_valid(raise_exception=True)
-
-        vakajarjestaja_obj = None
-        vakajarjestaja_arg = data.get('vakajarjestaja_input')
-        full_query = True if (vakajarjestaja_arg and vakajarjestaja_arg.lower() == 'all') else False
-        if not full_query:
-            vakajarjestaja_obj = (Organisaatio.objects
-                                  .filter(Q(id=vakajarjestaja_arg) | Q(organisaatio_oid=vakajarjestaja_arg))
-                                  .first())
-
-        if not vakajarjestaja_obj and not full_query:
-            raise ValidationError({'vakajarjestaja': [ErrorMessages.MI015.value]})
-
-        self.check_user_permissions(self.request.user, vakajarjestaja_obj, full_query)
-
-        last_year = datetime.date.today().year - 1
-        tilastovuosi_arg = data.get('tilastovuosi', last_year)
-        try:
-            tilasto_pvm = datetime.date(int(tilastovuosi_arg), 12, 31)
-        except ValueError:
-            raise ValidationError({'tilastovuosi': [ErrorMessages.GE010.value]})
-
-        poiminta_pvm = parse_query_parameter(data, 'poiminta_pvm', datetime.datetime)
-
-        summary_obj, created = YearlyReportSummary.objects.get_or_create(vakajarjestaja=vakajarjestaja_obj,
-                                                                         tilasto_pvm=tilasto_pvm)
-
-        timediff = None
-        if not created and poiminta_pvm is not None:
-            # If report already exists, get difference between this and previous poiminta_pvm
-            timediff = abs(summary_obj.poiminta_pvm - poiminta_pvm)
-
-        if created or (timediff is not None and timediff > datetime.timedelta(minutes=30)):
-            # Generate new report if it is created for the first time or if the difference between this and previous
-            # poiminta_pvm is more than 30 minutes
-            poiminta_pvm = poiminta_pvm or datetime.datetime.now(datetime.timezone.utc)
-            clear_fields = [field for field in model_to_dict(summary_obj) if field not in
-                            ['id', 'vakajarjestaja', 'tilasto_pvm', 'status', 'poiminta_pvm',
-                             'muutos_pvm', 'luonti_pvm']]
-            for field in clear_fields:
-                setattr(summary_obj, field, None)
-            summary_obj.status = ReportStatus.PENDING.value
-            summary_obj.poiminta_pvm = poiminta_pvm
-            summary_obj.save()
-            vakajarjestaja_id = getattr(vakajarjestaja_obj, 'id', None)
-            create_yearly_reporting_summary.delay(tilasto_pvm, poiminta_pvm, vakajarjestaja_id)
-
-        serializer = self.get_serializer(model_to_dict(summary_obj))
-        headers = self.get_success_headers(serializer.data)
-        return Response(serializer.data, headers=headers)

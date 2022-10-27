@@ -2,9 +2,9 @@ import {
   Component,
   EventEmitter,
   forwardRef,
-  Input,
+  Input, OnChanges,
   OnInit,
-  Output,
+  Output, SimpleChanges,
   ViewChild,
   ViewEncapsulation
 } from '@angular/core';
@@ -16,7 +16,7 @@ import {
   AbstractControl,
   ControlValueAccessor,
   NG_VALIDATORS,
-  NG_VALUE_ACCESSOR, ValidationErrors,
+  NG_VALUE_ACCESSOR, NgModel, ValidationErrors,
   Validator
 } from '@angular/forms';
 import { TranslateService } from '@ngx-translate/core';
@@ -47,7 +47,7 @@ export interface VardaDatepickerEvent {
   ],
   encapsulation: ViewEncapsulation.None
 })
-export class VardaDatepickerComponent implements OnInit, ControlValueAccessor, Validator {
+export class VardaDatepickerComponent implements OnInit, OnChanges, ControlValueAccessor, Validator {
   @Input() placeholder: string;
   @Input() required = false;
   @Input() readonly = false;
@@ -69,7 +69,7 @@ export class VardaDatepickerComponent implements OnInit, ControlValueAccessor, V
   @Output() readonly focusChange: EventEmitter<boolean> = new EventEmitter<boolean>();
   // Emit true if calendar is opened, false if closed
   @Output() readonly calendarChange: EventEmitter<boolean> = new EventEmitter<boolean>();
-  @ViewChild('matPicker') pickerControl!: AbstractControl;
+  @ViewChild('matPicker', {read: NgModel}) pickerControl: NgModel;
 
   VardaDatepickerHeaderComponent = VardaDatepickerHeaderComponent;
   disabled = false;
@@ -91,6 +91,12 @@ export class VardaDatepickerComponent implements OnInit, ControlValueAccessor, V
       this.dateAdapter.setLocale('sv-SV');
     } else {
       this.dateAdapter.setLocale('fi-FI');
+    }
+  }
+
+  ngOnChanges(changes: SimpleChanges) {
+    if (changes.isTouched) {
+      setTimeout(() => this.pickerControl?.control.markAsTouched());
     }
   }
 

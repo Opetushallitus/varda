@@ -13,6 +13,7 @@
 
 .excel-table .download-cell {
   width: 1px;
+  white-space: nowrap;
 }
 
 .excel-table .mat-cell, .excel-table .mat-header-cell {
