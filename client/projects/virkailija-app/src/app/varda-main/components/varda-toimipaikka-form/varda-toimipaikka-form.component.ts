@@ -305,7 +305,7 @@ export class VardaToimipaikkaFormComponent extends VardaFormAccordionAbstractCom
 
   enableForm() {
     super.enableForm();
-    this.checkPostiosoiteToggle();
+    setTimeout(() => this.checkPostiosoiteToggle());
   }
 
   ngOnDestroy() {

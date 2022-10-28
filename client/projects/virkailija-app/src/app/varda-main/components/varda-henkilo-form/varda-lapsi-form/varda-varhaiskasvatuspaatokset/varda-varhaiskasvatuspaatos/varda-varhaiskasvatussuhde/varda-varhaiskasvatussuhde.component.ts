@@ -174,9 +174,11 @@ export class VardaVarhaiskasvatussuhdeComponent extends VardaFormAccordionAbstra
   enableForm() {
     super.enableForm();
 
-    if (this.currentObject) {
-      this.formGroup.controls.toimipaikka_oid.disable();
-    }
+    setTimeout(() => {
+      if (this.currentObject) {
+        this.formGroup.controls.toimipaikka_oid.disable();
+      }
+    });
   }
 
   initToimipaikat() {
