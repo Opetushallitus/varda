@@ -1,20 +1,15 @@
 package fi.csc.varda
 
-import io.ktor.application.*
-import io.ktor.features.*
 import io.ktor.http.*
 import io.ktor.http.content.*
-import io.ktor.request.*
-import io.ktor.response.*
-import io.ktor.routing.*
-import org.slf4j.event.Level
+import io.ktor.server.application.*
+import io.ktor.server.request.*
+import io.ktor.server.response.*
+import io.ktor.server.routing.*
 import java.io.*
 
 fun Application.configureRouting() {
     routing {
-        install(CallLogging) {
-            level = Level.INFO
-        }
         get("/") {
             call.respondText("Hello, world!")
         }

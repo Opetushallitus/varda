@@ -1,6 +1,6 @@
 plugins {
-    id("org.jetbrains.kotlin.jvm") version "1.6.10"
-    id("com.adarshr.test-logger") version "3.1.0"
+    id("org.jetbrains.kotlin.jvm") version "1.7.20"
+    id("com.adarshr.test-logger") version "3.2.0"
     application
 }
 
@@ -12,18 +12,19 @@ dependencies {
     implementation(platform("org.jetbrains.kotlin:kotlin-bom"))
     implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
 
-    implementation("com.google.guava:guava:31.0.1-jre")
+    implementation("com.google.guava:guava:31.1-jre")
 
-    implementation("io.ktor:ktor-server-core:1.6.7")
-    implementation("io.ktor:ktor-server-netty:1.6.7")
-    implementation("ch.qos.logback:logback-classic:1.2.9")
+    implementation("io.ktor:ktor-server-call-logging:2.1.2")
+    implementation("io.ktor:ktor-server-core:2.1.2")
+    implementation("io.ktor:ktor-server-netty:2.1.2")
+    implementation("ch.qos.logback:logback-classic:1.4.4")
 
-    implementation("org.apache.poi:poi:5.1.0")
-    implementation("org.apache.poi:poi-ooxml:5.1.0")
+    implementation("org.apache.poi:poi:5.2.3")
+    implementation("org.apache.poi:poi-ooxml:5.2.3")
 
-    testImplementation("io.ktor:ktor-server-test-host:1.6.7")
-    testImplementation("org.jetbrains.kotlin:kotlin-test:1.6.7")
-    testImplementation("org.jetbrains.kotlin:kotlin-test-junit:1.6.7")
+    testImplementation("io.ktor:ktor-server-test-host:2.1.2")
+    testImplementation("org.jetbrains.kotlin:kotlin-test:1.7.20")
+    testImplementation("org.jetbrains.kotlin:kotlin-test-junit:1.7.20")
 }
 
 application {

@@ -6,7 +6,6 @@ import uuid
 
 from django.db import transaction
 from django.db.models import F, DurationField, ExpressionWrapper
-from django.utils import timezone
 from rest_framework.exceptions import ValidationError as ValidationErrorRest
 
 from varda.clients.organisaatio_client import (get_organisaatiopalvelu_info, get_parent_oid,
@@ -785,7 +784,7 @@ def update_all_organisaatio_service_organisations():
     chunk_size = 100
     # Playing it safe with new update timestamp (could be the time last request was made). Expecting
     # organisaatio-service to use same timezone as varda.
-    aikaleima_now = datetime.datetime.now(tz=timezone.utc)
+    aikaleima_now = datetime.datetime.now(tz=datetime.timezone.utc)
     aikaleima, created = Aikaleima.objects.get_or_create(avain=AikaleimaAvain.ORGANISAATIOS_LAST_UPDATE.name)
     changed_oids = get_changed_since(aikaleima.aikaleima)
     # List might be long so we split it to avoid big 'in' queries.

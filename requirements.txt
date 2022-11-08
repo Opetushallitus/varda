@@ -3,10 +3,10 @@ boto3==1.24.*  # Apache 2.0-license
 celery==5.2.*  # BSD-license
 coreapi==2.3.*  # BSD-license
 coreschema==0.0.*  # BSD-license
-cryptography==37.0.*  # BSD-license
-Django==4.0.*  # BSD-license
+cryptography==38.0.*  # BSD-license
+Django==4.1.*  # BSD-license
 django-cas-ng==4.3.*  # BSD-license
-django-celery-beat==2.3.*  # BSD-license
+django-celery-beat==2.4.*  # BSD-license
 django-celery-results==2.4.*  # BSD-license
 django-cors-headers==3.13.*  # MIT-license
 django-crispy-forms==1.14.*  # MIT-license
@@ -19,12 +19,12 @@ django-ratelimit==3.0.*  # Apache 2.0-license
 django-rest-knox==4.2.*  # MIT-license
 django-simple-history==3.1.*  # BSD-license
 django-spaghetti-and-meatballs==0.4.*  # MIT-license
-djangorestframework==3.13.*  # BSD-license
+djangorestframework==3.14.*  # BSD-license
 djangorestframework-guardian==0.3.*  # BSD-license
 drf-nested-routers==0.93.*  # Apache 2.0-license
-drf-yasg==1.20.*  # BSD 3-Clause License
+drf-yasg==1.21.*  # BSD 3-Clause License
 flake8==5.0.*  # MIT-license
-flower==1.1.*  # BSD-license
+flower==1.2.*  # BSD-license
 gunicorn==20.1.*  # MIT-license
 itypes==1.2.*  # BSD-license
 Jinja2==3.1.*  # BSD-license
@@ -42,5 +42,5 @@ PyYAML==6.0  # MIT-license
 requests==2.28.*  # Apache 2.0-license
 simplejson==3.17.*  # MIT-license
 uritemplate==4.1.*  # BSD 3-Clause License or Apache License, Version 2.0
-responses==0.21.*  # Mocks. Apache 2.0-license
+responses==0.22.*  # Mocks. Apache 2.0-license
 XlsxWriter==3.0.*  # BSD-2-Clause License

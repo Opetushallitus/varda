@@ -24,7 +24,7 @@ class CustomLogoutView(views.LogoutView):
     @method_decorator(never_cache)
     def dispatch(self, request, *args, **kwargs):
         auth_logout(request)
-        next_page = self.get_next_page()
+        next_page = self.get_success_url()
         if next_page:
             # Redirect to this page until the session has been cleared.
             # return HttpResponseRedirect(next_page)  \\// Original line
