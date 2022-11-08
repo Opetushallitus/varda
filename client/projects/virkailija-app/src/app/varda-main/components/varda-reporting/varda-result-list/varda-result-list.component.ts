@@ -39,9 +39,6 @@ export class VardaResultListComponent implements OnInit, OnChanges {
     if (changes.searchResults && this.selectedId !== null) {
       this.selectResult(null);
     }
-    if (this.searchResults && this.searchResults.length > 0) {
-      this.selectResult(this.searchResults[0].id);
-    }
 
     if (changes.pageSize && this.pageSize) {
       this.paginatorParams.pageSize = this.pageSize;

@@ -227,10 +227,6 @@ export class VardaSearchLapsiComponent extends VardaSearchAbstractComponent impl
     });
   }
 
-  autofillOnChange() {
-    this.search();
-  }
-
   afterUserAccessInit() {
     if (!this.userAccess.lapsitiedot.katselija && this.userAccess.huoltajatiedot.katselija) {
       this.filterParams.rajaus = this.rajaus.MAKSUTIEDOT;
