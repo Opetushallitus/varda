@@ -384,3 +384,34 @@ class TestOppijanumerorekisteriLogic(TestCase):
         oppijanumerorekisteri.fetch_and_update_modified_henkilot()
         batch_error_after_retry_count = BatchError.objects.filter(type=BatchErrorType.HENKILOTIETO_UPDATE.name, henkilo=henkilo).count()
         self.assertEqual(batch_error_end_count, batch_error_after_retry_count)
+
+    @responses.activate
+    def test_batcherror_henkilo_duplicate(self):
+        henkilo_oid = '1.2.246.562.24.47279942650'
+        responses.add(responses.GET,
+                      re.compile(f'https://virkailija.testiopintopolku.fi/oppijanumerorekisteri-service/s2s/changedSince/{self.date_time_regex}'),
+                      json=[henkilo_oid],
+                      status=status.HTTP_200_OK)
+
+        duplicate_oid = '1.2.246.562.24.58672764848'
+        henkilo_duplicate = Henkilo.objects.get(henkilo_oid=duplicate_oid)
+        responses.add(responses.GET,
+                      f'https://virkailija.testiopintopolku.fi/oppijanumerorekisteri-service/henkilo/{henkilo_oid}/master',
+                      json={'etunimet': 'Arpa', 'sukunimi': 'Kuutio', 'kutsumanimi': 'Arpa',
+                            'oidHenkilo': duplicate_oid, 'hetu': '010114A0013'},
+                      status=status.HTTP_200_OK)
+        oppijanumerorekisteri.fetch_and_update_modified_henkilot()
+        batch_error_qs = BatchError.objects.filter(henkilo__henkilo_oid=henkilo_oid)
+        self.assertEqual(batch_error_qs.first().henkilo_duplicate, henkilo_duplicate)
+
+        batch_error_qs.delete()
+
+        duplicate_hetu = '291180-7071'
+        henkilo_duplicate = Henkilo.objects.get(henkilo_oid='1.2.246.562.24.7777777777755')
+        responses.add(responses.GET,
+                      f'https://virkailija.testiopintopolku.fi/oppijanumerorekisteri-service/henkilo/{henkilo_oid}/master',
+                      json={'etunimet': 'Arpa', 'sukunimi': 'Kuutio', 'kutsumanimi': 'Arpa',
+                            'oidHenkilo': henkilo_oid, 'hetu': duplicate_hetu},
+                      status=status.HTTP_200_OK)
+        oppijanumerorekisteri.fetch_and_update_modified_henkilot()
+        self.assertEqual(batch_error_qs.first().henkilo_duplicate, henkilo_duplicate)

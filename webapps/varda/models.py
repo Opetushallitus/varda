@@ -247,9 +247,13 @@ class Henkilo(HistoryAbstractModel):
             super().save(*args, **kwargs)
         except IntegrityError as integrity_error:
             if 'henkilo_henkilotunnus_unique_hash_unique_constraint' in str(integrity_error):
-                raise ValidationError({'henkilotunnus': [ErrorMessages.HE014.value]})
+                validation_error = ValidationError({'henkilotunnus': [ErrorMessages.HE014.value]})
+                validation_error.duplicate_identifier = self.henkilotunnus_unique_hash
+                raise validation_error
             elif 'henkilo_oid_unique_constraint' in str(integrity_error):
-                raise ValidationError({'henkilo_oid': [ErrorMessages.HE015.value]})
+                validation_error = ValidationError({'henkilo_oid': [ErrorMessages.HE015.value]})
+                validation_error.duplicate_identifier = self.henkilo_oid
+                raise validation_error
             raise integrity_error
 
     def remove_address_information(self):
@@ -659,6 +663,7 @@ class BatchError(AbstractModel):
     type = models.TextField(choices=BatchErrorType.choices(),
                             null=False)
     henkilo = models.ForeignKey(Henkilo, related_name='batcherrors', on_delete=models.PROTECT)
+    henkilo_duplicate = models.ForeignKey(Henkilo, null=True, related_name='batcherrors_duplicate', on_delete=models.PROTECT)
     retry_time = models.DateTimeField(default=django.utils.timezone.now)
     retry_count = models.IntegerField(default=0)
     error_message = models.TextField()

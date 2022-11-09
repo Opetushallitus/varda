@@ -3,6 +3,7 @@ import logging
 
 from django.conf import settings
 from django.db import IntegrityError, transaction
+from django.db.models import Q
 from pytz import timezone
 from requests import RequestException
 from rest_framework.exceptions import NotFound, APIException
@@ -36,12 +37,12 @@ def batch_error_decorator(batch_error_type):
             except Exception as e:
                 logger.exception('BatchError caught exception')
                 if not henkilo:
-                    logger.error('Could not create batch error. Missing henkilo.')
-                elif (batch_error_type == BatchErrorType.LAPSI_HUOLTAJUUSSUHDE_UPDATE or
-                      batch_error_type == BatchErrorType.HENKILOTIETO_UPDATE):
+                    logger.error('Could not create BatchError. Missing henkilo.')
+                elif (batch_error_type in (BatchErrorType.LAPSI_HUOLTAJUUSSUHDE_UPDATE,
+                                           BatchErrorType.HENKILOTIETO_UPDATE)):
                     _create_or_update_henkilo_obj_batch_error(henkilo, e, batch_error_type)
                 else:
-                    logger.error('Could not create batcherror. Unkown batcherror type {}'.format(batch_error_type))
+                    logger.error('Could not create BatchError. Unkown batcherror type {}'.format(batch_error_type))
         return wrap_decorator
     return decorator
 
@@ -258,6 +259,11 @@ def _create_or_update_henkilo_obj_batch_error(henkilo_obj, error, batch_error_ty
     batch_error, is_new = BatchError.objects.get_or_create(henkilo=henkilo_obj, type=batch_error_type.name)
     batch_error.update_next_retry()
     batch_error.error_message = str(error)
+
+    if duplicate_identifier := getattr(error, 'duplicate_identifier', None):
+        batch_error.henkilo_duplicate = Henkilo.objects.filter(Q(henkilotunnus_unique_hash=duplicate_identifier) |
+                                                               Q(henkilo_oid=duplicate_identifier)).first()
+
     batch_error.save()
 
 
