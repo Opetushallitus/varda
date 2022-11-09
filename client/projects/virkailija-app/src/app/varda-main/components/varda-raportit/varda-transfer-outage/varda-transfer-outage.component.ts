@@ -116,7 +116,7 @@ export class VardaTransferOutageComponent implements OnInit, OnDestroy {
         break;
       case 'palvelukayttaja':
       default:
-        this.displayedColumns = ['username', 'last_successful_max', 'last_unsuccessful_max'];
+        this.displayedColumns = ['username', 'lahdejarjestelma', 'last_successful_max', 'last_unsuccessful_max'];
     }
 
     this.raportitService.getTransferOutage(parsedFilter).subscribe({

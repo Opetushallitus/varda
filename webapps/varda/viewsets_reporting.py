@@ -1075,21 +1075,21 @@ class TransferOutageReportViewSet(GenericViewSet, ListModelMixin):
         additional_filters = Q()
         match self.request.query_params.get('group_by', None):
             case 'palvelukayttaja':
-                group_by_value = 'user'
-                last_values = ('user__id', 'user__username',)
+                group_by_values = ['user', 'lahdejarjestelma']
+                last_values = ('user__id', 'user__username', 'lahdejarjestelma',)
                 additional_filters = Q(user__additional_cas_user_fields__kayttajatyyppi=Kayttajatyyppi.PALVELU.value)
             case 'organisaatio':
-                group_by_value = 'vakajarjestaja'
+                group_by_values = ['vakajarjestaja']
                 last_values = ('vakajarjestaja__id', 'vakajarjestaja__nimi', 'vakajarjestaja__organisaatio_oid',)
             case 'lahdejarjestelma':
-                group_by_value = 'lahdejarjestelma'
+                group_by_values = ['lahdejarjestelma']
                 last_values = ('lahdejarjestelma',)
             case _:
                 raise ValidationError({'group_by': [ErrorMessages.GE001.value]})
 
         return (Z6_LastRequest.objects
-                .values(group_by_value)
-                .filter(additional_filters & Q(**{f'{group_by_value}__isnull': False}))
+                .values(*group_by_values)
+                .filter(additional_filters & Q(**{f'{group_by_values[0]}__isnull': False}))
                 .annotate(last_successful_max=Max('last_successful'),
                           last_unsuccessful_max=Max('last_unsuccessful'))
                 .filter(request_filters)
