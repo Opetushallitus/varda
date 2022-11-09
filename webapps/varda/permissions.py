@@ -3,7 +3,7 @@ from functools import wraps
 
 from celery import shared_task
 from django.conf import settings
-from django.contrib.auth.models import AnonymousUser, Group, Permission
+from django.contrib.auth.models import AnonymousUser, Group
 from django.contrib.contenttypes.models import ContentType
 from django.db import transaction, IntegrityError
 from django.db.models import IntegerField, Q, Model, QuerySet
@@ -374,27 +374,6 @@ def user_has_huoltajatieto_tallennus_permissions_to_correct_organization(user, v
         if user.groups.filter(name=group_toimipaikka_huoltaja_tallentaja).exists():
             return True
     return False
-
-
-def get_ids_user_has_permissions_by_type(user, model, permission_type='view'):
-    model_name = model.get_name()
-    content_type = ContentType.objects.get(model=model_name)
-
-    permission_codename = f'{permission_type}_{model_name}'
-    perm = Permission.objects.get(codename=permission_codename.split('.')[-1])
-    user_permission_objects = (UserObjectPermission.objects
-                               .filter(user=user, permission=perm, content_type=content_type)
-                               .annotate(object_pk_as_int=Cast('object_pk', IntegerField()))
-                               .values_list('object_pk_as_int', flat=True))
-    group_permission_objects = (GroupObjectPermission.objects
-                                .filter(group__user=user, permission=perm, content_type=content_type)
-                                .annotate(object_pk_as_int=Cast('object_pk', IntegerField()))
-                                .values_list('object_pk_as_int', flat=True))
-
-    all_object_ids_user_has_permissions = (user_permission_objects.union(group_permission_objects)
-                                           .order_by('object_pk_as_int'))
-
-    return list(all_object_ids_user_has_permissions)
 
 
 def object_ids_organization_has_permissions_to(organisaatio_oid, model):

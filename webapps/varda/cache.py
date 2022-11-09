@@ -2,12 +2,13 @@ import datetime
 import logging
 
 from django.conf import settings
-from django.contrib.auth.models import AnonymousUser
 from django.core.cache import cache
 from functools import wraps
 from hashlib import sha1
+
+from guardian.shortcuts import get_objects_for_user
+
 from varda.misc import hash_string
-from varda.permissions import get_ids_user_has_permissions_by_type
 
 
 logger = logging.getLogger(__name__)
@@ -55,16 +56,15 @@ def get_object_ids_user_has_permissions(user, model, cached_time=settings.DEFAUL
     :param cached_time: Time IDs are stored in cache
     :return: List of IDs
     """
-    if isinstance(user, AnonymousUser):
-        # Swagger uses AnonymousUser so in that case return an empty tuple
-        return ()
-
     model_name = model.get_name()
 
     cache_key_objs_user_has_permissions = create_cache_key(user.id, model_name + '_obj_permissions')
     object_ids_user_has_permissions = cache.get(cache_key_objs_user_has_permissions)
     if object_ids_user_has_permissions is None:
-        object_ids_user_has_permissions = get_ids_user_has_permissions_by_type(user, model)
+        object_ids_user_has_permissions = list(
+            get_objects_for_user(user, f'view_{model_name}', klass=model, use_groups=True, any_perm=False,
+                                 with_superuser=True, accept_global_perms=False).values_list('id', flat=True)
+        )
         cache.set(cache_key_objs_user_has_permissions, object_ids_user_has_permissions, cached_time)
 
         cache_key_list_of_users_for_this_model = create_cache_key(0, model_name + '_cache_user_list')
