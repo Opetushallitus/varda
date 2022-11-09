@@ -333,17 +333,6 @@ def get_toimipaikka_json(toimipaikka_validated_data, vakajarjestaja_id):
     }
     kayntiosoite_sv = {**kayntiosoite_fi, 'kieli': 'kieli_sv#1'}
     postiosoite_sv = {**postiosoite_fi, 'kieli': 'kieli_sv#1'}
-    kayntiosoite_en = {
-        'osoiteTyyppi': 'ulkomainen_kaynti',
-        'osoite': toimipaikka_validated_data['kayntiosoite'] + ', ' + toimipaikka_validated_data[
-            'kayntiosoite_postinumero'] + ' ' + toimipaikka_validated_data['kayntiosoite_postitoimipaikka'],
-        'kieli': 'kieli_en#1'
-    }
-    postiosoite_en = {
-        'osoiteTyyppi': 'ulkomainen_posti',
-        'osoite': toimipaikka_validated_data['postiosoite'] + ', ' + toimipaikka_validated_data['postinumero'] + ' ' + toimipaikka_validated_data['postitoimipaikka'],
-        'kieli': 'kieli_en#1'
-    }
     email_fi = {
         'email': toimipaikka_validated_data['sahkopostiosoite'],
         'kieli': 'kieli_fi#1'
@@ -395,8 +384,6 @@ def get_toimipaikka_json(toimipaikka_validated_data, vakajarjestaja_id):
             puhelin_sv,
             {'www': None, 'kieli': 'kieli_sv#1'},
             {'tyyppi': 'puhelin', 'kieli': 'kieli_sv#1'},
-            kayntiosoite_en,
-            postiosoite_en,
             email_en,
             puhelin_en,
             {'www': None, 'kieli': 'kieli_en#1'},
@@ -410,22 +397,16 @@ def get_toimipaikka_json(toimipaikka_validated_data, vakajarjestaja_id):
             'yhteystiedot': [
                 {'osoiteTyyppi': 'kaynti', 'kieli': 'kieli_fi#1'},
                 {'osoiteTyyppi': 'posti', 'kieli': 'kieli_fi#1'},
-                {'osoiteTyyppi': 'ulkomainen_kaynti', 'kieli': 'kieli_fi#1'},
-                {'osoiteTyyppi': 'ulkomainen_posti', 'kieli': 'kieli_fi#1'},
                 {'email': None, 'kieli': 'kieli_fi#1'},
                 {'www': None, 'kieli': 'kieli_fi#1'},
                 {'tyyppi': 'puhelin', 'kieli': 'kieli_fi#1'},
                 {'osoiteTyyppi': 'kaynti', 'kieli': 'kieli_sv#1'},
                 {'osoiteTyyppi': 'posti', 'kieli': 'kieli_sv#1'},
-                {'osoiteTyyppi': 'ulkomainen_kaynti', 'kieli': 'kieli_sv#1'},
-                {'osoiteTyyppi': 'ulkomainen_posti', 'kieli': 'kieli_sv#1'},
                 {'email': None, 'kieli': 'kieli_sv#1'},
                 {'www': None, 'kieli': 'kieli_sv#1'},
                 {'tyyppi': 'puhelin', 'kieli': 'kieli_sv#1'},
                 {'osoiteTyyppi': 'kaynti', 'kieli': 'kieli_en#1'},
                 {'osoiteTyyppi': 'posti', 'kieli': 'kieli_en#1'},
-                {'osoiteTyyppi': 'ulkomainen_kaynti', 'kieli': 'kieli_en#1'},
-                {'osoiteTyyppi': 'ulkomainen_posti', 'kieli': 'kieli_en#1'},
                 {'email': None, 'kieli': 'kieli_en#1'},
                 {'www': None, 'kieli': 'kieli_en#1'},
                 {'tyyppi': 'puhelin', 'kieli': 'kieli_en#1'}
@@ -572,17 +553,6 @@ def update_yhteystiedot(new_toimipaikka_json, toimipaikka_obj):
                        yhteystiedot,
                        lambda _yhteystieto: 'osoiteTyyppi' in _yhteystieto and 'posti' == _yhteystieto['osoiteTyyppi'],
                        ['kieli_fi#1', 'kieli_sv#1'])
-    ulkomainen_posti_template = {
-        'osoiteTyyppi': 'ulkomainen_posti',
-        'osoite': '{0}, {1} {2}'.format(toimipaikka_obj.postiosoite,
-                                        toimipaikka_obj.postinumero,
-                                        posti_template['postitoimipaikka'])
-    }
-    upsert_yhteystieto(ulkomainen_posti_template,
-                       yhteystiedot,
-                       lambda _yhteystieto: 'osoiteTyyppi' in _yhteystieto and 'ulkomainen_posti' == _yhteystieto[
-                           'osoiteTyyppi'],
-                       ['kieli_en#1'])
     # Käyntiosoite
     kaynti_template = {
         'osoite': toimipaikka_obj.kayntiosoite,
@@ -594,17 +564,6 @@ def update_yhteystiedot(new_toimipaikka_json, toimipaikka_obj):
                        yhteystiedot,
                        lambda _yhteystieto: 'osoiteTyyppi' in _yhteystieto and 'kaynti' == _yhteystieto['osoiteTyyppi'],
                        ['kieli_fi#1', 'kieli_sv#1'])
-    ulkomainen_posti_template = {
-        'osoiteTyyppi': 'ulkomainen_kaynti',
-        'osoite': '{0}, {1} {2}'.format(toimipaikka_obj.kayntiosoite,
-                                        toimipaikka_obj.kayntiosoite_postinumero,
-                                        kaynti_template['postitoimipaikka'])
-    }
-    upsert_yhteystieto(ulkomainen_posti_template,
-                       yhteystiedot,
-                       lambda _yhteystieto: 'osoiteTyyppi' in _yhteystieto and 'ulkomainen_kaynti' == _yhteystieto[
-                           'osoiteTyyppi'],
-                       ['kieli_en#1'])
     new_toimipaikka_json['yhteystiedot'] = yhteystiedot
 
 

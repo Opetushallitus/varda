@@ -183,12 +183,6 @@ class TestFetchAndSaveToimipaikkaData(TestCase):
             }
             ],
             'yhteystiedot': [{
-                'osoiteTyyppi': 'ulkomainen_posti',
-                'kieli': 'kieli_en#1',
-                'yhteystietoOid': '1.2.246.562.5.60611374459',
-                'id': '2190919',
-                'osoite': 'tyy'
-            }, {
                 'osoiteTyyppi': 'kaynti',
                 'kieli': 'kieli_fi#1',
                 'postinumeroUri': 'posti_00520',
