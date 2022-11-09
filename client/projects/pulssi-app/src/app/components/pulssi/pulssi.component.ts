@@ -39,6 +39,21 @@ export class PulssiComponent implements OnInit, OnDestroy {
     this.subscriptions.push(
       this.apiService.getPulssi(params).subscribe({
         next: data => {
+          data.toimipaikka_by_ak = Object.keys(data.toimipaikka_by_ak)
+            .sort((a, b) => {
+              // others key always comes last
+              if (a === 'others') {
+                return 1;
+              } else if (b === 'others') {
+                return -1;
+              }
+              return 0;
+            }).reduce((previousValue, currentValue) => {
+              // Rebuild toimipaikka_by_ak object
+              previousValue[currentValue] = data.toimipaikka_by_ak[currentValue];
+              return previousValue;
+            }, {});
+
           this.pulssiData = data;
           // Get data again in 10 minutes
           this.subscriptions.push(

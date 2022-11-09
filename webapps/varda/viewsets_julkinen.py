@@ -2,8 +2,9 @@ import datetime
 
 from django.conf import settings
 from django.contrib.auth.models import User
-from django.db.models import Avg, Count, Exists, F, OuterRef, Sum, Value, CharField, Q, Case, When, BooleanField
-from django.db.models.functions import Lower
+from django.db.models import (Avg, Count, DecimalField, Exists, F, Func, OuterRef, Sum, Value, CharField, Q, Case, When,
+                              BooleanField)
+from django.db.models.functions import Coalesce, Lower
 from django.utils import timezone
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import status
@@ -23,9 +24,9 @@ from varda.filters import CustomParametersFilterBackend, CustomParameter
 from varda.lokalisointipalvelu import get_localisation_data
 from varda.misc_queries import get_active_filter
 from varda.misc_viewsets import parse_query_parameter
-from varda.models import (Huoltaja, Lapsi, Maksutieto, Organisaatio, PidempiPoissaolo, TaydennyskoulutusTyontekija,
-                          TilapainenHenkilosto, Toimipaikka, Tyontekija, Tyoskentelypaikka, Varhaiskasvatuspaatos,
-                          Z2_Koodisto, Z2_Code)
+from varda.models import (Huoltaja, Lapsi, Maksutieto, Organisaatio, PidempiPoissaolo, Taydennyskoulutus,
+                          TaydennyskoulutusTyontekija, TilapainenHenkilosto, Toimipaikka, Tyontekija, Tyoskentelypaikka,
+                          Varhaiskasvatuspaatos, Z2_Koodisto, Z2_Code)
 from varda.serializers_julkinen import LocalisationSerializer, KoodistotSerializer, PulssiSerializer
 from webapps.api_throttles import PublicAnonThrottle
 
@@ -204,6 +205,25 @@ class PulssiViewSet(GenericViewSet, ListModelMixin):
                              .annotate(temp=Value(0)).values('temp')
                              .annotate(**kj_annotations).values(*kj_codes))[0]
 
+        # Toimipaikka count by asiointikieli_koodi
+        # PostgreSQL specific functionality (unnest)
+        toimipaikka_by_ak = {row['asiointikieli_lower']: row['count'] for row in
+                             Toimipaikka.objects
+                             .filter(active_filter)
+                             .annotate(asiointikieli_lower=Lower(Func(F('asiointikieli_koodi'), function='unnest')))
+                             .values('asiointikieli_lower')
+                             .annotate(count=Count('id'))
+                             .order_by('asiointikieli_lower')}
+        # If asiointikieli is not one of predefined, count it to others category
+        toimipaikka_by_ak_filtered = {'others': 0}
+        for key, value in toimipaikka_by_ak.items():
+            if key[0:2] in ['fi', 'sv', 'en', 'se']:
+                # One of common languages
+                toimipaikka_by_ak_filtered[key] = value
+            else:
+                # Other language
+                toimipaikka_by_ak_filtered['others'] += value
+
         # Toimipaikka count with active KieliPainotus and ToiminnallinenPainotus
         kp_voimassa_filter = get_active_filter(today, prefix='kielipainotukset')
         toimipaikka_with_kp = Toimipaikka.objects.filter(active_filter & kp_voimassa_filter).distinct('id').count()
@@ -214,6 +234,16 @@ class PulssiViewSet(GenericViewSet, ListModelMixin):
         lapsi_active_filter = (get_active_filter(today, prefix='varhaiskasvatuspaatokset') &
                                get_active_filter(today, prefix='varhaiskasvatuspaatokset__varhaiskasvatussuhteet'))
         lapsi_count = Lapsi.objects.filter(lapsi_active_filter).distinct('henkilo_id').count()
+        lapsi_kunta_count = (Lapsi.objects
+                                  .filter(lapsi_active_filter &
+                                          (Q(vakatoimija__yritysmuoto__in=YRITYSMUOTO_KUNTA) |
+                                           Q(oma_organisaatio__yritysmuoto__in=YRITYSMUOTO_KUNTA)))
+                                  .distinct('henkilo_id').count())
+        lapsi_yksityinen_count = (Lapsi.objects
+                                  .filter(lapsi_active_filter &
+                                          ~(Q(vakatoimija__yritysmuoto__in=YRITYSMUOTO_KUNTA) |
+                                            Q(oma_organisaatio__yritysmuoto__in=YRITYSMUOTO_KUNTA)))
+                                  .distinct('henkilo_id').count())
         vakapaatos_count = Varhaiskasvatuspaatos.objects.filter(active_filter).count()
         paivittainen_count = (Lapsi.objects
                               .filter(lapsi_active_filter, varhaiskasvatuspaatokset__paivittainen_vaka_kytkin=True)
@@ -224,6 +254,15 @@ class PulssiViewSet(GenericViewSet, ListModelMixin):
         vuorohoito_count = (Lapsi.objects
                             .filter(lapsi_active_filter, varhaiskasvatuspaatokset__vuorohoito_kytkin=True)
                             .distinct('henkilo_id').count())
+
+        jm_lapsi_annotations = {}
+        for jm_code in jm_codes:
+            jm_lapsi_annotations[jm_code] = Count(Case(When(
+                varhaiskasvatuspaatokset__jarjestamismuoto_koodi__iexact=jm_code, then=F('henkilo_id'))), distinct=True)
+        lapsi_by_jm = (Lapsi.objects
+                       .filter(lapsi_active_filter)
+                       .annotate(temp=Value(0)).values('temp')
+                       .annotate(**jm_lapsi_annotations).values(*jm_codes))[0]
 
         # Huoltaja related information
         huoltaja_vakapaatos_prefix = 'huoltajuussuhteet__lapsi__varhaiskasvatuspaatokset'
@@ -281,13 +320,18 @@ class PulssiViewSet(GenericViewSet, ListModelMixin):
                                 .distinct('tyontekija__henkilo_id', 'taydennyskoulutus_id')
                                 .values('id'))
         koulutuspaiva_count = (TaydennyskoulutusTyontekija.objects
-                               .filter(id__in=distinct_tt_subquery)
-                               .aggregate(sum=Sum('taydennyskoulutus__koulutuspaivia')))
+                               .filter(id__in=distinct_tt_subquery, taydennyskoulutus__suoritus_pvm__year=today.year)
+                               .aggregate(sum=Coalesce(Sum('taydennyskoulutus__koulutuspaivia'), 0.0,
+                                                       output_field=DecimalField())))
+
+        taydennyskoulutus_count = Taydennyskoulutus.objects.filter(suoritus_pvm__year=today.year).count()
 
         # TilapainenHenkilosto tyontekijamaara and tuntimaara sum
         tilapainen_henkilosto_aggregate = (TilapainenHenkilosto.objects
-                                           .aggregate(tyontekijamaara=Sum('tyontekijamaara'),
-                                                      tuntimaara=Sum('tuntimaara')))
+                                           .filter(kuukausi__year=today.year)
+                                           .aggregate(tyontekijamaara=Coalesce(Sum('tyontekijamaara'), 0),
+                                                      tuntimaara=Coalesce(Sum('tuntimaara'), 0.0,
+                                                                          output_field=DecimalField())))
 
         # Varda UI related data
         user_count = (User.objects
@@ -315,12 +359,15 @@ class PulssiViewSet(GenericViewSet, ListModelMixin):
             'organisaatio_count': organisaatio_count, 'kunta_count': kunta_count, 'yksityinen_count': yksityinen_count,
             'toimipaikka_count': toimipaikka_count, 'toimipaikka_by_tm': toimipaikka_by_tm,
             'toimipaikka_by_jm': toimipaikka_by_jm, 'toimipaikka_by_kj': toimipaikka_by_kj,
-            'toimipaikka_with_kp': toimipaikka_with_kp, 'toimipaikka_with_tp': toimipaikka_with_tp,
-            'lapsi_count': lapsi_count, 'vakapaatos_count': vakapaatos_count, 'paivittainen_count': paivittainen_count,
+            'toimipaikka_by_ak': toimipaikka_by_ak_filtered, 'toimipaikka_with_kp': toimipaikka_with_kp,
+            'toimipaikka_with_tp': toimipaikka_with_tp, 'lapsi_count': lapsi_count,
+            'lapsi_kunta_count': lapsi_kunta_count, 'lapsi_yksityinen_count': lapsi_yksityinen_count,
+            'vakapaatos_count': vakapaatos_count, 'paivittainen_count': paivittainen_count,
             'kokopaivainen_count': kokopaivainen_count, 'vuorohoito_count': vuorohoito_count,
-            'huoltaja_count': huoltaja_count, 'asiakasmaksu_avg': asiakasmaksu_avg['avg'],
+            'lapsi_by_jm': lapsi_by_jm, 'huoltaja_count': huoltaja_count, 'asiakasmaksu_avg': asiakasmaksu_avg['avg'],
             'tyontekija_count': tyontekija_count, 'tyoskentelypaikka_by_tn': tyoskentelypaikka_by_tn,
-            'tyontekija_multi_count': tyontekija_multi_count, 'koulutuspaiva_count': koulutuspaiva_count['sum'],
+            'tyontekija_multi_count': tyontekija_multi_count, 'taydennyskoulutus_count': taydennyskoulutus_count,
+            'koulutuspaiva_count': koulutuspaiva_count['sum'],
             'tilapainen_henkilosto_tyontekijamaara': tilapainen_henkilosto_aggregate['tyontekijamaara'],
             'tilapainen_henkilosto_tuntimaara': tilapainen_henkilosto_aggregate['tuntimaara'],
             'ui_login_count': ui_login_count, 'oppija_login_count': oppija_login_count,

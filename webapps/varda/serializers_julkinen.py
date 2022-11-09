@@ -55,13 +55,26 @@ class PulssiSerializer(serializers.Serializer):
         'type': openapi.TYPE_OBJECT,
         'additionalProperties': {'type': openapi.TYPE_INTEGER}
     })
+    toimipaikka_by_ak = CustomSchemaField({
+        'type': openapi.TYPE_OBJECT,
+        'properties': {
+            'others': {'type': openapi.TYPE_INTEGER}
+        },
+        'additionalProperties': {'type': openapi.TYPE_INTEGER}
+    })
     toimipaikka_with_kp = serializers.IntegerField()
     toimipaikka_with_tp = serializers.IntegerField()
     lapsi_count = serializers.IntegerField()
+    lapsi_kunta_count = serializers.IntegerField()
+    lapsi_yksityinen_count = serializers.IntegerField()
     vakapaatos_count = serializers.IntegerField()
     paivittainen_count = serializers.IntegerField()
     kokopaivainen_count = serializers.IntegerField()
     vuorohoito_count = serializers.IntegerField()
+    lapsi_by_jm = CustomSchemaField({
+        'type': openapi.TYPE_OBJECT,
+        'additionalProperties': {'type': openapi.TYPE_INTEGER}
+    })
     huoltaja_count = serializers.IntegerField()
     asiakasmaksu_avg = serializers.DecimalField(0, 0)
     tyontekija_count = serializers.IntegerField()
@@ -70,6 +83,7 @@ class PulssiSerializer(serializers.Serializer):
         'additionalProperties': {'type': openapi.TYPE_INTEGER}
     })
     tyontekija_multi_count = serializers.IntegerField()
+    taydennyskoulutus_count = serializers.IntegerField()
     koulutuspaiva_count = serializers.DecimalField(0, 0)
     tilapainen_henkilosto_tyontekijamaara = serializers.IntegerField()
     tilapainen_henkilosto_tuntimaara = serializers.DecimalField(0, 0)

@@ -60,6 +60,20 @@
               </td>
               <td>{{ kasvatusopillinen_jarjestelma[1] | number:undefined:'fi' }}</td>
             </tr>
+            <tr class="table-subheader">
+              <td colspan="2">{{ translations.pulssi_toimipaikka_asiointikieli | translate }}</td>
+            </tr>
+            <tr *ngFor="let asiointikieli of getEntries(pulssiData.toimipaikka_by_ak)"
+                class="subrow">
+              <td [libKoodistoValue]="KoodistoEnum.kieli" format="long"
+                  *ngIf="asiointikieli[0] !== 'others'; else asiointikieliOthers">
+                {{ asiointikieli[0] }}
+              </td>
+              <ng-template #asiointikieliOthers>
+                <td>{{ translations.pulssi_toimipaikka_asiointikieli_others | translate }}</td>
+              </ng-template>
+              <td>{{ asiointikieli[1] | number:undefined:'fi' }}</td>
+            </tr>
             <tr>
               <td>{{ translations.pulssi_toimipaikka_toiminnallinen_painotus | translate}}</td>
               <td>{{ pulssiData.toimipaikka_with_tp | number:undefined:'fi' }}</td>
@@ -76,6 +90,16 @@
       <div class="number-container">
         <div>{{ pulssiData.lapsi_count | number:undefined:'fi' }}</div>
         <div>{{ translations.pulssi_lapsi | translate }}</div>
+      </div>
+      <div class="pulssi-lapsi-type">
+        <div class="number-container">
+          <div>{{ pulssiData.lapsi_kunta_count | number:undefined:'fi' }}</div>
+          <div>{{ translations.pulssi_lapsi_kunta | translate }}</div>
+        </div>
+        <div class="number-container">
+          <div>{{ pulssiData.lapsi_yksityinen_count | number:undefined:'fi' }}</div>
+          <div>{{ translations.pulssi_lapsi_yksityinen | translate }}</div>
+        </div>
       </div>
       <div class="table-responsive">
         <table class="table table-hover">
@@ -95,6 +119,14 @@
             <tr>
               <td>{{ translations.pulssi_lapsi_vuorohoito | translate}}</td>
               <td>{{ pulssiData.vuorohoito_count | number:undefined:'fi' }}</td>
+            </tr>
+            <tr class="table-subheader">
+              <td colspan="2">{{ translations.pulssi_lapsi_jarjestamismuoto | translate }}</td>
+            </tr>
+            <tr *ngFor="let jarjestamismuoto of getEntries(pulssiData.lapsi_by_jm)"
+                class="subrow">
+              <td [libKoodistoValue]="KoodistoEnum.jarjestamismuoto" format="long">{{ jarjestamismuoto[0] }}</td>
+              <td>{{ jarjestamismuoto[1] | number:undefined:'fi' }}</td>
             </tr>
             <tr>
               <td>{{ translations.pulssi_huoltaja | translate}}</td>
@@ -127,6 +159,10 @@
             <tr>
               <td>{{ translations.pulssi_tyontekija_multi | translate}}</td>
               <td>{{ pulssiData.tyontekija_multi_count | number:undefined:'fi' }}</td>
+            </tr>
+            <tr>
+              <td>{{ translations.pulssi_taydennyskoulutus | translate}}</td>
+              <td>{{ pulssiData.taydennyskoulutus_count | number:undefined:'fi' }}</td>
             </tr>
             <tr>
               <td>{{ translations.pulssi_koulutuspaiva | translate}}</td>

@@ -31,7 +31,7 @@
   flex-wrap: wrap;
 }
 
-.pulssi-organisaatio-type {
+.pulssi-organisaatio-type, .pulssi-lapsi-type {
   display: flex;
   gap: 1.5em;
   justify-content: center;
