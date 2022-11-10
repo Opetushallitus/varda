@@ -44,7 +44,7 @@ tasks {
     jar {
         manifest {
             // Update version code here
-            attributes(mapOf("Main-Class" to "fi.csc.varda.AppKt", "Implementation-Version" to "1.0.1"))
+            attributes(mapOf("Main-Class" to "fi.csc.varda.AppKt", "Implementation-Version" to "1.0.2"))
         }
 
         // Create fat JAR

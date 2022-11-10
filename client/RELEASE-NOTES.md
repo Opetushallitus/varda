@@ -1,6 +1,11 @@
 # Release notes
 Varda-käyttöliittymä release notes
 
+1.6.9 (10.11.2022)
+- OPHVARDA-2543: Kirjastojen päivitys
+- OPHVARDA-2532: Älä avaa oletuksena ensimmäistä hakutulosta
+- OPHVARDA-2535: Tiedonsiirron katkos -raportin jatkokehitys
+
 1.6.8 (27.10.2022)
 - OPHVARDA-2467: Vuosiraportin jatkokehitys
 
