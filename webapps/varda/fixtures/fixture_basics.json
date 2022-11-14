@@ -745,5 +745,30 @@
       "date_changed": "2022-03-01T16:00:00.000Z",
       "description": ""
     }
+  },
+  {
+    "model": "django_celery_beat.periodictask",
+    "pk": 25,
+    "fields": {
+      "name": "vacuum_database",
+      "task": "varda.tasks.vacuum_database_task",
+      "interval": null,
+      "crontab": 10,
+      "solar": null,
+      "args": "[]",
+      "kwargs": "{}",
+      "queue": null,
+      "exchange": null,
+      "routing_key": null,
+      "priority": null,
+      "one_off": false,
+      "start_time": null,
+      "expires": null,
+      "enabled": true,
+      "last_run_at": null,
+      "total_run_count": 0,
+      "date_changed": "2022-11-01T16:00:00.000Z",
+      "description": ""
+    }
   }
 ]

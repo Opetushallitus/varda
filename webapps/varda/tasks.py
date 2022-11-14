@@ -3,15 +3,17 @@ import json
 import logging
 
 from celery import shared_task
+from django.apps import apps
 from django.conf import settings
 from django.contrib.auth.models import Group, User
 from django.core.management import call_command
-from django.db import transaction
+from django.db import connection, transaction
 from django.db.models import Case, Count, DateField, F, Func, Q, Value, When
 from django.db.models.functions import Cast
 from django.utils import timezone
 from guardian.models import GroupObjectPermission, UserObjectPermission
 from knox.models import AuthToken
+from psycopg2 import sql
 
 from varda import koodistopalvelu, oppijanumerorekisteri
 from varda import organisaatiopalvelu
@@ -643,3 +645,20 @@ def get_ukranian_child_statistics(active_since='2022-02-24', swedish=False):
         result_str += f';{key},{name},{amount}'
 
     return result_str
+
+
+@shared_task
+@single_instance_task(timeout_in_minutes=8 * 60)
+def vacuum_database_task(table_name=None):
+    table_list = []
+    if table_name:
+        table_list.append(table_name)
+    else:
+        # If table_name is not defined, vacuum and analyze all model tables from all apps
+        for app_config in apps.get_app_configs():
+            for model in app_config.get_models():
+                table_list.append(model._meta.db_table)
+
+    with connection.cursor() as cursor:
+        for table in table_list:
+            cursor.execute(sql.SQL('VACUUM ANALYZE {};').format(sql.Identifier(table)))
