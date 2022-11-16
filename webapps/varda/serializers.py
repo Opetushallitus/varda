@@ -759,8 +759,7 @@ class NestedMaksutietoHuoltajaSerializer(serializers.Serializer):
         return data
 
     def to_representation(self, instance):
-        huoltaja = instance.huoltajuussuhde.huoltaja
-        henkilo = huoltaja.henkilo
+        henkilo = instance.huoltajuussuhde.huoltaja.henkilo
         data = {'henkilo_oid': henkilo.henkilo_oid, 'etunimet': henkilo.etunimet, 'sukunimi': henkilo.sukunimi}
 
         if self.context['request'].method in ['POST', 'PUT', 'PATCH']:
@@ -846,11 +845,14 @@ def _validate_maksutieto_overlap(data, lapsi_obj=None, maksutieto_id=None):
 
 
 def _get_lapsi_for_maksutieto(maksutieto):
-    lapsi = maksutieto.huoltajuussuhteet.all().values('lapsi').distinct()
-    if len(lapsi) != 1:
-        logger.error('Could not find just one lapsi for maksutieto-id: {}'.format(maksutieto.id))
+    # MaksutietoHuoltajuussuhde objects (maksutiedot_huoltajuussuhteet field) are prefetched for Maksutieto,
+    # so utilize it to get related Lapsi objects without making additional database queries
+    lapsi_set = {maksutieto_huoltajuussuhde.huoltajuussuhde.lapsi for
+                 maksutieto_huoltajuussuhde in maksutieto.maksutiedot_huoltajuussuhteet.all()}
+    if len(lapsi_set) != 1:
+        logger.error(f'Could not find just one Lapsi object for Maksutieto with ID: {maksutieto.id}')
         raise APIException
-    return Lapsi.objects.get(id=lapsi[0].get('lapsi'))
+    return lapsi_set.pop()
 
 
 class MaksutietoSerializer(RequiredLahdejarjestelmaMixin, serializers.HyperlinkedModelSerializer):

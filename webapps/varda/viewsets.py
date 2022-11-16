@@ -6,7 +6,7 @@ from django.contrib.auth.models import Group, User
 from django.core.cache import cache
 from django.db import IntegrityError, transaction
 from django.db.models import ProtectedError, Q, Subquery, Sum
-from django.db.models.query import EmptyQuerySet
+from django.db.models.query import EmptyQuerySet, Prefetch
 from django.http import Http404
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
@@ -48,7 +48,7 @@ from varda.monkey_patch import knox_views
 from varda.oppijanumerorekisteri import fetch_henkilo_with_oid, save_henkilo_to_db
 from varda.organisaatiopalvelu import (check_if_toimipaikka_exists_in_organisaatiopalvelu,
                                        create_toimipaikka_in_organisaatiopalvelu)
-from varda.pagination import ChangeableReportingPageSizePagination
+from varda.pagination import ChangeablePageSizePagination, ChangeableReportingPageSizePagination
 from varda.permission_groups import create_permission_groups_for_organisaatio
 from varda.permissions import (assign_henkilo_permissions, assign_kielipainotus_permissions, assign_lapsi_permissions,
                                assign_maksutieto_permissions, assign_paos_toiminta_permissions,
@@ -1303,10 +1303,17 @@ class MaksutietoViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMixin, Per
     """
     filter_backends = (DjangoFilterBackend,)
     filterset_class = filters.MaksutietoFilter
+    # Prefetch related MaksutietoHuoltajuussuhde objects, for cheap access to related Lapsi and Huoltaja objects
+    huoltajuussuhde_prefetch_qs = (MaksutietoHuoltajuussuhde.objects
+                                   .select_related('huoltajuussuhde__huoltaja__henkilo', 'huoltajuussuhde__lapsi'))
     # Only query distinct results, as related object filters can return the same object multiple times
-    queryset = Maksutieto.objects.all().distinct().order_by('id')
+    queryset = (Maksutieto.objects.all()
+                .prefetch_related(Prefetch('maksutiedot_huoltajuussuhteet', queryset=huoltajuussuhde_prefetch_qs))
+                .distinct('id')
+                .order_by('id'))
     serializer_class = None
     permission_classes = (CustomModelPermissions, CustomObjectPermissions,)
+    pagination_class = ChangeablePageSizePagination
 
     def get_serializer_class(self):
         request = self.request
