@@ -130,9 +130,7 @@ export class VardaToimipaikkaFormComponent extends VardaFormAccordionAbstractCom
     );
   }
 
-  disableForm() {
-    super.disableForm();
-
+  disableFormExtra() {
     this.valuesChanged.emit(false);
   }
 
@@ -303,9 +301,8 @@ export class VardaToimipaikkaFormComponent extends VardaFormAccordionAbstractCom
     this.maxEndDate = endDate?.clone().toDate();
   }
 
-  enableForm() {
-    super.enableForm();
-    setTimeout(() => this.checkPostiosoiteToggle());
+  enableFormExtra() {
+    this.checkPostiosoiteToggle();
   }
 
   ngOnDestroy() {

@@ -180,23 +180,19 @@ export class VardaMaksutietoComponent extends VardaFormAccordionAbstractComponen
     );
   }
 
-  enableForm() {
-    super.enableForm();
-
-    setTimeout(() => {
-      if (this.objectExists()) {
-        this.formGroup.controls.huoltajat.disable();
-        this.formGroup.controls.alkamis_pvm.disable();
-        this.formGroup.controls.maksun_peruste_koodi.disable();
-        this.formGroup.controls.palveluseteli_arvo.disable();
-        this.formGroup.controls.asiakasmaksu.disable();
-        this.formGroup.controls.perheen_koko.disable();
-      }
-      if (this.yksityinenBoolean) {
-        this.formGroup.controls.palveluseteli_arvo.disable();
-        this.formGroup.controls.perheen_koko.disable();
-      }
-    });
+  enableFormExtra() {
+    if (this.objectExists()) {
+      this.formGroup.controls.huoltajat.disable();
+      this.formGroup.controls.alkamis_pvm.disable();
+      this.formGroup.controls.maksun_peruste_koodi.disable();
+      this.formGroup.controls.palveluseteli_arvo.disable();
+      this.formGroup.controls.asiakasmaksu.disable();
+      this.formGroup.controls.perheen_koko.disable();
+    }
+    if (this.yksityinenBoolean) {
+      this.formGroup.controls.palveluseteli_arvo.disable();
+      this.formGroup.controls.perheen_koko.disable();
+    }
   }
 
   removeHuoltajaForm(index: number) {

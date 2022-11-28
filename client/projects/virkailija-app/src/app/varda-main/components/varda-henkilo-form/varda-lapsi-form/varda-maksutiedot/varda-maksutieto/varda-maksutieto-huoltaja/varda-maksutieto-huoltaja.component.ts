@@ -51,13 +51,16 @@ export class VardaMaksutietoHuoltajaComponent implements OnChanges {
   }
 
   changeIdentifierControlState(addWithSsn: boolean) {
-    if (addWithSsn === true) {
-      this.huoltajaForm.controls.henkilotunnus.enable();
-      this.huoltajaForm.controls.henkilo_oid.disable();
-    } else {
-      this.huoltajaForm.controls.henkilotunnus.disable();
-      this.huoltajaForm.controls.henkilo_oid.enable();
-    }
+    setTimeout(() => {
+      // https://github.com/angular/angular/issues/22556
+      if (addWithSsn === true) {
+        this.huoltajaForm.controls.henkilotunnus.enable();
+        this.huoltajaForm.controls.henkilo_oid.disable();
+      } else {
+        this.huoltajaForm.controls.henkilotunnus.disable();
+        this.huoltajaForm.controls.henkilo_oid.enable();
+      }
+    });
   }
 
   deleteHuoltaja() {

@@ -66,8 +66,7 @@ export abstract class PainotusAbstractComponent<T> extends VardaFormAccordionAbs
     }
   }
 
-  enableForm() {
-    super.enableForm();
+  enableFormExtra() {
     this.savePending = false;
   }
 

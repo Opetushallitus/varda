@@ -23,7 +23,7 @@
     </app-varda-form-field>
 
     <app-varda-form-field name="henkilotunnus"
-                          *ngIf="!huoltajaForm.controls.henkilotunnus.disabled"
+                          *ngIf="huoltajaForm.controls.addWithSsnOrOid.value"
                           [form]="huoltajaForm"
                           [label]="i18n.henkilo_henkilotunnus | translate"
                           [errorText]="i18n.henkilo_error_henkilotunnus | translate"
@@ -36,7 +36,7 @@
     </app-varda-form-field>
 
     <app-varda-form-field name="henkilo_oid"
-                          *ngIf="!huoltajaForm.controls.henkilo_oid.disabled"
+                          *ngIf="!huoltajaForm.controls.addWithSsnOrOid.value"
                           [form]="huoltajaForm"
                           [label]="i18n.henkilo_henkilo_oid | translate"
                           [errorText]="i18n.henkilo_error_henkilo_oid | translate"

@@ -1,4 +1,13 @@
-import { Component, Output, ViewChild, EventEmitter, ElementRef, OnDestroy, OnInit, Input } from '@angular/core';
+import {
+  Component,
+  Output,
+  ViewChild,
+  EventEmitter,
+  ElementRef,
+  OnDestroy,
+  OnInit,
+  Input
+} from '@angular/core';
 import { VardaHenkilostoApiService } from 'projects/virkailija-app/src/app/core/services/varda-henkilosto.service';
 import { VardaLapsiService } from 'projects/virkailija-app/src/app/core/services/varda-lapsi.service';
 import { PuutteellinenErrorDTO } from '../../../utilities/models/dto/varda-puutteellinen-dto.model';
@@ -92,18 +101,34 @@ export abstract class VardaFormAccordionAbstractComponent<T extends {id?: number
 
   enableForm() {
     this.isEdit = true;
+
+    // https://github.com/angular/angular/issues/22556
     setTimeout(() => {
       this.formGroup.enable();
+      this.enableFormExtra();
     });
   }
+
+  /**
+   * Use in child components to provide extra enable actions to run inside setTimeout
+   */
+  enableFormExtra() { };
 
   disableForm() {
     this.isEdit = false;
     this.modalService.setFormValuesChanged(false);
+
+    // https://github.com/angular/angular/issues/22556
     setTimeout(() => {
       this.formGroup.disable();
+      this.disableFormExtra();
     });
   }
+
+  /**
+   * Use in child components to provide extra disable actions to run inside setTimeout
+   */
+  disableFormExtra() { };
 
   disableSubmit() {
     setTimeout(() => this.isSubmitting = false, 500);

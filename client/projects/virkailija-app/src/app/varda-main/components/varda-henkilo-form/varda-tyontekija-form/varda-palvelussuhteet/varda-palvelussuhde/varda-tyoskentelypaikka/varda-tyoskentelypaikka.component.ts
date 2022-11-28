@@ -172,18 +172,14 @@ export class VardaTyoskentelypaikkaComponent extends VardaFormAccordionAbstractC
     );
   }
 
-  enableForm() {
-    super.enableForm();
-
-    setTimeout(() => {
-      if (this.currentObject) {
-        this.formGroup.controls.kiertava_tyontekija_kytkin.disable();
-        this.formGroup.controls.toimipaikka_oid.disable();
-      }
-      if (!this.toimijaAccess.tyontekijatiedot.tallentaja) {
-        this.formGroup.controls.kiertava_tyontekija_kytkin.disable();
-      }
-    });
+  enableFormExtra() {
+    if (this.currentObject) {
+      this.formGroup.controls.kiertava_tyontekija_kytkin.disable();
+      this.formGroup.controls.toimipaikka_oid.disable();
+    }
+    if (!this.toimijaAccess.tyontekijatiedot.tallentaja) {
+      this.formGroup.controls.kiertava_tyontekija_kytkin.disable();
+    }
   }
 
   initDateFilters() {

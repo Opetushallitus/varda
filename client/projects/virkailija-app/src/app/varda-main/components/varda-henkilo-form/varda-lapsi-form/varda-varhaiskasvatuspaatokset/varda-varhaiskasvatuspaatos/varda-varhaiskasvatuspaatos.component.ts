@@ -202,19 +202,15 @@ export class VardaVarhaiskasvatuspaatosComponent extends VardaFormAccordionAbstr
     this.lapsiService.activeLapsi.next(activeLapsi);
   }
 
-  enableForm() {
-    super.enableForm();
-
-    setTimeout(() => {
-      if (this.currentObject) {
-        this.formGroup.controls.jarjestamismuoto_koodi.disable();
-        this.formGroup.controls.vuorohoito_kytkin.disable();
-        this.formGroup.controls.paivittainen_vaka_kytkin.disable();
-        this.formGroup.controls.kokopaivainen_vaka_kytkin.disable();
-        this.formGroup.controls.tuntimaara_viikossa.disable();
-        this.formGroup.controls.tilapainen_vaka_kytkin.disable();
-      }
-    });
+  enableFormExtra() {
+    if (this.currentObject) {
+      this.formGroup.controls.jarjestamismuoto_koodi.disable();
+      this.formGroup.controls.vuorohoito_kytkin.disable();
+      this.formGroup.controls.paivittainen_vaka_kytkin.disable();
+      this.formGroup.controls.kokopaivainen_vaka_kytkin.disable();
+      this.formGroup.controls.tuntimaara_viikossa.disable();
+      this.formGroup.controls.tilapainen_vaka_kytkin.disable();
+    }
   }
 
   handleJarjestamismuodot(jarjestamismuodot: Array<CodeDTO>) {

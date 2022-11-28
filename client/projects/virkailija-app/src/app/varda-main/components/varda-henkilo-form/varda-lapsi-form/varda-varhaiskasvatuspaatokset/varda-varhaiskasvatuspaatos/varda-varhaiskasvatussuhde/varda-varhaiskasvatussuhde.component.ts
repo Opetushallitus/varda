@@ -171,14 +171,10 @@ export class VardaVarhaiskasvatussuhdeComponent extends VardaFormAccordionAbstra
     );
   }
 
-  enableForm() {
-    super.enableForm();
-
-    setTimeout(() => {
-      if (this.currentObject) {
-        this.formGroup.controls.toimipaikka_oid.disable();
-      }
-    });
+  enableFormExtra() {
+    if (this.currentObject) {
+      this.formGroup.controls.toimipaikka_oid.disable();
+    }
   }
 
   initToimipaikat() {
