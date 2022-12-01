@@ -1,6 +1,10 @@
 # Release notes
 Varda-käyttöliittymä release notes
 
+1.6.10 (01.12.2022)
+- OPHVARDA-2567: Rajauksia aktiivisten lasten/työntekijöiden perusteella
+- OPHVARDA-2587: Yhteenveto-näkymän jatkokehitys
+
 1.6.9 (10.11.2022)
 - OPHVARDA-2543: Kirjastojen päivitys
 - OPHVARDA-2532: Älä avaa oletuksena ensimmäistä hakutulosta
