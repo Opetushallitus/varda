@@ -1,5 +1,12 @@
 import { Component, ElementRef, OnDestroy, OnInit, ViewChild } from '@angular/core';
-import { CodeDTO, KoodistoDTO, KoodistoEnum, KoodistoSortBy, VardaKoodistoService } from 'varda-shared';
+import {
+  CodeDTO,
+  KoodistoDTO,
+  KoodistoEnum,
+  KoodistoSortBy,
+  VardaDateService,
+  VardaKoodistoService
+} from 'varda-shared';
 import { VirkailijaTranslations } from '../../../../assets/i18n/virkailija-translations.enum';
 import { BehaviorSubject, Observable, Subscription } from 'rxjs';
 import { BreakpointObserver } from '@angular/cdk/layout';
@@ -59,6 +66,7 @@ export abstract class VardaSearchAbstractComponent implements OnInit, OnDestroy 
     maksutiedot: this.i18n.maksutiedot,
     alkanut: this.i18n.katsele_tietoja_alkanut,
     palvelussuhteet: this.i18n.palvelussuhteet,
+    tyoskentelypaikat: this.i18n.tyoskentelypaikka_plural,
     poissaolot: this.i18n.katsele_tietoja_tyontekija_poissaolot,
     taydennyskoulutukset: this.i18n.taydennyskoulutukset,
     aikavali: this.i18n.katsele_tietoja_aikavalilla,
@@ -67,11 +75,9 @@ export abstract class VardaSearchAbstractComponent implements OnInit, OnDestroy 
     no: this.i18n.no
   };
 
+  filterParams: Record<string, any>;
+
   searchValue: string;
-  // Rajaus filters (class, type, date)
-  isFilters1Active = false;
-  // Always active filters
-  isFilters2Active = false;
   isFiltersVisible: boolean;
 
   toimipaikat: Array<VardaToimipaikkaMinimalDto> = [];
@@ -104,7 +110,7 @@ export abstract class VardaSearchAbstractComponent implements OnInit, OnDestroy 
   ngOnInit(): void {
     // Hide filters if screen size is small
     this.resizeSubscription = this.breakpointObserver.observe('(min-width: 768px)').subscribe(data => {
-      this.isFiltersVisible = this.isFilters1Filled() || this.isFilters2Filled() || data.matches;
+      this.isFiltersVisible = this.isFiltersActive() || data.matches;
       this.isSmall = !data.matches;
     });
 
@@ -142,7 +148,7 @@ export abstract class VardaSearchAbstractComponent implements OnInit, OnDestroy 
       let newValue;
       switch (param.type) {
         case FilterStringType.TRANSLATED_STRING:
-          newValue = this.translateService.instant(this.translatedStringMap[param.value]);
+          newValue = this.translateService.instant(this.translatedStringMap[param.value] || param.value);
           break;
         case FilterStringType.RAW:
         default:
@@ -243,26 +249,39 @@ export abstract class VardaSearchAbstractComponent implements OnInit, OnDestroy 
     return;
   }
 
-  ngOnDestroy(): void {
-    this.resizeSubscription.unsubscribe();
-  }
-
   clearFilters() {
     this.clearFilters1();
-    this.isFilters1Active = false;
     this.clearFilters2();
-    this.isFilters2Active = false;
+    this.clearFilters3();
 
     this.search();
   }
 
-  isFiltersActive(): boolean {
-    return this.isFilters1Active || this.isFilters2Active;
+  addDateRangeFilterString(stringParams: Array<FilterStringParam>) {
+    if (this.filterParams.alkamisPvm && this.filterParams.paattymisPvm) {
+      stringParams.push({ value: 'aikavali', type: FilterStringType.TRANSLATED_STRING, lowercase: true });
+      stringParams.push({
+        value: `${this.filterParams.alkamisPvm.format(VardaDateService.vardaDefaultDateFormat)} -
+        ${this.filterParams.paattymisPvm.format(VardaDateService.vardaDefaultDateFormat)}`,
+        type: FilterStringType.RAW,
+        ignoreComma: true
+      });
+    }
   }
 
+  ngOnDestroy(): void {
+    this.resizeSubscription.unsubscribe();
+  }
+
+  abstract isFiltersActive(): boolean;
+  abstract fillFilters1();
+  abstract fillFilters2();
+  abstract fillFilters3();
   abstract isFilters1Filled(): boolean;
   abstract isFilters2Filled(): boolean;
+  abstract isFilters3Filled(): boolean;
   abstract clearFilters1();
   abstract clearFilters2();
+  abstract clearFilters3();
   abstract search(paginatorParams?: PaginatorParams): void;
 }

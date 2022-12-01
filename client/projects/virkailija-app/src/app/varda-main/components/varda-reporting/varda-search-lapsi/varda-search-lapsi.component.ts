@@ -32,6 +32,7 @@ export class VardaSearchLapsiComponent extends VardaSearchAbstractComponent impl
   };
 
   filterParams: {
+    aktiiviset: boolean;
     rajaus: string;
     voimassaolo: string;
     alkamisPvm: Moment;
@@ -41,8 +42,9 @@ export class VardaSearchLapsiComponent extends VardaSearchAbstractComponent impl
     jarjestamismuoto: CodeDTO;
     toimintamuoto: CodeDTO;
   } = {
-    rajaus: this.rajaus.VAKAPAATOKSET,
-    voimassaolo: this.voimassaolo.VOIMASSA,
+    aktiiviset: true,
+    rajaus: null,
+    voimassaolo: null,
     alkamisPvm: moment(),
     paattymisPvm: moment(),
     maksunPeruste: null,
@@ -50,6 +52,8 @@ export class VardaSearchLapsiComponent extends VardaSearchAbstractComponent impl
     jarjestamismuoto: null,
     toimintamuoto: null
   };
+  rajausPrevious = this.filterParams.rajaus;
+  aktiivisetPrevious = this.filterParams.aktiiviset;
 
   maksunPerusteCodes: Array<CodeDTO> = [];
   jarjestamismuotoCodes: Array<CodeDTO> = [];
@@ -119,6 +123,12 @@ export class VardaSearchLapsiComponent extends VardaSearchAbstractComponent impl
       }
     }
 
+    if (this.isFilters3Filled()) {
+      searchParams.aktiiviset = true;
+      searchParams.alkamis_pvm = this.dateService.momentToVardaDate(this.filterParams.alkamisPvm);
+      searchParams.paattymis_pvm = this.dateService.momentToVardaDate(this.filterParams.paattymisPvm);
+    }
+
     if (this.filterParams.jarjestamismuoto) {
       searchParams.jarjestamismuoto = this.filterParams.jarjestamismuoto.code_value;
     }
@@ -148,23 +158,42 @@ export class VardaSearchLapsiComponent extends VardaSearchAbstractComponent impl
   }
 
   filter(): boolean {
-    this.isFilters2Active = this.isFilters2Filled();
-    if (!this.isFilters1Active && this.filterParams.rajaus !== this.rajaus.NONE) {
-      this.isFilters1Active = true;
+    if (this.rajausPrevious === this.rajaus.NONE && this.filterParams.rajaus !== this.rajaus.NONE) {
+      // clear aktiiviset filter
+      this.clearFilters3();
+      // initialize rajaus filters
       this.fillFilters1();
-    }
-
-    if (this.filterParams.rajaus === this.rajaus.NONE) {
+    } else if (this.aktiivisetPrevious === false && this.filterParams.aktiiviset === true) {
+      // clear rajaus filters
       this.clearFilters1();
-      this.isFilters1Active = false;
-    } else if (!this.isFilters1Filled()) {
+      // initialize aktiiviset filter
+      this.fillFilters3();
+    }
+    this.rajausPrevious = this.filterParams.rajaus;
+    this.aktiivisetPrevious = this.filterParams.aktiiviset;
+
+    if ((this.filterParams.rajaus !== this.rajaus.NONE && !this.isFilters1Filled()) ||
+      (this.filterParams.aktiiviset === true && !this.isFilters3Filled())) {
+      // rajaus or aktiiviset filters are in use but not all filters are valid, do not continue search
       return false;
     }
+
     return true;
+  }
+
+  isFiltersActive(): boolean {
+    return this.filterParams.rajaus !== this.rajaus.NONE || this.filterParams.aktiiviset || this.isFilters2Filled();
   }
 
   fillFilters1() {
     this.filterParams.voimassaolo = this.voimassaolo.VOIMASSA;
+    this.filterParams.alkamisPvm = moment();
+    this.filterParams.paattymisPvm = moment();
+  }
+
+  fillFilters2() {}
+
+  fillFilters3() {
     this.filterParams.alkamisPvm = moment();
     this.filterParams.paattymisPvm = moment();
   }
@@ -182,6 +211,12 @@ export class VardaSearchLapsiComponent extends VardaSearchAbstractComponent impl
     this.filterParams.jarjestamismuoto = null;
   }
 
+  clearFilters3() {
+    this.filterParams.aktiiviset = false;
+    this.filterParams.alkamisPvm = null;
+    this.filterParams.paattymisPvm = null;
+  }
+
   isFilters1Filled(): boolean {
     return this.filterParams.rajaus !== this.rajaus.NONE && this.filterParams.rajaus !== null &&
       this.filterParams.voimassaolo !== null && this.filterParams.alkamisPvm !== null &&
@@ -192,21 +227,19 @@ export class VardaSearchLapsiComponent extends VardaSearchAbstractComponent impl
     return this.filterParams.jarjestamismuoto !== null;
   }
 
+  isFilters3Filled(): boolean {
+    return this.filterParams.aktiiviset && this.filterParams.alkamisPvm !== null &&
+      this.filterParams.paattymisPvm !== null;
+  }
+
   updateFilterString() {
     const stringParams: Array<FilterStringParam> = [];
 
     if (this.isFilters1Filled()) {
       stringParams.push({ value: this.filterParams.rajaus, type: FilterStringType.TRANSLATED_STRING });
       stringParams.push({ value: this.filterParams.voimassaolo, type: FilterStringType.TRANSLATED_STRING, lowercase: true });
-      if (this.filterParams.alkamisPvm && this.filterParams.paattymisPvm) {
-        stringParams.push({ value: 'aikavali', type: FilterStringType.TRANSLATED_STRING, lowercase: true });
-        stringParams.push({
-          value: `${this.filterParams.alkamisPvm.format(VardaDateService.vardaDefaultDateFormat)} -
-        ${this.filterParams.paattymisPvm.format(VardaDateService.vardaDefaultDateFormat)}`,
-          type: FilterStringType.RAW,
-          ignoreComma: true
-        });
-      }
+
+      this.addDateRangeFilterString(stringParams);
 
       if (this.filterParams.rajaus === this.rajaus.MAKSUTIEDOT) {
         stringParams.push({ value: this.getCodeUiString(this.filterParams.maksunPeruste), type: FilterStringType.RAW, lowercase: true });
@@ -217,6 +250,13 @@ export class VardaSearchLapsiComponent extends VardaSearchAbstractComponent impl
             type: FilterStringType.TRANSLATED_STRING, lowercase: true, ignoreComma: true });
         }
       }
+    }
+
+    if (this.isFilters3Filled()) {
+      stringParams.push({ value: this.i18n.katsele_tietoja_lapsi_active, type: FilterStringType.TRANSLATED_STRING,
+        lowercase: true });
+
+      this.addDateRangeFilterString(stringParams);
     }
 
     stringParams.push({ value: this.getCodeUiString(this.filterParams.jarjestamismuoto), type: FilterStringType.RAW, lowercase: true});

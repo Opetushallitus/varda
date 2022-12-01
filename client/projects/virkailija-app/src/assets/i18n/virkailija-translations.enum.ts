@@ -501,6 +501,8 @@ export enum VirkailijaTranslations {
   katsele_tietoja_lapsi_maksun_peruste_all = 'katsele-tietoja.lapsi.maksun-peruste-all',
   katsele_tietoja_lapsi_toimintamuoto_all = 'katsele-tietoja.lapsi.toimintamuoto-all',
   katsele_tietoja_lapsi_palveluseteli = 'katsele-tietoja.lapsi.palveluseteli',
+  katsele_tietoja_lapsi_active = 'katsele-tietoja.lapsi.active',
+  katsele_tietoja_lapsi_active_description = 'katsele-tietoja.lapsi.active.description',
   katsele_tietoja_error_no_maksun_peruste_selected = 'katsele-tietoja.error.no-maksun-peruste-selected',
   katsele_tietoja_tyontekija_no_tutkinnot = 'katsele-tietoja.tyontekija.no-tutkinnot',
   katsele_tietoja_tyontekija_no_palvelussuhteet = 'katsele-tietoja.tyontekija.no-palvelussuhteet',
@@ -542,6 +544,8 @@ export enum VirkailijaTranslations {
   katsele_tietoja_tyontekija_tehtavanimike_taydennyskoulutus = 'katsele-tietoja.tyontekija.tehtavanimike-taydennyskoulutus',
   katsele_tietoja_tyontekija_kiertava = 'katsele-tietoja.tyontekija.kiertava',
   katsele_tietoja_tyontekija_kiertava_description = 'katsele-tietoja.tyontekija.kiertava-description',
+  katsele_tietoja_tyontekija_active = 'katsele-tietoja.tyontekija.active',
+  katsele_tietoja_tyontekija_active_description = 'katsele-tietoja.tyontekija.active.description',
 
   yhteenveto_intro_paragraph_1 = 'yhteenveto.intro.paragraph-1',
   yhteenveto_lapset_lkm = 'yhteenveto.lapset-lkm',

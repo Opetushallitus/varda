@@ -421,10 +421,14 @@ class ExcelReportGenerator:
             target_date = datetime.date.today()
 
         active_filter = get_active_filter(target_date)
-        vakasuhde_filter = active_filter
-        maksutieto_filter = (active_filter & get_active_filter(
-            target_date, prefix='huoltajuussuhteet__lapsi__varhaiskasvatuspaatokset__varhaiskasvatussuhteet'
-        ))
+        vakasuhde_filter = active_filter & get_active_filter(target_date, prefix='varhaiskasvatuspaatos')
+        maksutieto_filter = (
+            active_filter &
+            get_active_filter(target_date, prefix='huoltajuussuhteet__lapsi__varhaiskasvatuspaatokset') &
+            get_active_filter(
+                target_date, prefix='huoltajuussuhteet__lapsi__varhaiskasvatuspaatokset__varhaiskasvatussuhteet'
+            )
+        )
 
         self._create_vakatiedot_report(vakasuhde_filter=vakasuhde_filter, maksutieto_filter=maksutieto_filter)
 
@@ -663,7 +667,10 @@ class ExcelReportGenerator:
         if not target_date:
             target_date = datetime.date.today()
 
-        self._create_tyontekijatiedot_report(palvelussuhde_filter=get_active_filter(target_date))
+        palvelussuhde_filter = (get_active_filter(target_date) &
+                                get_active_filter(target_date, prefix='tyoskentelypaikat'))
+
+        self._create_tyontekijatiedot_report(palvelussuhde_filter=palvelussuhde_filter)
 
     def _create_tyontekijatiedot_report(self, palvelussuhde_filter=Q()):
         vakajarjestaja_filter = Q(tyontekija__vakajarjestaja=self.organisaatio_id)

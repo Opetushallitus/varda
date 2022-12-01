@@ -34,12 +34,13 @@ export class VardaSearchToimipaikkaComponent extends VardaSearchAbstractComponen
     alkamisPvm: Moment;
     paattymisPvm: Moment;
   } = {
-      toimintamuoto: null,
-      jarjestamismuoto: null,
-      voimassaolo: this.voimassaolo.VOIMASSA,
-      alkamisPvm: moment(),
-      paattymisPvm: moment()
-    };
+    toimintamuoto: null,
+    jarjestamismuoto: null,
+    voimassaolo: this.voimassaolo.VOIMASSA,
+    alkamisPvm: moment(),
+    paattymisPvm: moment()
+  };
+  voimassaoloPrevious = this.filterParams.voimassaolo;
 
   constructor(
     koodistoService: VardaKoodistoService,
@@ -51,8 +52,6 @@ export class VardaSearchToimipaikkaComponent extends VardaSearchAbstractComponen
     private dateService: VardaDateService,
   ) {
     super(koodistoService, breakpointObserver, translateService, koosteService, authService, vakajarjestajaService);
-    this.isFilters1Active = false;
-    this.isFilters2Active = false;
   }
 
   ngOnInit() {
@@ -117,22 +116,44 @@ export class VardaSearchToimipaikkaComponent extends VardaSearchAbstractComponen
   }
 
   filter(): boolean {
-    this.isFilters2Active = this.isFilters2Filled();
-    if (!this.isFilters1Active && this.filterParams.voimassaolo !== this.voimassaolo.KAIKKI) {
-      this.isFilters1Active = true;
+    if (this.voimassaoloPrevious === this.voimassaolo.KAIKKI &&
+      this.filterParams.voimassaolo !== this.voimassaolo.KAIKKI) {
+      // initialize voimassaolo filters
       this.fillFilters1();
-    } else if (this.filterParams.voimassaolo === this.voimassaolo.KAIKKI) {
-      this.clearFilters1();
-      this.isFilters1Active = false;
-    } else if (!this.isFilters1Filled()) {
+    }
+    this.voimassaoloPrevious = this.filterParams.voimassaolo;
+
+    if (this.filterParams.voimassaolo !== this.voimassaolo.KAIKKI && !this.isFilters1Filled()) {
+      // voimassaolo filter is in use but not all filters are valid, do not continue search
       return false;
     }
+
     return true;
+  }
+
+  isFiltersActive(): boolean {
+    return this.filterParams.voimassaolo !== this.voimassaolo.KAIKKI || this.isFilters2Filled();
   }
 
   fillFilters1() {
     this.filterParams.alkamisPvm = moment();
     this.filterParams.paattymisPvm = moment();
+  }
+
+  fillFilters2() {}
+  fillFilters3() {}
+
+  isFilters1Filled(): boolean {
+    return this.filterParams.voimassaolo !== this.voimassaolo.KAIKKI && this.filterParams.alkamisPvm !== null &&
+      this.filterParams.paattymisPvm !== null;
+  }
+
+  isFilters2Filled(): boolean {
+    return this.filterParams.jarjestamismuoto !== null || this.filterParams.toimintamuoto !== null;
+  }
+
+  isFilters3Filled(): boolean {
+    return false;
   }
 
   clearFilters1() {
@@ -146,29 +167,14 @@ export class VardaSearchToimipaikkaComponent extends VardaSearchAbstractComponen
     this.filterParams.jarjestamismuoto = null;
   }
 
-  isFilters1Filled(): boolean {
-    return this.filterParams.voimassaolo !== this.voimassaolo.KAIKKI && this.filterParams.alkamisPvm !== null &&
-      this.filterParams.paattymisPvm !== null;
-  }
-
-  isFilters2Filled(): boolean {
-    return this.filterParams.jarjestamismuoto !== null || this.filterParams.toimintamuoto !== null;
-  }
+  clearFilters3() {}
 
   updateFilterString() {
     const stringParams: Array<FilterStringParam> = [];
 
     if (this.filterParams.voimassaolo !== this.voimassaolo.KAIKKI) {
       stringParams.push({ value: this.filterParams.voimassaolo, type: FilterStringType.TRANSLATED_STRING });
-      if (this.filterParams.alkamisPvm && this.filterParams.paattymisPvm) {
-        stringParams.push({ value: 'aikavali', type: FilterStringType.TRANSLATED_STRING, lowercase: true });
-        stringParams.push({
-          value: `${this.filterParams.alkamisPvm.format(VardaDateService.vardaDefaultDateFormat)} -
-        ${this.filterParams.paattymisPvm.format(VardaDateService.vardaDefaultDateFormat)}`,
-          type: FilterStringType.RAW,
-          ignoreComma: true
-        });
-      }
+      this.addDateRangeFilterString(stringParams);
     }
 
     stringParams.push({ value: this.getCodeUiString(this.filterParams.toimintamuoto), type: FilterStringType.RAW, lowercase: true });

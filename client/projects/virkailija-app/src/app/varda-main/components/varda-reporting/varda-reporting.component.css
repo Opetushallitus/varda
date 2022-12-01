@@ -107,7 +107,7 @@ h3 {
   cursor: pointer;
 }
 
-.varda-info-button {
+.varda-info-button, .varda-theme .varda-info-button {
   position: absolute !important;
   top: -0.5em;
   color: var(--blue-lighten-1);

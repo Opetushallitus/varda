@@ -1,7 +1,7 @@
 import datetime
 
 from django.db import transaction
-from django.db.models import Prefetch, Q, Subquery
+from django.db.models import Exists, OuterRef, Prefetch, Q, Subquery
 from django.http import Http404
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
@@ -19,9 +19,9 @@ from varda.cache import get_object_ids_user_has_permissions
 from varda.cas.varda_permissions import IsVardaPaakayttaja
 from varda.custom_swagger import ActionPaginationSwaggerAutoSchema
 from varda.filters import CustomParametersFilterBackend, CustomParameter
-from varda.misc_queries import get_paos_toimipaikat
+from varda.misc_queries import get_active_filter, get_paos_toimipaikat
 from varda.misc_viewsets import ExtraKwargsFilterBackend, parse_query_parameter
-from varda.models import (Toimipaikka, Organisaatio, PaosToiminta, PaosOikeus, Lapsi, Henkilo,
+from varda.models import (PidempiPoissaolo, Toimipaikka, Organisaatio, PaosToiminta, PaosOikeus, Lapsi, Henkilo,
                           Tyontekija, Z4_CasKayttoOikeudet)
 from varda.pagination import ChangeablePageSizePagination, ChangeablePageSizePaginationLarge
 from varda.permissions import (CustomModelPermissions, get_taydennyskoulutus_tyontekija_group_organisaatio_oids,
@@ -122,9 +122,12 @@ class UiVakajarjestajatViewSet(GenericViewSet, ListModelMixin):
         if (kiertava_tyontekija_kytkin := parse_query_parameter(query_params, 'kiertava_tyontekija_kytkin', bool)) is not None:
             filter_condition &= Q(palvelussuhteet__tyoskentelypaikat__kiertava_tyontekija_kytkin=kiertava_tyontekija_kytkin)
         if (voimassa_pvm := parse_query_parameter(query_params, 'voimassa_pvm', datetime.date)) is not None:
-            filter_condition &= (Q(palvelussuhteet__alkamis_pvm__lte=voimassa_pvm) &
-                                 (Q(palvelussuhteet__paattymis_pvm__gte=voimassa_pvm) |
-                                  Q(palvelussuhteet__paattymis_pvm__isnull=True)))
+            filter_condition &= (
+                get_active_filter(voimassa_pvm, prefix='palvelussuhteet') &
+                get_active_filter(voimassa_pvm, prefix='palvelussuhteet__tyoskentelypaikat') &
+                ~Exists(PidempiPoissaolo.objects
+                        .filter(get_active_filter(voimassa_pvm), palvelussuhde=OuterRef('palvelussuhteet')))
+            )
 
         return filter_condition
 
@@ -175,9 +178,10 @@ class UiVakajarjestajatViewSet(GenericViewSet, ListModelMixin):
         if toimipaikka_oid := query_params.get('toimipaikka_oid', None):
             filter_condition &= Q(varhaiskasvatuspaatokset__varhaiskasvatussuhteet__toimipaikka__organisaatio_oid=toimipaikka_oid)
         if (voimassa_pvm := parse_query_parameter(query_params, 'voimassa_pvm', datetime.date)) is not None:
-            filter_condition &= (Q(varhaiskasvatuspaatokset__varhaiskasvatussuhteet__alkamis_pvm__lte=voimassa_pvm) &
-                                 (Q(varhaiskasvatuspaatokset__varhaiskasvatussuhteet__paattymis_pvm__gte=voimassa_pvm) |
-                                  Q(varhaiskasvatuspaatokset__varhaiskasvatussuhteet__paattymis_pvm__isnull=True)))
+            filter_condition &= (
+                get_active_filter(voimassa_pvm, prefix='varhaiskasvatuspaatokset') &
+                get_active_filter(voimassa_pvm, prefix='varhaiskasvatuspaatokset__varhaiskasvatussuhteet')
+            )
 
         return filter_condition
 
@@ -420,7 +424,9 @@ class UiNestedLapsiViewSet(GenericViewSet, ListModelMixin):
                          CustomParameter(name='jarjestamismuoto', required=False, location='query', data_type='string',
                                          description='Lapsi must have this jarjestamismuoto koodi'),
                          CustomParameter(name='toimintamuoto', required=False, location='query', data_type='string',
-                                         description='Related Toimipaikka must have this toimintamuoto koodi'),)
+                                         description='Related Toimipaikka must have this toimintamuoto koodi'),
+                         CustomParameter(name='aktiiviset', required=False, location='query', data_type='boolean',
+                                         description='Varhaiskasvatuspaatos and Varhaiskasvatussuhde must be active'),)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -505,24 +511,27 @@ class UiNestedTyontekijaViewSet(GenericViewSet, ListModelMixin):
     permission_classes = (HenkilostohakuPermissions,)
     queryset = Tyontekija.objects.none()
     pagination_class = ChangeablePageSizePagination
-    custom_parameters = (CustomParameter(name='toimipaikat', required=False, location='query', data_type='string',
-                                         description='Comma separated list of toimipaikka IDs'),
-                         CustomParameter(name='rajaus', required=False, location='query', data_type='string',
-                                         description='palvelussuhteet/tyoskentelypaikat/poissaolot/taydennyskoulutukset'),
-                         CustomParameter(name='voimassaolo', required=False, location='query', data_type='string',
-                                         description='alkanut/paattynyt/voimassa'),
-                         CustomParameter(name='alkamis_pvm', required=False, location='query', data_type='string',
-                                         description='ISO Date (YYYY-MM-DD)'),
-                         CustomParameter(name='paattymis_pvm', required=False, location='query', data_type='string',
-                                         description='ISO Date (YYYY-MM-DD)'),
-                         CustomParameter(name='kiertava', required=False, location='query', data_type='boolean',
-                                         description='Tyontekija has kiertava tyoskentelypaikka'),
-                         CustomParameter(name='tehtavanimike', required=False, location='query', data_type='string',
-                                         description='Tyontekija must have this tehtavanimike koodi'),
-                         CustomParameter(name='tutkinto', required=False, location='query', data_type='string',
-                                         description='Tyontekija must have this tutkinto koodi'),
-                         CustomParameter(name='tyosuhde', required=False, location='query', data_type='string',
-                                         description='Tyontekija must have this tyosuhde koodi'),)
+    custom_parameters = (
+        CustomParameter(name='toimipaikat', required=False, location='query', data_type='string',
+                        description='Comma separated list of toimipaikka IDs'),
+        CustomParameter(name='rajaus', required=False, location='query', data_type='string',
+                        description='palvelussuhteet/tyoskentelypaikat/poissaolot/taydennyskoulutukset'),
+        CustomParameter(name='voimassaolo', required=False, location='query', data_type='string',
+                        description='alkanut/paattynyt/voimassa'),
+        CustomParameter(name='alkamis_pvm', required=False, location='query', data_type='string',
+                        description='ISO Date (YYYY-MM-DD)'),
+        CustomParameter(name='paattymis_pvm', required=False, location='query', data_type='string',
+                        description='ISO Date (YYYY-MM-DD)'),
+        CustomParameter(name='kiertava', required=False, location='query', data_type='boolean',
+                        description='Tyontekija has kiertava tyoskentelypaikka'),
+        CustomParameter(name='tehtavanimike', required=False, location='query', data_type='string',
+                        description='Tyontekija must have this tehtavanimike koodi'),
+        CustomParameter(name='tutkinto', required=False, location='query', data_type='string',
+                        description='Tyontekija must have this tutkinto koodi'),
+        CustomParameter(name='tyosuhde', required=False, location='query', data_type='string',
+                        description='Tyontekija must have this tyosuhde koodi'),
+        CustomParameter(name='aktiiviset', required=False, location='query', data_type='boolean',
+                        description='Palvelussuhde and Tyoskentelypaikka must be active, no active PidempiPoissaolo'),)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

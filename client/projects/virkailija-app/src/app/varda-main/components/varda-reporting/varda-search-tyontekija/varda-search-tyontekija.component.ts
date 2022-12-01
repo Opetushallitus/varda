@@ -20,6 +20,7 @@ import { ViewAccess } from 'projects/virkailija-app/src/app/utilities/models/var
 export class VardaSearchTyontekijaComponent extends VardaSearchAbstractComponent implements OnInit {
   rajaus = {
     PALVELUSSUHTEET: 'palvelussuhteet',
+    TYOSKENTELYPAIKAT: 'tyoskentelypaikat',
     POISSAOLOT: 'poissaolot',
     TAYDENNYSKOULUTUKSET: 'taydennyskoulutukset',
     NONE: null
@@ -32,6 +33,7 @@ export class VardaSearchTyontekijaComponent extends VardaSearchAbstractComponent
   };
 
   filterParams: {
+    aktiiviset: boolean;
     rajaus: string;
     voimassaolo: string;
     alkamisPvm: Moment;
@@ -42,8 +44,9 @@ export class VardaSearchTyontekijaComponent extends VardaSearchAbstractComponent
     kiertava: boolean;
     tyosuhde: CodeDTO;
   } = {
-    rajaus: this.rajaus.PALVELUSSUHTEET,
-    voimassaolo: this.voimassaolo.VOIMASSA,
+    aktiiviset: true,
+    rajaus: null,
+    voimassaolo: null,
     alkamisPvm: moment(),
     paattymisPvm: moment(),
     tehtavanimike: null,
@@ -52,6 +55,8 @@ export class VardaSearchTyontekijaComponent extends VardaSearchAbstractComponent
     kiertava: false,
     tyosuhde: null
   };
+  rajausPrevious = this.filterParams.rajaus;
+  aktiivisetPrevious = this.filterParams.aktiiviset;
 
   tehtavanimikkeet: Array<CodeDTO> = [];
   filteredTehtavanimikeOptions: BehaviorSubject<Array<CodeDTO>> = new BehaviorSubject([]);
@@ -124,9 +129,17 @@ export class VardaSearchTyontekijaComponent extends VardaSearchAbstractComponent
         searchParams.tehtavanimike_taydennyskoulutus = this.filterParams.tehtavanimikeTaydennyskoulutus.code_value;
       }
     }
+
+    if (this.isFilters3Filled()) {
+      searchParams.aktiiviset = true;
+      searchParams.alkamis_pvm = this.dateService.momentToVardaDate(this.filterParams.alkamisPvm);
+      searchParams.paattymis_pvm = this.dateService.momentToVardaDate(this.filterParams.paattymisPvm);
+    }
+
     if (this.filterParams.rajaus !== this.rajaus.TAYDENNYSKOULUTUKSET && this.filterParams.tehtavanimike !== null) {
       searchParams.tehtavanimike = this.filterParams.tehtavanimike.code_value;
     }
+
     if (this.filterParams.tutkinto !== null) {
       searchParams.tutkinto = this.filterParams.tutkinto.code_value;
     }
@@ -160,19 +173,31 @@ export class VardaSearchTyontekijaComponent extends VardaSearchAbstractComponent
   }
 
   filter(): boolean {
-    this.isFilters2Active = this.isFilters2Filled();
-    if (!this.isFilters1Active && this.filterParams.rajaus !== this.rajaus.NONE) {
-      this.isFilters1Active = true;
+    if (this.rajausPrevious === this.rajaus.NONE && this.filterParams.rajaus !== this.rajaus.NONE) {
+      // clear aktiiviset filter
+      this.clearFilters3();
+      // initialize rajaus filters
       this.fillFilters1();
-    }
-
-    if (this.filterParams.rajaus === this.rajaus.NONE) {
+    } else if (this.aktiivisetPrevious === false && this.filterParams.aktiiviset === true) {
+      // clear rajaus filters
       this.clearFilters1();
-      this.isFilters1Active = false;
-    } else if (!this.isFilters1Filled()) {
+      // initialize aktiiviset filter
+      this.fillFilters3();
+    }
+    this.rajausPrevious = this.filterParams.rajaus;
+    this.aktiivisetPrevious = this.filterParams.aktiiviset;
+
+    if ((this.filterParams.rajaus !== this.rajaus.NONE && !this.isFilters1Filled()) ||
+      (this.filterParams.aktiiviset === true && !this.isFilters3Filled())) {
+      // rajaus or aktiiviset filters are in use but not all filters are valid, do not continue search
       return false;
     }
+
     return true;
+  }
+
+  isFiltersActive(): boolean {
+    return this.filterParams.rajaus !== this.rajaus.NONE || this.filterParams.aktiiviset || this.isFilters2Filled();
   }
 
   fillFilters1() {
@@ -181,13 +206,12 @@ export class VardaSearchTyontekijaComponent extends VardaSearchAbstractComponent
     this.filterParams.paattymisPvm = moment();
   }
 
-  clearFilters() {
-    this.clearFilters1();
-    this.isFilters1Active = false;
-    this.clearFilters2();
-    this.isFilters2Active = false;
+  fillFilters2() {}
 
-    this.search();
+  fillFilters3() {
+    this.filterParams.aktiiviset = true;
+    this.filterParams.alkamisPvm = moment();
+    this.filterParams.paattymisPvm = moment();
   }
 
   clearFilters1() {
@@ -204,6 +228,12 @@ export class VardaSearchTyontekijaComponent extends VardaSearchAbstractComponent
     this.filterParams.tyosuhde = null;
   }
 
+  clearFilters3() {
+    this.filterParams.aktiiviset = false;
+    this.filterParams.alkamisPvm = null;
+    this.filterParams.paattymisPvm = null;
+  }
+
   isFilters1Filled(): boolean {
     return this.filterParams.rajaus !== this.rajaus.NONE &&
       this.filterParams.voimassaolo !== null && this.filterParams.alkamisPvm !== null &&
@@ -213,6 +243,11 @@ export class VardaSearchTyontekijaComponent extends VardaSearchAbstractComponent
   isFilters2Filled(): boolean {
     return this.filterParams.tehtavanimike !== null || this.filterParams.tutkinto !== null ||
       this.filterParams.tyosuhde !== null;
+  }
+
+  isFilters3Filled(): boolean {
+    return this.filterParams.aktiiviset && this.filterParams.alkamisPvm !== null &&
+      this.filterParams.paattymisPvm !== null;
   }
 
   updateFilterString() {
@@ -225,15 +260,15 @@ export class VardaSearchTyontekijaComponent extends VardaSearchAbstractComponent
       } else {
         stringParams.push({ value: this.getCodeUiString(this.filterParams.tehtavanimikeTaydennyskoulutus), type: FilterStringType.RAW, lowercase: true });
       }
-      if (this.filterParams.alkamisPvm && this.filterParams.paattymisPvm) {
-        stringParams.push({ value: 'aikavali', type: FilterStringType.TRANSLATED_STRING, lowercase: true });
-        stringParams.push({
-          value: `${this.filterParams.alkamisPvm.format(VardaDateService.vardaDefaultDateFormat)} -
-        ${this.filterParams.paattymisPvm.format(VardaDateService.vardaDefaultDateFormat)}`,
-          type: FilterStringType.RAW,
-          ignoreComma: true
-        });
-      }
+
+      this.addDateRangeFilterString(stringParams);
+    }
+
+    if (this.isFilters3Filled()) {
+      stringParams.push({ value: this.i18n.katsele_tietoja_tyontekija_active, type: FilterStringType.TRANSLATED_STRING,
+        lowercase: true });
+
+      this.addDateRangeFilterString(stringParams);
     }
 
     if (this.filterParams.rajaus !== this.rajaus.TAYDENNYSKOULUTUKSET) {

@@ -469,17 +469,19 @@ def get_history_value_subquery(model, field_name, datetime_param):
                     .distinct('id').order_by('id', '-history_date').values(field_name))
 
 
-def get_active_filter(target_date, prefix=''):
+def get_active_filter(target_date, target_date_secondary=None, prefix=''):
     """
     Get Q filter for getting only objects that are currently active. Optionally use prefix to filter on related data.
     :param target_date: Date object
+    :param target_date_secondary: Date object, used for paattymis_pvm if given
     :param prefix: string, e.g. varhaiskasvatuspaatokset (__ added automatically)
     :return: Q object filter
     """
     if prefix and not prefix.endswith('__'):
         prefix += '__'
     return (Q(**{f'{prefix}alkamis_pvm__lte': target_date}) &
-            (Q(**{f'{prefix}paattymis_pvm__gte': target_date}) | Q(**{f'{prefix}paattymis_pvm__isnull': True})))
+            (Q(**{f'{prefix}paattymis_pvm__gte': target_date_secondary or target_date}) |
+             Q(**{f'{prefix}paattymis_pvm__isnull': True})))
 
 
 def get_tallentaja_organisaatio_oid_for_paos_lapsi(lapsi):

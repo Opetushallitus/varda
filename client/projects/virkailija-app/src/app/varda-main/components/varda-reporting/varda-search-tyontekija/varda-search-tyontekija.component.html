@@ -98,22 +98,72 @@
 
       <div class="oph-bg-gray-lighten-5 filter-form order-6"
            *ngIf="isFiltersVisible">
-        <div class="col-md-auto">
+        <div class="col-12 varda-theme">
           <label class="varda-link varda-filter-close"
                  *ngIf="isSmall"
                  (click)="isFiltersVisible = false; clearFilters()">
             {{i18n.close | translate}}
           </label>
+          <mat-checkbox name="aktiivisetCheckbox"
+                        class="varda-checkbox"
+                        [(ngModel)]="filterParams.aktiiviset"
+                        labelPosition="after"
+                        (change)="search()">
+            <span class="oph-bold">{{i18n.katsele_tietoja_tyontekija_active | translate}}</span>
+            <button mat-icon-button
+                    class="varda-info-button"
+                    [matTooltip]="i18n.katsele_tietoja_tyontekija_active_description | translate"
+                    matTooltipClass="varda-tooltip"
+                    aria-label="aktiiviset työntekijät ohje">
+              <mat-icon alt="">info</mat-icon>
+            </button>
+          </mat-checkbox>
+        </div>
+        <div class="col-12" *ngIf="filterParams.aktiiviset">
+          <div class="varda-date-range-container">
+            <div class="row varda-date-range-row">
+              <div class="col">
+                <app-varda-datepicker [name]="'filterAlkamisPvm'"
+                                      [(ngModel)]="filterParams.alkamisPvm"
+                                      (dateInput)="search()"
+                                      [required]="true"
+                                      [errorMap]="[
+                                        { key: 'required', value: i18n.required_field },
+                                        { key: 'matDatepickerParse', value: i18n.katsele_tietoja_error_date_format }
+                                      ]">
+                </app-varda-datepicker>
+              </div>
+              <span class="varda-date-range-dash">–</span>
+              <div class="col">
+                <app-varda-datepicker [name]="'filterPaattymisPvm'"
+                                      [(ngModel)]="filterParams.paattymisPvm"
+                                      (dateInput)="search()"
+                                      [required]="true"
+                                      [errorMap]="[
+                                        { key: 'required', value: i18n.required_field },
+                                        { key: 'matDatepickerParse', value: i18n.katsele_tietoja_error_date_format }
+                                      ]">
+                </app-varda-datepicker>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-auto">
           <label class="oph-bold">{{i18n.katsele_tietoja_filter_content | translate}}</label>
           <app-varda-radio-button-group name="tyontekijaRajausButtonGroup"
-                                        responsive="md"
-                                        wrap="md"
+                                        responsive="lg"
+                                        wrap="lg"
                                         (valueChanged)="search()"
                                         [(ngModel)]="filterParams.rajaus">
             <app-varda-radio-button [id]="'filterPalvelussuhteet'"
                                     [value]="rajaus.PALVELUSSUHTEET"
                                     [disabled]="!userAccess.tyontekijatiedot.katselija">
               {{i18n.palvelussuhteet | translate}}
+            </app-varda-radio-button>
+            <app-varda-radio-button [id]="'filterTyoskentelypaikat'"
+                                    [value]="rajaus.TYOSKENTELYPAIKAT"
+                                    [disabled]="!userAccess.tyontekijatiedot.katselija">
+              {{i18n.tyoskentelypaikka_plural | translate}}
             </app-varda-radio-button>
             <app-varda-radio-button [id]="'filterPoissaolot'"
                                     [value]="rajaus.POISSAOLOT"
@@ -162,14 +212,12 @@
                                         [name]="'filterAlkamisPvm'"
                                         [(ngModel)]="filterParams.alkamisPvm"
                                         (dateInput)="search()"
-                                        [required]="true">
+                                        [required]="true"
+                                        [errorMap]="[
+                                          { key: 'required', value: i18n.required_field },
+                                          { key: 'matDatepickerParse', value: i18n.katsele_tietoja_error_date_format }
+                                        ]">
                   </app-varda-datepicker>
-                  <div aria-live="assertive"
-                       class="varda-error-message-block"
-                       role="alert"
-                       *ngIf="alkamisPvm.invalid">
-                    <p>{{i18n.katsele_tietoja_error_date_format | translate}}</p>
-                  </div>
                 </div>
                 <span class="varda-date-range-dash">–</span>
                 <div class="col">
@@ -177,14 +225,12 @@
                                         [name]="'filterPaattymisPvm'"
                                         [(ngModel)]="filterParams.paattymisPvm"
                                         (dateInput)="search()"
-                                        [required]="true">
+                                        [required]="true"
+                                        [errorMap]="[
+                                          { key: 'required', value: i18n.required_field },
+                                          { key: 'matDatepickerParse', value: i18n.katsele_tietoja_error_date_format }
+                                        ]">
                   </app-varda-datepicker>
-                  <div aria-live="assertive"
-                       class="varda-error-message-block"
-                       role="alert"
-                       *ngIf="paattymisPvm.invalid">
-                    <p>{{i18n.katsele_tietoja_error_date_format | translate}}</p>
-                  </div>
                 </div>
               </div>
             </div>
