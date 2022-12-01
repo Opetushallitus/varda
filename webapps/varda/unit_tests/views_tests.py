@@ -1,5 +1,4 @@
 import json
-from datetime import datetime
 from unittest import mock
 from unittest.mock import patch
 
@@ -3342,16 +3341,15 @@ class VardaViewsTests(TestCase):
         assert_validation_error(resp, 'errors', 'VS013',
                                 'Lapsi already has 3 overlapping Varhaiskasvatussuhde on the given date range.')
 
-    @patch('varda.viewsets.datetime')
-    def test_api_get_vakajarjestaja_yhteenveto(self, mock_datetime):
-        # Freeze date used in reporting
-        mock_datetime.datetime.now.return_value = datetime(2020, 9, 1)
-
+    @mock_date_decorator_factory('varda.viewsets.datetime', '2020-09-01')
+    def test_api_get_vakajarjestaja_yhteenveto(self):
         client = SetUpTestClient('tester').client()
-        resp = client.get('/api/v1/vakajarjestajat/2/yhteenveto/')
+
         accepted_response = {
             'vakajarjestaja_nimi': 'Tester organisaatio',
             'lapset_lkm': 5,
+            'lapset_kokopaivainen': 5,
+            'lapset_paivittainen': 5,
             'lapset_vakapaatos_voimassaoleva': 6,
             'lapset_vakasuhde_voimassaoleva': 5,
             'lapset_vuorohoidossa': 0,
@@ -3361,17 +3359,24 @@ class VardaViewsTests(TestCase):
             'toimipaikat_paattyneet': 0,
             'toimintapainotukset_maara': 2,
             'kielipainotukset_maara': 2,
-            'tyontekijat_lkm': 1,
+            'tyontekijat_lkm': 0,
             'palvelussuhteet_voimassaoleva': 1,
             'palvelussuhteet_maaraaikaiset': 0,
             'varhaiskasvatusalan_tutkinnot': 1,
-            'tyoskentelypaikat_kelpoiset': 2,
+            'tyoskentelypaikat_voimassaoleva': 0,
+            'tyoskentelypaikat_kelpoiset': 0,
+            'pidemmat_poissaolot_voimassaoleva': 0,
             'taydennyskoulutukset_kuluva_vuosi': 0,
             'tilapainen_henkilosto_maara_kuluva_vuosi': None,
             'tilapainen_henkilosto_tunnit_kuluva_vuosi': None
         }
+
+        resp = client.get('/api/v1/vakajarjestajat/2/yhteenveto/')
         assert_status_code(resp, status.HTTP_200_OK)
-        self.assertEqual(json.loads(resp.content), accepted_response)
+        resp_dict = json.loads(resp.content)
+        # Do not validate timestamp
+        del resp_dict['timestamp']
+        self.assertEqual(resp_dict, accepted_response)
 
     """ organisaatiopalvelu-integraatio
     def test_api_multiple_asiointikieli(self):

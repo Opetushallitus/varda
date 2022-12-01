@@ -94,13 +94,6 @@ def delete_cache_keys_related_model(model_name, object_id):
     cache.delete('{}.{}'.format(model_name, object_id))  # cache-value from serializer, e.g. vakajarjestaja.3
 
 
-def delete_toimipaikan_lapset_cache(toimipaikka_id):
-    list_of_toimipaikan_lapset_cache_keys = cache.get('toimipaikan_lapset_' + toimipaikka_id)
-    if list_of_toimipaikan_lapset_cache_keys:
-        cache.delete('toimipaikan_lapset_' + toimipaikka_id)
-        cache.delete_many(list_of_toimipaikan_lapset_cache_keys)
-
-
 def delete_object_ids_user_has_permissions(user_id):
     """
     Here we assume if the model has history attr, user has cache keys for that specific model.
@@ -174,5 +167,10 @@ def get_pulssi_cache():
     return cache.get('varda_pulssi', None)
 
 
-def delete_organisaatio_yhteenveto_cache(organisaatio_id):
-    cache.delete(f'organisaatio_yhteenveto_{organisaatio_id}')
+def set_yhteenveto_cache(organisaatio_id, data):
+    # Data cached for 10 minutes
+    cache.set(f'organisaatio_yhteenveto_{organisaatio_id}', data, 60 * 10)
+
+
+def get_yhteenveto_cache(organisaatio_id):
+    return cache.get(f'organisaatio_yhteenveto_{organisaatio_id}', None)

@@ -8,6 +8,11 @@
   margin-top: 2em;
 }
 
+.yhteenveto-wrapper em {
+  font-style: italic;
+  font-size: 14px;
+}
+
 .mat-table .mat-header-cell:nth-child(2), .mat-table .mat-cell:nth-child(2) {
   text-align: right;
   padding-right: 1em;

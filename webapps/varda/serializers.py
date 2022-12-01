@@ -1541,10 +1541,12 @@ Nested serializers
 class OrganisaatioYhteenvetoSerializer(serializers.Serializer):
     vakajarjestaja_nimi = serializers.CharField(read_only=True)
     lapset_lkm = serializers.IntegerField(read_only=True)
+    lapset_palveluseteli_ja_ostopalvelu = serializers.IntegerField(read_only=True)
+    lapset_vuorohoidossa = serializers.IntegerField(read_only=True)
+    lapset_paivittainen = serializers.IntegerField(read_only=True)
+    lapset_kokopaivainen = serializers.IntegerField(read_only=True)
     lapset_vakapaatos_voimassaoleva = serializers.IntegerField(read_only=True)
     lapset_vakasuhde_voimassaoleva = serializers.IntegerField(read_only=True)
-    lapset_vuorohoidossa = serializers.IntegerField(read_only=True)
-    lapset_palveluseteli_ja_ostopalvelu = serializers.IntegerField(read_only=True)
     lapset_maksutieto_voimassaoleva = serializers.IntegerField(read_only=True)
     toimipaikat_voimassaolevat = serializers.IntegerField(read_only=True)
     toimipaikat_paattyneet = serializers.IntegerField(read_only=True)
@@ -1553,11 +1555,14 @@ class OrganisaatioYhteenvetoSerializer(serializers.Serializer):
     tyontekijat_lkm = serializers.IntegerField(read_only=True)
     palvelussuhteet_voimassaoleva = serializers.IntegerField(read_only=True)
     palvelussuhteet_maaraaikaiset = serializers.IntegerField(read_only=True)
-    varhaiskasvatusalan_tutkinnot = serializers.IntegerField(read_only=True)
+    tyoskentelypaikat_voimassaoleva = serializers.IntegerField(read_only=True)
     tyoskentelypaikat_kelpoiset = serializers.IntegerField(read_only=True)
+    pidemmat_poissaolot_voimassaoleva = serializers.IntegerField(read_only=True)
+    varhaiskasvatusalan_tutkinnot = serializers.IntegerField(read_only=True)
     taydennyskoulutukset_kuluva_vuosi = serializers.IntegerField(read_only=True)
     tilapainen_henkilosto_maara_kuluva_vuosi = serializers.IntegerField(read_only=True, allow_null=True)
     tilapainen_henkilosto_tunnit_kuluva_vuosi = serializers.FloatField(read_only=True, allow_null=True)
+    timestamp = serializers.DateTimeField()
 
 
 class ToimipaikanLapsetKatseluSerializer(serializers.Serializer):

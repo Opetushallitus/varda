@@ -5,10 +5,12 @@ from django.conf import settings
 from django.contrib.auth.models import Group, User
 from django.core.cache import cache
 from django.db import IntegrityError, transaction
-from django.db.models import ProtectedError, Q, Subquery, Sum
+from django.db.models import Count, Exists, OuterRef, ProtectedError, Q, Subquery, Sum
+from django.db.models.functions import Lower
 from django.db.models.query import EmptyQuerySet, Prefetch
 from django.http import Http404
 from django.shortcuts import get_object_or_404
+from django.utils import timezone
 from django_filters.rest_framework import DjangoFilterBackend
 from drf_yasg.utils import swagger_auto_schema
 from guardian.shortcuts import assign_perm
@@ -25,8 +27,8 @@ from rest_framework_guardian.filters import ObjectPermissionsFilter
 
 from varda import filters, validators
 from varda.api_token import KnoxLoginView
-from varda.cache import (delete_organisaatio_yhteenveto_cache, delete_toimipaikan_lapset_cache,
-                         delete_cache_keys_related_model, get_object_ids_user_has_permissions)
+from varda.cache import (delete_cache_keys_related_model, get_object_ids_user_has_permissions, get_yhteenveto_cache,
+                         set_yhteenveto_cache)
 from varda.clients.oppijanumerorekisteri_client import (get_henkilo_data_by_oid, add_henkilo_to_oppijanumerorekisteri,
                                                         get_henkilo_by_henkilotunnus)
 from varda.custom_swagger import IntegerIdSchema
@@ -36,13 +38,13 @@ from varda.enums.organisaatiotyyppi import Organisaatiotyyppi
 from varda.exceptions.conflict_error import ConflictError
 from varda.kayttooikeuspalvelu import set_user_info_from_onr
 from varda.misc import CustomServerErrorException, encrypt_string, hash_string, update_painotus_kytkin
-from varda.misc_queries import get_paos_toimipaikat
+from varda.misc_queries import get_active_filter, get_paos_toimipaikat
 from varda.misc_viewsets import (IncreasedModifyThrottleMixin, ObjectByTunnisteMixin, ParentObjectMixin,
                                  PermissionListMixin)
-from varda.models import (Organisaatio, Toimipaikka, ToiminnallinenPainotus, KieliPainotus, Henkilo, PaosToiminta,
-                          Lapsi, Huoltaja, Huoltajuussuhde, Varhaiskasvatuspaatos, Varhaiskasvatussuhde, Maksutieto,
-                          PaosOikeus, Z3_AdditionalCasUserFields, Z4_CasKayttoOikeudet, Tyontekija, Palvelussuhde,
-                          Taydennyskoulutus, Tyoskentelypaikka, TilapainenHenkilosto, Tutkinto,
+from varda.models import (Organisaatio, PidempiPoissaolo, Toimipaikka, ToiminnallinenPainotus, KieliPainotus, Henkilo,
+                          PaosToiminta, Lapsi, Huoltaja, Huoltajuussuhde, Varhaiskasvatuspaatos, Varhaiskasvatussuhde,
+                          Maksutieto, PaosOikeus, Z3_AdditionalCasUserFields, Z4_CasKayttoOikeudet, Tyontekija,
+                          Palvelussuhde, Taydennyskoulutus, Tyoskentelypaikka, TilapainenHenkilosto, Tutkinto,
                           MaksutietoHuoltajuussuhde)
 from varda.monkey_patch import knox_views
 from varda.oppijanumerorekisteri import fetch_henkilo_with_oid, save_henkilo_to_db
@@ -75,7 +77,7 @@ from varda.serializers import (ExternalPermissionsSerializer, GroupSerializer, U
                                PaosToimintaSerializer, PaosToimijatSerializer, PaosToimipaikatSerializer,
                                PaosOikeusSerializer, LapsiKoosteSerializer, UserSerializer, ToimipaikkaKoosteSerializer,
                                ToimipaikkaUpdateSerializer, PulssiVakajarjestajatSerializer, MaksutietoPostSerializer)
-from webapps.api_throttles import (BurstRateThrottleStrict, SustainedRateThrottleStrict)
+from webapps.api_throttles import BurstRateThrottleStrict, SustainedRateThrottleStrict
 
 
 logger = logging.getLogger(__name__)
@@ -585,7 +587,6 @@ class ToimipaikkaViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMixin, Pe
                 assign_toimipaikka_permissions(saved_object)
 
                 delete_cache_keys_related_model(Organisaatio.get_name(), saved_object.vakajarjestaja.id)
-                delete_organisaatio_yhteenveto_cache(saved_object.vakajarjestaja.id)
         except IntegrityError as e:
             logger.error(f'Could not create a toimipaikka in Org.Palvelu. Data: {validated_data}. Error: {e.__cause__}.')
             raise ValidationError({'toimipaikka': [ErrorMessages.TP002.value]})
@@ -593,7 +594,6 @@ class ToimipaikkaViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMixin, Pe
     def perform_update(self, serializer):
         saved_object = serializer.save()
         delete_cache_keys_related_model(Organisaatio.get_name(), saved_object.vakajarjestaja.id)
-        delete_organisaatio_yhteenveto_cache(saved_object.vakajarjestaja.id)
 
     @auditlog
     @action(methods=['get'], detail=True, permission_classes=(CustomModelPermissions, CustomObjectPermissions,))
@@ -642,7 +642,6 @@ class ToiminnallinenPainotusViewSet(IncreasedModifyThrottleMixin, ObjectByTunnis
         self._toggle_toimipaikka_kytkin(saved_object.toimipaikka)
 
         delete_cache_keys_related_model(Toimipaikka.get_name(), saved_object.toimipaikka.id)
-        delete_organisaatio_yhteenveto_cache(saved_object.toimipaikka.vakajarjestaja.id)
 
     @transaction.atomic
     def perform_update(self, serializer):
@@ -662,7 +661,6 @@ class ToiminnallinenPainotusViewSet(IncreasedModifyThrottleMixin, ObjectByTunnis
         self._toggle_toimipaikka_kytkin(toimipaikka)
 
         delete_cache_keys_related_model(Toimipaikka.get_name(), instance.toimipaikka.id)
-        delete_organisaatio_yhteenveto_cache(instance.toimipaikka.vakajarjestaja.id)
 
 
 @auditlogclass
@@ -703,7 +701,6 @@ class KieliPainotusViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMixin, 
         self._toggle_toimipaikka_kytkin(saved_object.toimipaikka)
 
         delete_cache_keys_related_model(Toimipaikka.get_name(), saved_object.toimipaikka.id)
-        delete_organisaatio_yhteenveto_cache(saved_object.toimipaikka.vakajarjestaja.id)
 
     @transaction.atomic
     def perform_update(self, serializer):
@@ -723,7 +720,6 @@ class KieliPainotusViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMixin, 
         self._toggle_toimipaikka_kytkin(toimipaikka)
 
         delete_cache_keys_related_model(Toimipaikka.get_name(), instance.toimipaikka.id)
-        delete_organisaatio_yhteenveto_cache(instance.toimipaikka.vakajarjestaja.id)
 
 
 class HaeHenkiloViewSet(GenericViewSet, CreateModelMixin):
@@ -1168,12 +1164,8 @@ class VarhaiskasvatuspaatosViewSet(IncreasedModifyThrottleMixin, ObjectByTunnist
         else:
             validated_data['pikakasittely_kytkin'] = False
 
-        saved_object = serializer.save()
-        """
-        No need to delete the related-lapsi cache, since user cannot change the lapsi-relation.
-        """
-        self.delete_list_of_toimipaikan_lapset_cache(self.get_toimipaikka_ids(saved_object))
-        self.delete_organisaatio_yhteenveto_cache(saved_object)
+        # No need to delete the related-lapsi cache, since user cannot change the lapsi-relation.
+        serializer.save()
 
     def perform_destroy(self, instance):
         lapsi_id = instance.lapsi.id
@@ -1182,10 +1174,6 @@ class VarhaiskasvatuspaatosViewSet(IncreasedModifyThrottleMixin, ObjectByTunnist
         except ProtectedError:
             raise ValidationError({'errors': [ErrorMessages.VP004.value]})
         delete_cache_keys_related_model(Lapsi.get_name(), lapsi_id)
-        """
-        No need to delete toimipaikan_lapset or vakajarjestaja_yhteenveto caches.
-        For this object to be deleted, the vakasuhteet must have been first deleted.
-        """
 
     def get_toimipaikka_ids(self, vakapaatos_obj):
         toimipaikka_id_list = []
@@ -1194,15 +1182,6 @@ class VarhaiskasvatuspaatosViewSet(IncreasedModifyThrottleMixin, ObjectByTunnist
             if toimipaikka_id not in toimipaikka_id_list:
                 toimipaikka_id_list.append(toimipaikka_id)
         return toimipaikka_id_list
-
-    def delete_list_of_toimipaikan_lapset_cache(self, toimipaikka_id_list):
-        for toimipaikka_id in toimipaikka_id_list:
-            delete_toimipaikan_lapset_cache(str(toimipaikka_id))
-
-    def delete_organisaatio_yhteenveto_cache(self, vakapaatos_obj):
-        vakasuhde = vakapaatos_obj.varhaiskasvatussuhteet.all().first()
-        if vakasuhde is not None:
-            delete_organisaatio_yhteenveto_cache(vakasuhde.toimipaikka.vakajarjestaja.id)
 
 
 @auditlogclass
@@ -1252,31 +1231,11 @@ class VarhaiskasvatussuhdeViewSet(IncreasedModifyThrottleMixin, ObjectByTunniste
             delete_cache_keys_related_model(Toimipaikka.get_name(), varhaiskasvatussuhde.toimipaikka.id)
             delete_cache_keys_related_model(Varhaiskasvatuspaatos.get_name(),
                                             varhaiskasvatussuhde.varhaiskasvatuspaatos.id)
-            delete_toimipaikan_lapset_cache(str(varhaiskasvatussuhde.toimipaikka.id))
-            delete_organisaatio_yhteenveto_cache(varhaiskasvatussuhde.toimipaikka.vakajarjestaja.id)
-            if lapsi_obj.oma_organisaatio:
-                delete_organisaatio_yhteenveto_cache(lapsi_obj.oma_organisaatio.id)
-
-    def perform_update(self, serializer):
-        saved_object = serializer.save()
-
-        # No need to delete the related-object caches. User cannot change toimipaikka or varhaiskasvatuspaatos.
-        delete_toimipaikan_lapset_cache(str(saved_object.toimipaikka.id))
-        delete_organisaatio_yhteenveto_cache(saved_object.toimipaikka.vakajarjestaja.id)
-        lapsi_obj = saved_object.varhaiskasvatuspaatos.lapsi
-        if lapsi_obj.paos_kytkin:
-            delete_organisaatio_yhteenveto_cache(lapsi_obj.oma_organisaatio.id)
 
     def perform_destroy(self, instance):
         instance.delete()
-
-        delete_toimipaikan_lapset_cache(str(instance.toimipaikka.id))
-        delete_organisaatio_yhteenveto_cache(instance.toimipaikka.vakajarjestaja.id)
         delete_cache_keys_related_model(Toimipaikka.get_name(), instance.toimipaikka.id)
         delete_cache_keys_related_model(Varhaiskasvatuspaatos.get_name(), instance.varhaiskasvatuspaatos.id)
-        lapsi_obj = instance.varhaiskasvatuspaatos.lapsi
-        if lapsi_obj.paos_kytkin:
-            delete_organisaatio_yhteenveto_cache(lapsi_obj.oma_organisaatio.id)
 
 
 @auditlogclass
@@ -1336,15 +1295,10 @@ class MaksutietoViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMixin, Per
             if not user_has_huoltajatieto_tallennus_permissions_to_correct_organization(user, lapsi.vakatoimija.organisaatio_oid, toimipaikka_qs):
                 raise PermissionDenied({'errors': [ErrorMessages.MA010.value]})
 
-        """
-        Save maksutieto
-        """
+        # Save maksutieto
         with transaction.atomic():
             saved_object = serializer.save()
             assign_maksutieto_permissions(saved_object)
-
-            vakajarjestaja = lapsi.vakatoimija or lapsi.oma_organisaatio
-            delete_organisaatio_yhteenveto_cache(vakajarjestaja.id)
 
     @transaction.atomic
     def perform_update(self, serializer):
@@ -1354,12 +1308,8 @@ class MaksutietoViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMixin, Per
         if len(lapsi_objects) != 1:
             logger.error(f'Error getting lapsi for maksutieto {maksutieto_obj.id}')
             raise CustomServerErrorException
-        lapsi_object = lapsi_objects[0]
 
         serializer.save()
-
-        vakajarjestaja = lapsi_object.vakatoimija or lapsi_object.oma_organisaatio
-        delete_organisaatio_yhteenveto_cache(vakajarjestaja.id)
 
     @transaction.atomic
     def destroy(self, request, *args, **kwargs):
@@ -1369,13 +1319,9 @@ class MaksutietoViewSet(IncreasedModifyThrottleMixin, ObjectByTunnisteMixin, Per
         if len(lapsi_objects) != 1:
             logger.error(f'Error getting lapsi when deleting maksutieto {instance.id}')
             raise CustomServerErrorException
-        lapsi_object = lapsi_objects[0]
 
         MaksutietoHuoltajuussuhde.objects.filter(maksutieto=instance).delete()
         self.perform_destroy(instance)
-
-        vakajarjestaja = lapsi_object.vakatoimija or lapsi_object.oma_organisaatio
-        delete_organisaatio_yhteenveto_cache(vakajarjestaja.id)
 
         return Response(status=status.HTTP_204_NO_CONTENT)
 
@@ -1595,289 +1541,214 @@ class NestedOrganisaatioYhteenvetoViewSet(GenericViewSet, ListModelMixin):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.today = None
-        self.vakajarjestaja_id = None
-
-    def get_active_filter(self, prefix):
-        return (Q(**{prefix + 'alkamis_pvm__lte': self.today}) &
-                (Q(**{prefix + 'paattymis_pvm__isnull': True}) | Q(**{prefix + 'paattymis_pvm__gte': self.today})))
+        self.active_filter = None
+        self.organisaatio_id = None
 
     @transaction.atomic
     @swagger_auto_schema(responses={status.HTTP_200_OK: OrganisaatioYhteenvetoSerializer(many=False)})
     def list(self, request, *args, **kwargs):
-        self.today = datetime.datetime.now()
+        self.today = datetime.date.today()
+        self.active_filter = get_active_filter(self.today)
 
         self.kwargs['pk'] = self.kwargs['organisaatio_pk']
-        self.vakajarjestaja_id = self.kwargs['pk']
-        if not self.vakajarjestaja_id.isdigit():
+        self.organisaatio_id = self.kwargs['pk']
+        if not self.organisaatio_id.isdigit():
             raise Http404
+
         vakajarjestaja_obj = self.get_object()
-        data = cache.get('organisaatio_yhteenveto_' + self.vakajarjestaja_id)
-        if data is None:
+
+        data = get_yhteenveto_cache(self.organisaatio_id)
+        if not data:
+            lapsi_data = self.get_lapsi_data()
+            palvelussuhde_data = self.get_palvelussuhde_data()
+            tyoskentelypaikka_data = self.get_tyoskentelypaikka_data()
+            tilapainen_henkilosto_data = self.get_tilapainen_henkilosto_data()
             data = {
                 'vakajarjestaja_nimi': vakajarjestaja_obj.nimi,
-                'lapset_lkm': self.get_lapset_lkm(),
-                'lapset_vakapaatos_voimassaoleva': self.get_vakapaatos_voimassaoleva(),
-                'lapset_vakasuhde_voimassaoleva': self.get_vakasuhde_voimassaoleva(),
-                'lapset_vuorohoidossa': self.get_vuorohoito_lapset(),
-                'lapset_palveluseteli_ja_ostopalvelu': self.get_paos_lapset(),
-                'lapset_maksutieto_voimassaoleva': self.get_maksutieto_voimassaoleva(),
-                'toimipaikat_voimassaolevat': self.get_active_toimipaikat(),
-                'toimipaikat_paattyneet': self.get_closed_toimipaikat(),
-                'toimintapainotukset_maara': self.get_toimipaikkojen_toimintapainotukset(),
-                'kielipainotukset_maara': self.get_toimipaikkojen_kielipainotukset(),
+                'lapset_lkm': lapsi_data['count'],
+                'lapset_vuorohoidossa': lapsi_data['vuorohoito_count'],
+                'lapset_palveluseteli_ja_ostopalvelu': lapsi_data['paos_count'],
+                'lapset_paivittainen': lapsi_data['paivittainen_count'],
+                'lapset_kokopaivainen': lapsi_data['kokopaivainen_count'],
+                'lapset_vakapaatos_voimassaoleva': self.get_vakapaatos_count(),
+                'lapset_vakasuhde_voimassaoleva': self.get_vakasuhde_count(),
+                'lapset_maksutieto_voimassaoleva': self.get_maksutieto_count(),
+                'toimipaikat_voimassaolevat': self.get_toimipaikka_active_count(),
+                'toimipaikat_paattyneet': self.get_toimipaikka_inactive_count(),
+                'toimintapainotukset_maara': self.get_toiminnallinen_painotus_count(),
+                'kielipainotukset_maara': self.get_kielipainotus_count(),
                 'tyontekijat_lkm': self.get_tyontekija_count(),
-                'palvelussuhteet_voimassaoleva': self.get_active_palvelussuhde_count(),
-                'palvelussuhteet_maaraaikaiset': self.get_active_palvelussuhde_maaraaikainen_count(),
-                'varhaiskasvatusalan_tutkinnot': self.get_vaka_tutkinto_count(),
-                'tyoskentelypaikat_kelpoiset': self.get_kelpoinen_tyoskentelypaikka_count(),
-                'taydennyskoulutukset_kuluva_vuosi': self.get_taydennyskoulutus_count_this_year(),
-                'tilapainen_henkilosto_maara_kuluva_vuosi': self.get_tilapainen_henkilosto_maara_this_year(),
-                'tilapainen_henkilosto_tunnit_kuluva_vuosi': self.get_tilapainen_henkilosto_tunnit_this_year()
+                'palvelussuhteet_voimassaoleva': palvelussuhde_data['count'],
+                'palvelussuhteet_maaraaikaiset': palvelussuhde_data['maaraaikainen_count'],
+                'tyoskentelypaikat_voimassaoleva': tyoskentelypaikka_data['count'],
+                'tyoskentelypaikat_kelpoiset': tyoskentelypaikka_data['kelpoinen_count'],
+                'pidemmat_poissaolot_voimassaoleva': self.get_pidempi_poissaolo_count(),
+                'varhaiskasvatusalan_tutkinnot': self.get_tutkinto_count(),
+                'taydennyskoulutukset_kuluva_vuosi': self.get_taydennyskoulutus_count(),
+                'tilapainen_henkilosto_maara_kuluva_vuosi': tilapainen_henkilosto_data['tyontekijamaara_sum'],
+                'tilapainen_henkilosto_tunnit_kuluva_vuosi': tilapainen_henkilosto_data['tuntimaara_sum'],
+                'timestamp': timezone.now()
             }
-            cache.set('organisaatio_yhteenveto_' + self.vakajarjestaja_id, data, 8 * 60 * 60)
+            set_yhteenveto_cache(self.organisaatio_id, data)
 
         serializer = self.get_serializer(data, many=False)
         return Response(serializer.data)
 
-    def get_lapset_lkm(self):
+    def get_lapsi_data(self):
         """
-        Return the number of unique lapset (having an active vakasuhde) in all toimipaikat under the vakajarjestaja.
+        :return: number of unique Lapsi objects with different filters, Lapsi must have
+        active Varhaiskasvatuspaatos and Varhaiskasvatussuhde objects
+        count: Number of unique Lapsi objects with active Varhaiskasvatuspaatos and Varhaiskasvatussuhde objects
+        vuorohoito_count: vuorohoito_kytkin is True
+        paos_count: Lapsi is PAOS Lapsi and jarjestamismuoto_koodi is jm02 or jm03
+        paivittainen_count: paivittainen_vaka_kytkin is True
+        kokopaivainen_count: kokopaivainen_vaka_kytkin is True
         """
-        organisation_filter = Q(varhaiskasvatuspaatokset__varhaiskasvatussuhteet__toimipaikka__vakajarjestaja__id=self.vakajarjestaja_id)
+        organisaatio_filter = (Q(vakatoimija_id=self.organisaatio_id) | Q(oma_organisaatio_id=self.organisaatio_id) |
+                               Q(paos_organisaatio_id=self.organisaatio_id))
+        active_filter = (get_active_filter(self.today, prefix='varhaiskasvatuspaatokset') &
+                         get_active_filter(self.today, prefix='varhaiskasvatuspaatokset__varhaiskasvatussuhteet'))
+        return (
+            Lapsi.objects
+            .filter(organisaatio_filter & active_filter)
+            .annotate(jarjestamismuoto_koodi_lower=Lower('varhaiskasvatuspaatokset__jarjestamismuoto_koodi'))
+            .aggregate(
+                count=Count('id', distinct=True),
+                vuorohoito_count=Count('id', distinct=True, filter=Q(varhaiskasvatuspaatokset__vuorohoito_kytkin=True)),
+                paos_count=Count('id', distinct=True, filter=(~Q(vakatoimija_id=self.organisaatio_id) &
+                                                              Q(jarjestamismuoto_koodi_lower__in=('jm02', 'jm03')))),
+                paivittainen_count=Count('id', distinct=True,
+                                         filter=Q(varhaiskasvatuspaatokset__paivittainen_vaka_kytkin=True)),
+                kokopaivainen_count=Count('id', distinct=True,
+                                          filter=Q(varhaiskasvatuspaatokset__kokopaivainen_vaka_kytkin=True))
+            )
+        )
 
-        date_filter = Q(Q(varhaiskasvatuspaatokset__varhaiskasvatussuhteet__alkamis_pvm__lte=self.today) &
-                        (Q(varhaiskasvatuspaatokset__varhaiskasvatussuhteet__paattymis_pvm__isnull=True) |
-                         Q(varhaiskasvatuspaatokset__varhaiskasvatussuhteet__paattymis_pvm__gte=self.today)))
-
-        return (Lapsi.objects
-                .filter(organisation_filter &
-                        date_filter)
-                .distinct()
-                .count()
-                )
-
-    def get_vakapaatos_voimassaoleva(self):
-        organisation_filter = Q(varhaiskasvatussuhteet__toimipaikka__vakajarjestaja__id=self.vakajarjestaja_id)
-        date_filter = Q(Q(alkamis_pvm__lte=self.today) &
-                        (Q(paattymis_pvm__isnull=True) |
-                         Q(paattymis_pvm__gte=self.today)))
-
-        return (Varhaiskasvatuspaatos.objects
-                .filter(organisation_filter &
-                        date_filter)
-                .distinct()
-                .count()
-                )
-
-    def get_vakasuhde_voimassaoleva(self):
-        organisation_filter = Q(toimipaikka__vakajarjestaja__id=self.vakajarjestaja_id)
-
-        date_filter = Q(Q(alkamis_pvm__lte=self.today) &
-                        (Q(paattymis_pvm__isnull=True) |
-                         Q(paattymis_pvm__gte=self.today)))
-
-        return (Varhaiskasvatussuhde.objects
-                .filter(organisation_filter &
-                        date_filter)
-                .distinct()
-                .count()
-                )
-
-    def get_vuorohoito_lapset(self):
+    def get_vakapaatos_count(self):
         """
-        Return the number of unique lapset (having an active vakasuhde AND vuorohoito_kytkin=True) in all toimipaikat under the vakajarjestaja.
+        :return: number of unique Varhaiskasvatuspaatos objects that are active
         """
-        organisation_filter = Q(Q(varhaiskasvatuspaatokset__varhaiskasvatussuhteet__toimipaikka__vakajarjestaja__id=self.vakajarjestaja_id) &
-                                Q(varhaiskasvatuspaatokset__varhaiskasvatussuhteet__isnull=False))
+        organisaatio_filter = (Q(lapsi__vakatoimija_id=self.organisaatio_id) |
+                               Q(lapsi__oma_organisaatio_id=self.organisaatio_id) |
+                               Q(lapsi__paos_organisaatio_id=self.organisaatio_id))
+        return Varhaiskasvatuspaatos.objects.filter(organisaatio_filter & self.active_filter).distinct('id').count()
 
-        vuorohoito_filter = Q(varhaiskasvatuspaatokset__vuorohoito_kytkin=True)
-
-        date_filter = Q(Q(varhaiskasvatuspaatokset__varhaiskasvatussuhteet__alkamis_pvm__lte=self.today) &
-                        (Q(varhaiskasvatuspaatokset__varhaiskasvatussuhteet__paattymis_pvm__isnull=True) |
-                         Q(varhaiskasvatuspaatokset__varhaiskasvatussuhteet__paattymis_pvm__gte=self.today)))
-
-        return (Lapsi.objects
-                .filter(organisation_filter &
-                        vuorohoito_filter &
-                        date_filter)
-                .distinct()
-                .count()
-                )
-
-    def get_paos_lapset(self):
+    def get_vakasuhde_count(self):
         """
-        Return the number of unique lapset (having an active vakasuhde) in Palveluseteli or Ostopalvelu under the vakajarjestaja.
+        :return: number of unique Varhaiskasvatussuhde objects that are active
         """
-        organisation_filter = Q(Q(varhaiskasvatuspaatokset__varhaiskasvatussuhteet__toimipaikka__vakajarjestaja__id=self.vakajarjestaja_id) |
-                                Q(oma_organisaatio=self.vakajarjestaja_id) |
-                                Q(paos_organisaatio=self.vakajarjestaja_id) &
-                                Q(varhaiskasvatuspaatokset__varhaiskasvatussuhteet__isnull=False))
+        organisaatio_filter = (Q(varhaiskasvatuspaatos__lapsi__vakatoimija_id=self.organisaatio_id) |
+                               Q(varhaiskasvatuspaatos__lapsi__oma_organisaatio_id=self.organisaatio_id) |
+                               Q(varhaiskasvatuspaatos__lapsi__paos_organisaatio_id=self.organisaatio_id))
+        return Varhaiskasvatussuhde.objects.filter(organisaatio_filter & self.active_filter).distinct('id').count()
 
-        jarjestamismuoto_filter = Q(Q(varhaiskasvatuspaatokset__jarjestamismuoto_koodi__iexact='JM02') |
-                                    Q(varhaiskasvatuspaatokset__jarjestamismuoto_koodi__iexact='JM03'))
-
-        date_filter = Q(Q(varhaiskasvatuspaatokset__varhaiskasvatussuhteet__alkamis_pvm__lte=self.today) &
-                        (Q(varhaiskasvatuspaatokset__varhaiskasvatussuhteet__paattymis_pvm__isnull=True) |
-                        Q(varhaiskasvatuspaatokset__varhaiskasvatussuhteet__paattymis_pvm__gte=self.today)))
-
-        return (Lapsi.objects
-                .filter(organisation_filter &
-                        jarjestamismuoto_filter &
-                        date_filter)
-                .distinct()
-                .count()
-                )
-
-    def get_maksutieto_voimassaoleva(self):
+    def get_maksutieto_count(self):
         """
-        Returns the number of unique active maksutieto objects
+        :return: number of unique Maksutieto objects that are active
         """
+        # Organisaatio can only be vakatoimija or oma_organisaatio, not paos_organisaatio
+        organisaatio_filter = (Q(huoltajuussuhteet__lapsi__vakatoimija_id=self.organisaatio_id) |
+                               Q(huoltajuussuhteet__lapsi__oma_organisaatio_id=self.organisaatio_id))
 
-        # in paos cases only children in oma_organisaatio are counted
-        organisation_filter = Q((Q(huoltajuussuhteet__lapsi__varhaiskasvatuspaatokset__varhaiskasvatussuhteet__toimipaikka__vakajarjestaja__id=self.vakajarjestaja_id) &
-                                Q(huoltajuussuhteet__lapsi__paos_kytkin=False)) |
-                                (Q(huoltajuussuhteet__lapsi__oma_organisaatio__id=self.vakajarjestaja_id) &
-                                Q(huoltajuussuhteet__lapsi__paos_kytkin=True)) &
-                                Q(huoltajuussuhteet__lapsi__varhaiskasvatuspaatokset__varhaiskasvatussuhteet__isnull=False))
+        return Maksutieto.objects.filter(organisaatio_filter & self.active_filter).distinct('id').count()
 
-        date_filter = Q(Q(alkamis_pvm__lte=self.today) &
-                        (Q(paattymis_pvm__isnull=True) |
-                         Q(paattymis_pvm__gte=self.today)))
+    def get_toimipaikka_active_count(self):
+        """
+        :return: number of unique Toimipaikka objects that are active
+        """
+        organisaatio_filter = Q(vakajarjestaja_id=self.organisaatio_id)
+        return Toimipaikka.objects.filter(organisaatio_filter & self.active_filter).distinct('id').count()
 
-        return (Maksutieto.objects
-                .filter(organisation_filter &
-                        date_filter)
-                .distinct()
-                .count()
-                )
-
-    def get_active_toimipaikat(self):
-        organisation_filter = Q(vakajarjestaja__id=self.vakajarjestaja_id)
-
-        date_filter = Q(Q(alkamis_pvm__lte=self.today) &
-                        (Q(paattymis_pvm__isnull=True) |
-                         Q(paattymis_pvm__gte=self.today)))
-
-        return (Toimipaikka.objects
-                .filter(organisation_filter &
-                        date_filter)
-                .distinct()
-                .count()
-                )
-
-    def get_closed_toimipaikat(self):
-        organisation_filter = Q(vakajarjestaja__id=self.vakajarjestaja_id)
-
+    def get_toimipaikka_inactive_count(self):
+        """
+        :return: number of unique Toimipaikka objects that are not active
+        """
+        organisaatio_filter = Q(vakajarjestaja_id=self.organisaatio_id)
         date_filter = Q(paattymis_pvm__lt=self.today)
+        return Toimipaikka.objects.filter(organisaatio_filter & date_filter).distinct().count()
 
-        return (Toimipaikka.objects
-                .filter(organisation_filter,
-                        date_filter)
-                .distinct()
-                .count()
-                )
-
-    def get_toimipaikkojen_toimintapainotukset(self):
+    def get_toiminnallinen_painotus_count(self):
         """
-        Return the number of active toimintapainotukset in all toimipaikat under the vakajarjestaja.
+        :return: number of unique ToiminnallinenPainotus objects that are active
         """
-        organisation_filter = Q(toimipaikka__vakajarjestaja__id=self.vakajarjestaja_id)
+        organisaatio_filter = Q(toimipaikka__vakajarjestaja_id=self.organisaatio_id)
+        return ToiminnallinenPainotus.objects.filter(organisaatio_filter & self.active_filter).distinct().count()
 
-        date_filter = Q(Q(alkamis_pvm__lte=self.today) &
-                        (Q(paattymis_pvm__isnull=True) |
-                         Q(paattymis_pvm__gte=self.today)))
-
-        return (ToiminnallinenPainotus.objects
-                .filter(organisation_filter &
-                        date_filter)
-                .distinct()
-                .count()
-                )
-
-    def get_toimipaikkojen_kielipainotukset(self):
+    def get_kielipainotus_count(self):
         """
-        Return the number of active kielipainotukset in all toimipaikat under the vakajarjestaja.
+        :return: number of unique KieliPainotus objects that are active
         """
-        organisation_filter = Q(toimipaikka__vakajarjestaja__id=self.vakajarjestaja_id)
-
-        date_filter = Q(Q(alkamis_pvm__lte=self.today) &
-                        (Q(paattymis_pvm__isnull=True) |
-                         Q(paattymis_pvm__gte=self.today)))
-
-        return (KieliPainotus.objects
-                .filter(organisation_filter &
-                        date_filter)
-                .distinct()
-                .count()
-                )
+        organisaatio_filter = Q(toimipaikka__vakajarjestaja_id=self.organisaatio_id)
+        return KieliPainotus.objects.filter(organisaatio_filter & self.active_filter).distinct().count()
 
     def get_tyontekija_count(self):
         """
-        :return: number of tyontekijat
+        :return: number of unique Tyontekija objects that have active Palvelussuhde and Tyoskentelypaikka objects,
+        and not active PidempiPoissaolo object
         """
-        tyontekija_filter = Q(vakajarjestaja__id=self.vakajarjestaja_id)
-        return Tyontekija.objects.filter(tyontekija_filter).count()
+        organisaatio_filter = Q(vakajarjestaja__id=self.organisaatio_id)
+        active_filter = (get_active_filter(self.today, prefix='palvelussuhteet') &
+                         get_active_filter(self.today, prefix='palvelussuhteet__tyoskentelypaikat') &
+                         ~Exists(PidempiPoissaolo.objects
+                                 .filter(self.active_filter, palvelussuhde=OuterRef('palvelussuhteet'))))
+        return Tyontekija.objects.filter(organisaatio_filter & active_filter).distinct('id').count()
 
-    def get_active_palvelussuhde_count(self):
+    def get_palvelussuhde_data(self):
         """
-        :return: number of active palvelussuhteet
+        :return: number of unique Palvelussuhde objects that are active with different filters
+        count: all Palvelussuhde objects
+        maaraaikainen_count: tyosuhde_koodi is 2
         """
-        date_filter = self.get_active_filter('')
-        vakajarjestaja_filter = Q(tyontekija__vakajarjestaja__id=self.vakajarjestaja_id)
-        return Palvelussuhde.objects.filter(date_filter & vakajarjestaja_filter).distinct().count()
+        organisatio_filter = Q(tyontekija__vakajarjestaja_id=self.organisaatio_id)
+        return (Palvelussuhde.objects
+                .filter(organisatio_filter & self.active_filter)
+                .aggregate(count=Count('id', distinct=True),
+                           maaraaikainen_count=Count('id', distinct=True, filter=Q(tyosuhde_koodi=2))))
 
-    def get_active_palvelussuhde_maaraaikainen_count(self):
+    def get_tyoskentelypaikka_data(self):
         """
-        :return: number of active palvelussuhteet that have tyosuhde_koodi = 2 (maaraaikainen)
+        :return: number of unique Palvelussuhde objects that are active with different filters
+        count: all Tyoskentelypaikka objects
+        kelpoinen_count: kelpoisuus_kytkin is True
         """
-        date_filter = self.get_active_filter('')
-        vakajarjestaja_filter = Q(tyontekija__vakajarjestaja_id=self.vakajarjestaja_id)
-        tyosuhde_filter = Q(tyosuhde_koodi=2)
-        return Palvelussuhde.objects.filter(date_filter & vakajarjestaja_filter & tyosuhde_filter).distinct().count()
+        organisaatio_filter = Q(palvelussuhde__tyontekija__vakajarjestaja_id=self.organisaatio_id)
+        return (Tyoskentelypaikka.objects
+                .filter(organisaatio_filter & self.active_filter)
+                .aggregate(count=Count('id', distinct=True),
+                           kelpoinen_count=Count('id', distinct=True, filter=Q(kelpoisuus_kytkin=True))))
 
-    def get_taydennyskoulutus_count_this_year(self):
+    def get_pidempi_poissaolo_count(self):
         """
-        :return: number of taydennyskoulutukset this year
+        :return: number of unique PidempiPoissaolo objects that are active
         """
-        suoritus_pvm_filter = Q(suoritus_pvm__year=self.today.year)
-        vakajarjestaja_filter = Q(tyontekijat__vakajarjestaja__id=self.vakajarjestaja_id)
-        return Taydennyskoulutus.objects.filter(suoritus_pvm_filter & vakajarjestaja_filter).distinct().count()
+        organisaatio_filter = Q(palvelussuhde__tyontekija__vakajarjestaja_id=self.organisaatio_id)
+        return PidempiPoissaolo.objects.filter(organisaatio_filter & self.active_filter).distinct('id').count()
 
-    def get_kelpoinen_tyoskentelypaikka_count(self):
+    def get_tutkinto_count(self):
         """
-        :return: number of tyoskentelypaikat with kelpoisuus_kytkin=True
+        :return: number of unique Tutkinto objects, not tutkinto_koodi 003
         """
-        kelpoisuus_filter = Q(kelpoisuus_kytkin=True)
-        vakajarjestaja_filter = Q(palvelussuhde__tyontekija__vakajarjestaja__id=self.vakajarjestaja_id)
-        return Tyoskentelypaikka.objects.filter(kelpoisuus_filter & vakajarjestaja_filter).distinct().count()
-
-    def get_vaka_tutkinto_count(self):
-        """
-        :return: number of valid tutkinnot
-        """
+        organisaatio_filter = Q(vakajarjestaja_id=self.organisaatio_id)
         tutkinto_koodi_filter = ~Q(tutkinto_koodi='003')
-        vakajarjestaja_filter = Q(vakajarjestaja__id=self.vakajarjestaja_id)
-        return Tutkinto.objects.filter(tutkinto_koodi_filter & vakajarjestaja_filter).distinct().count()
+        return Tutkinto.objects.filter(organisaatio_filter & tutkinto_koodi_filter).distinct('id').count()
 
-    def get_tilapainen_henkilosto_maara_this_year(self):
+    def get_taydennyskoulutus_count(self):
         """
-        :return: total amount of tilapainen henkilosto this year
+        :return: number of unique Taydennyskoulutukset with suoritus_pvm during current year
         """
-        kuukausi_filter = Q(kuukausi__year=self.today.year)
-        vakajarjestaja_filter = Q(vakajarjestaja__id=self.vakajarjestaja_id)
-        return (TilapainenHenkilosto.objects
-                .filter(kuukausi_filter & vakajarjestaja_filter)
-                .aggregate(sum=Sum('tyontekijamaara')))['sum']
+        organisaatio_filter = Q(tyontekijat__vakajarjestaja_id=self.organisaatio_id)
+        date_filter = Q(suoritus_pvm__year=self.today.year)
+        return Taydennyskoulutus.objects.filter(organisaatio_filter & date_filter).distinct('id').count()
 
-    def get_tilapainen_henkilosto_tunnit_this_year(self):
+    def get_tilapainen_henkilosto_data(self):
         """
-        :return: total amount of tilapainen henkilosto hours this year
+        :return: aggregated TilapainenHenkilosto related data
+        tyontekijamaara_sum: sum of tyontekijamaara
+        tuntimaara_sum: tuntimaara for Organisaatio this year
         """
-        kuukausi_filter = Q(kuukausi__year=self.today.year)
-        vakajarjestaja_filter = Q(vakajarjestaja__id=self.vakajarjestaja_id)
         return (TilapainenHenkilosto.objects
-                .filter(kuukausi_filter & vakajarjestaja_filter)
-                .aggregate(sum=Sum('tuntimaara')))['sum']
+                .filter(kuukausi__year=self.today.year, vakajarjestaja__id=self.organisaatio_id)
+                .aggregate(tyontekijamaara_sum=Sum('tyontekijamaara'), tuntimaara_sum=Sum('tuntimaara')))
 
 
 @auditlogclass
