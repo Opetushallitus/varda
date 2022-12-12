@@ -1212,6 +1212,7 @@ class VarhaiskasvatussuhdeViewSet(IncreasedModifyThrottleMixin, ObjectByTunniste
     queryset = Varhaiskasvatussuhde.objects.all().order_by('id')
     serializer_class = VarhaiskasvatussuhdeSerializer
     permission_classes = (CustomModelPermissions, CustomObjectPermissions,)
+    pagination_class = ChangeablePageSizePagination
 
     def perform_create(self, serializer):
         user = self.request.user
