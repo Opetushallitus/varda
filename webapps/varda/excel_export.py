@@ -455,7 +455,7 @@ class ExcelReportGenerator:
         vakasuhde_sheet = self.workbook.add_worksheet(self.translations.get(VAKASUHDE_SHEET_NAME))
         self._write_headers(vakasuhde_sheet, VAKASUHDE_HEADERS)
 
-        for index, vakasuhde in enumerate(vakasuhde_qs, 1):
+        for index, vakasuhde in enumerate(vakasuhde_qs.iterator(), 1):
             vakapaatos = vakasuhde.varhaiskasvatuspaatos
             lapsi = vakapaatos.lapsi
             henkilo = lapsi.henkilo
@@ -523,7 +523,7 @@ class ExcelReportGenerator:
             maksutieto_sheet = self.workbook.add_worksheet(self.translations.get(MAKSUTIETO_SHEET_NAME))
             self._write_headers(maksutieto_sheet, MAKSUTIETO_HEADERS)
 
-            for index, maksutieto in enumerate(maksutieto_qs, 1):
+            for index, maksutieto in enumerate(maksutieto_qs.iterator(), 1):
                 # Lapsi information
                 maksutieto_values = [
                     maksutieto.henkilo_oid, maksutieto.etunimet, maksutieto.sukunimi,
@@ -690,7 +690,7 @@ class ExcelReportGenerator:
         self._write_headers(tyontekija_sheet, TYONTEKIJA_HEADERS)
 
         index = 1
-        for palvelussuhde in palvelussuhde_qs:
+        for palvelussuhde in palvelussuhde_qs.iterator():
             tyoskentelypaikka_qs = (palvelussuhde.tyoskentelypaikat.filter(toimipaikka=self.toimipaikka_id)
                                     if self.toimipaikka_id else palvelussuhde.tyoskentelypaikat.all())
             tyoskentelypaikka_qs.order_by('alkamis_pvm')
@@ -759,7 +759,7 @@ class ExcelReportGenerator:
         taydennyskoulutus_sheet = self.workbook.add_worksheet(self.translations.get(TAYDENNYSKOULUTUS_SHEET_NAME))
         self._write_headers(taydennyskoulutus_sheet, TAYDENNYSKOULUTUS_HEADERS)
 
-        for index, taydennyskoulutus in enumerate(taydennyskoulutus_qs, 1):
+        for index, taydennyskoulutus in enumerate(taydennyskoulutus_qs.iterator(), 1):
             tyontekija = taydennyskoulutus.tyontekija
             henkilo = tyontekija.henkilo
             taydennyskoulutus_parent = taydennyskoulutus.taydennyskoulutus
@@ -812,7 +812,7 @@ class ExcelReportGenerator:
         self._write_headers(toimipaikka_sheet, TOIMIPAIKKA_HEADERS)
 
         index = 1
-        for toimipaikka in toimipaikka_qs:
+        for toimipaikka in toimipaikka_qs.iterator():
             painotus_list = list(toimipaikka.toiminnallisetpainotukset.all()) + list(toimipaikka.kielipainotukset.all())
             if len(painotus_list) == 0:
                 # We want at least one row for toimipaikka
