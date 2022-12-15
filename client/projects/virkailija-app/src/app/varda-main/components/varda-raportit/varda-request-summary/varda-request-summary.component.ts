@@ -7,7 +7,7 @@ import * as moment from 'moment';
 import { Router } from '@angular/router';
 import { VardaRaportitService } from '../../../../core/services/varda-raportit.service';
 import { TranslateService } from '@ngx-translate/core';
-import { PageEvent } from '@angular/material/paginator';
+import { LegacyPageEvent as PageEvent } from '@angular/material/legacy-paginator';
 import {
   RequestSummary,
   RequestSummarySearchFilter

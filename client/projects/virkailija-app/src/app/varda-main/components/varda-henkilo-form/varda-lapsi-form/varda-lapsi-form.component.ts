@@ -1,6 +1,6 @@
 import { Component, OnDestroy, Input, Output, EventEmitter, OnInit } from '@angular/core';
 import { FormControl, FormGroup, Validators } from '@angular/forms';
-import { MatRadioChange } from '@angular/material/radio';
+import { MatLegacyRadioChange as MatRadioChange } from '@angular/material/legacy-radio';
 import { AuthService } from 'projects/virkailija-app/src/app/core/auth/auth.service';
 import { VardaApiService } from 'projects/virkailija-app/src/app/core/services/varda-api.service';
 import {

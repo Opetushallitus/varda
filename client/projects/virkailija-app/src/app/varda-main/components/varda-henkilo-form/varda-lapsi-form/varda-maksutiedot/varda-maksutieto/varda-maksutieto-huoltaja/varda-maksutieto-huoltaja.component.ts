@@ -1,6 +1,6 @@
 import { Component, Input, Output, EventEmitter, ElementRef, SimpleChanges, OnChanges } from '@angular/core';
 import { FormGroup } from '@angular/forms';
-import { MatRadioChange } from '@angular/material/radio';
+import { MatLegacyRadioChange as MatRadioChange } from '@angular/material/legacy-radio';
 import { ErrorTree, VardaErrorMessageService } from 'projects/virkailija-app/src/app/core/services/varda-error-message.service';
 import { VirkailijaTranslations } from 'projects/virkailija-app/src/assets/i18n/virkailija-translations.enum';
 import { Observable } from 'rxjs';

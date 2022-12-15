@@ -5,7 +5,7 @@ import { VardaRaportitService } from '../../../../core/services/varda-raportit.s
 import { VardaVakajarjestajaUi } from '../../../../utilities/models/varda-vakajarjestaja-ui.model';
 import { VardaExcelReportDTO } from '../../../../utilities/models/dto/varda-excel-report-dto.model';
 import { VardaPaginatorParams } from '../../../../utilities/models/varda-paginator-params.model';
-import { PageEvent } from '@angular/material/paginator';
+import { LegacyPageEvent as PageEvent } from '@angular/material/legacy-paginator';
 import { environment } from '../../../../../environments/environment';
 import { interval, Subscription } from 'rxjs';
 import { Clipboard } from '@angular/cdk/clipboard';

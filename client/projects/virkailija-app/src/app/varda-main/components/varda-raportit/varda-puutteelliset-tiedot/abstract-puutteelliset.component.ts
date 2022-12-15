@@ -1,5 +1,5 @@
 import { Input, Output, EventEmitter, OnDestroy, Component, OnInit } from '@angular/core';
-import { PageEvent } from '@angular/material/paginator';
+import { LegacyPageEvent as PageEvent } from '@angular/material/legacy-paginator';
 import { TranslateService } from '@ngx-translate/core';
 import { VardaErrorMessageService, ErrorTree } from 'projects/virkailija-app/src/app/core/services/varda-error-message.service';
 import { VardaUtilityService } from 'projects/virkailija-app/src/app/core/services/varda-utility.service';

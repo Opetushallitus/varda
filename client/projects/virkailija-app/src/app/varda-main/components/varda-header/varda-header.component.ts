@@ -7,7 +7,7 @@ import { filter } from 'rxjs/operators';
 import { VirkailijaTranslations } from 'projects/virkailija-app/src/assets/i18n/virkailija-translations.enum';
 import { AuthService } from '../../../core/auth/auth.service';
 import { Observable, Subscription } from 'rxjs';
-import { MatDialog } from '@angular/material/dialog';
+import { MatLegacyDialog as MatDialog } from '@angular/material/legacy-dialog';
 import { PuutteellisetDialogComponent } from '../varda-raportit/varda-puutteelliset-tiedot/puutteelliset-dialog/puutteelliset-dialog.component';
 import { VardaRaportitService } from '../../../core/services/varda-raportit.service';
 import { VardaCookieEnum } from '../../../utilities/models/enums/varda-cookie.enum';

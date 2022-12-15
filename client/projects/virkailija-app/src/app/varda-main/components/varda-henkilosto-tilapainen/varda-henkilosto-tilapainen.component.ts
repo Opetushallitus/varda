@@ -6,7 +6,7 @@ import { LoadingHttpService, VardaDateService } from 'varda-shared';
 import { VardaVakajarjestajaService } from '../../../core/services/varda-vakajarjestaja.service';
 import { VardaVakajarjestaja, VardaVakajarjestajaUi } from '../../../utilities/models';
 import { Observable, forkJoin, of } from 'rxjs';
-import { MatDialog } from '@angular/material/dialog';
+import { MatLegacyDialog as MatDialog } from '@angular/material/legacy-dialog';
 import { EiHenkilostoaDialogComponent } from './ei-henkilostoa-dialog/ei-henkilostoa-dialog.component';
 import { catchError } from 'rxjs/operators';
 import { VardaHenkilostoApiService } from '../../../core/services/varda-henkilosto.service';

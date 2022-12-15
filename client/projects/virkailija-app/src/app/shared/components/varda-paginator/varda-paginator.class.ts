@@ -1,4 +1,4 @@
-import { MatPaginatorIntl, PageEvent } from '@angular/material/paginator';
+import { MatLegacyPaginatorIntl as MatPaginatorIntl, LegacyPageEvent as PageEvent } from '@angular/material/legacy-paginator';
 import { TranslateService } from '@ngx-translate/core';
 import { Injectable } from '@angular/core';
 import { VirkailijaTranslations } from 'projects/virkailija-app/src/assets/i18n/virkailija-translations.enum';

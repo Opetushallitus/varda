@@ -6,13 +6,13 @@ import { VardaVakajarjestajaService } from '../../../core/services/varda-vakajar
 import { VardaVakajarjestajaUi } from '../../../utilities/models';
 import { VardaTaydennyskoulutusDTO } from '../../../utilities/models/dto/varda-taydennyskoulutus-dto.model';
 import { VardaHenkilostoApiService } from '../../../core/services/varda-henkilosto.service';
-import { MatTableDataSource } from '@angular/material/table';
+import { MatLegacyTableDataSource as MatTableDataSource } from '@angular/material/legacy-table';
 import { MatSort } from '@angular/material/sort';
 import { ModalEvent } from '../../../shared/components/varda-modal-form/varda-modal-form.component';
 import { Observable, Subscription } from 'rxjs';
 import { VardaModalService } from '../../../core/services/varda-modal.service';
 import { distinctUntilChanged, filter } from 'rxjs/operators';
-import { PageEvent } from '@angular/material/paginator';
+import { LegacyPageEvent as PageEvent } from '@angular/material/legacy-paginator';
 
 @Component({
   selector: 'app-varda-taydennyskoulutus',

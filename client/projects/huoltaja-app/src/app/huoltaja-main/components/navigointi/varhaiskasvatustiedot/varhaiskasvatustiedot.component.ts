@@ -1,5 +1,5 @@
 import { Component, Input, OnDestroy } from '@angular/core';
-import { MatDialog } from '@angular/material/dialog';
+import { MatLegacyDialog as MatDialog } from '@angular/material/legacy-dialog';
 import { HuoltajaApiService } from 'projects/huoltaja-app/src/app/services/huoltaja-api.service';
 import { VarhaiskasvatustiedotDTO, LapsiDTO } from 'projects/huoltaja-app/src/app/utilities/models/dto/lapsi-dto';
 import { HuoltajaTranslations } from 'projects/huoltaja-app/src/assets/i18n/translations.enum';

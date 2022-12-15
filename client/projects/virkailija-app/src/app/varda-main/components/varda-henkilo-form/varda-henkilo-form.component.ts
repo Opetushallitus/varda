@@ -12,7 +12,7 @@ import { HenkiloRooliEnum } from '../../../utilities/models/enums/henkilorooli.e
 import { FormGroup, FormControl, Validators } from '@angular/forms';
 import { VardaFormValidators } from '../../../shared/validators/varda-form-validators';
 import { Lahdejarjestelma } from '../../../utilities/models/enums/hallinnointijarjestelma';
-import { MatRadioChange } from '@angular/material/radio';
+import { MatLegacyRadioChange as MatRadioChange } from '@angular/material/legacy-radio';
 import { VardaSnackBarService } from '../../../core/services/varda-snackbar.service';
 
 @Component({

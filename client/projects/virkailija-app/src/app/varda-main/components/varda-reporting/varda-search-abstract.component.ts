@@ -11,9 +11,9 @@ import { VirkailijaTranslations } from '../../../../assets/i18n/virkailija-trans
 import { BehaviorSubject, Observable, Subscription } from 'rxjs';
 import { BreakpointObserver } from '@angular/cdk/layout';
 import { TranslateService } from '@ngx-translate/core';
-import { MatChipList } from '@angular/material/chips';
+import { MatLegacyChipList as MatChipList } from '@angular/material/legacy-chips';
 import { VardaToimipaikkaMinimalDto } from '../../../utilities/models/dto/varda-toimipaikka-dto.model';
-import { MatAutocompleteSelectedEvent } from '@angular/material/autocomplete';
+import { MatLegacyAutocompleteSelectedEvent as MatAutocompleteSelectedEvent } from '@angular/material/legacy-autocomplete';
 import { VardaVakajarjestajaService } from '../../../core/services/varda-vakajarjestaja.service';
 import { UserAccess } from '../../../utilities/models/varda-user-access.model';
 import { AuthService } from '../../../core/auth/auth.service';

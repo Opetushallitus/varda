@@ -13,10 +13,10 @@ import {
   OnInit
 } from '@angular/core';
 import { FormControl, FormGroup } from '@angular/forms';
-import { MatRadioGroup, MatRadioButton } from '@angular/material/radio';
+import { MatLegacyRadioGroup as MatRadioGroup, MatLegacyRadioButton as MatRadioButton } from '@angular/material/legacy-radio';
 import { VardaDatepickerComponent } from '../varda-datepicker/varda-datepicker.component';
 import { Subscription, Subject, Observable, fromEvent } from 'rxjs';
-import { MatSelect, MatSelectChange } from '@angular/material/select';
+import { MatLegacySelect as MatSelect, MatLegacySelectChange as MatSelectChange } from '@angular/material/legacy-select';
 import { Element } from '@angular/compiler';
 import {
   VardaAutocompleteSelectorComponent

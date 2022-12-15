@@ -1,5 +1,5 @@
 import { OnDestroy, Component, OnInit, ViewChild, ElementRef, AfterViewInit } from '@angular/core';
-import { MatPaginator, PageEvent } from '@angular/material/paginator';
+import { MatLegacyPaginator as MatPaginator, LegacyPageEvent as PageEvent } from '@angular/material/legacy-paginator';
 import { ActivatedRoute } from '@angular/router';
 import { TranslateService } from '@ngx-translate/core';
 import moment, { Moment } from 'moment';

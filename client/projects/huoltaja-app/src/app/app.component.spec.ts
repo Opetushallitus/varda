@@ -4,7 +4,7 @@ import { TranslateService } from '@ngx-translate/core';
 import { VardaSharedModule, LoadingHttpService, LoginService } from 'varda-shared';
 import { RouterTestingModule } from '@angular/router/testing';
 import { EMPTY, Observable, of } from 'rxjs';
-import { MatSnackBar } from '@angular/material/snack-bar';
+import { MatLegacySnackBar as MatSnackBar } from '@angular/material/legacy-snack-bar';
 
 describe('AppComponent', () => {
   let loadingHttpService: LoadingHttpService;

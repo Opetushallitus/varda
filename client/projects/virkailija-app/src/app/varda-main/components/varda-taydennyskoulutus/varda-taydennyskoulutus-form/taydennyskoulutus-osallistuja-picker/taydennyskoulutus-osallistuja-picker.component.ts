@@ -7,11 +7,11 @@ import {
   VardaTaydennyskoulutusTyontekijaListDTO,
   VardaTaydennyskoulutusTyontekijaSaveDTO
 } from 'projects/virkailija-app/src/app/utilities/models/dto/varda-taydennyskoulutus-dto.model';
-import { MatTableDataSource } from '@angular/material/table';
+import { MatLegacyTableDataSource as MatTableDataSource } from '@angular/material/legacy-table';
 import { SelectionModel } from '@angular/cdk/collections';
 import { MatSort } from '@angular/material/sort';
 import { VardaVakajarjestajaUi } from 'projects/virkailija-app/src/app/utilities/models';
-import { PageEvent } from '@angular/material/paginator';
+import { LegacyPageEvent as PageEvent } from '@angular/material/legacy-paginator';
 import { filter } from 'rxjs/operators';
 import { Subscription } from 'rxjs';
 

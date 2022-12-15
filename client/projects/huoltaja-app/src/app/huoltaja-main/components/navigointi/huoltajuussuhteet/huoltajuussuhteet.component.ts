@@ -1,5 +1,5 @@
 import { Component } from '@angular/core';
-import { MatDialog } from '@angular/material/dialog';
+import { MatLegacyDialog as MatDialog } from '@angular/material/legacy-dialog';
 import { HuoltajaApiService } from 'projects/huoltaja-app/src/app/services/huoltaja-api.service';
 import { HuoltajatiedotSimpleDTO } from 'projects/huoltaja-app/src/app/utilities/models/dto/huoltajuussuhde-dto';
 import { HuoltajaTranslations } from 'projects/huoltaja-app/src/assets/i18n/translations.enum';

@@ -66,5 +66,8 @@
         "@angular-eslint/template/no-negated-async": "off"
       }
     }
-  ]
+  ],
+  "parserOptions": {
+    "project": "tsconfig.json"
+  }
 }

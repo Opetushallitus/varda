@@ -5,7 +5,7 @@ import { HttpService } from './http.service';
 import { CookieService } from 'ngx-cookie-service';
 import { VardaUserDTO } from './models/user-dto';
 import { TranslateService } from '@ngx-translate/core';
-import { MatSnackBar, MatSnackBarRef } from '@angular/material/snack-bar';
+import { MatLegacySnackBar as MatSnackBar, MatLegacySnackBarRef as MatSnackBarRef } from '@angular/material/legacy-snack-bar';
 import { take } from 'rxjs/operators';
 import { TimeoutTranslationKey, LoginTimeoutComponent } from './components/login-timeout/login-timeout.component';
 

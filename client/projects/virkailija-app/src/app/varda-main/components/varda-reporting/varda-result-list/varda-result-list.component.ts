@@ -1,5 +1,5 @@
 import { Component, EventEmitter, Input, OnChanges, OnInit, Output, SimpleChanges } from '@angular/core';
-import { PageEvent } from '@angular/material/paginator';
+import { LegacyPageEvent as PageEvent } from '@angular/material/legacy-paginator';
 import { SearchResult } from '../varda-search-abstract.component';
 import { Observable } from 'rxjs';
 import { delay } from 'rxjs/operators';

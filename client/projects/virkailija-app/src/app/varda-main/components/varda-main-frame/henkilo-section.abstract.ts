@@ -2,7 +2,7 @@ import { OnChanges, Input, Output, EventEmitter, SimpleChanges, OnDestroy, Compo
 import { VardaToimipaikkaMinimalDto } from '../../../utilities/models/dto/varda-toimipaikka-dto.model';
 import { UserAccess } from '../../../utilities/models/varda-user-access.model';
 import { BehaviorSubject, Subscription } from 'rxjs';
-import { PageEvent } from '@angular/material/paginator';
+import { LegacyPageEvent as PageEvent } from '@angular/material/legacy-paginator';
 import { HenkiloListDTO } from '../../../utilities/models/dto/varda-henkilo-dto.model';
 import { LapsiListDTO } from '../../../utilities/models/dto/varda-lapsi-dto.model';
 import { TyontekijaListDTO } from '../../../utilities/models/dto/varda-tyontekija-dto.model';
