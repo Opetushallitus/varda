@@ -569,7 +569,7 @@ def mock_cas_palvelukayttaja_responses(organisaatiot, username, henkilo_oid='1.2
                   json=_get_kayttooikeudet_json(organisaatiot, username, henkilo_oid),
                   status=status.HTTP_200_OK)
     responses.add(responses.POST,
-                  'https://virkailija.testiopintopolku.fi/organisaatio-service/rest/organisaatio/v4/findbyoids',
+                  'https://virkailija.testiopintopolku.fi/organisaatio-service/api/findbyoids',
                   json=[{'oid': organisaatio['organisaatioOid'], 'tyypit': ['organisaatiotyyppi_07'], 'status': 'AKTIIVINEN'}
                         for organisaatio in organisaatiot],
                   status=status.HTTP_200_OK)

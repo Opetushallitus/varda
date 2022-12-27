@@ -17,7 +17,7 @@ class TestUpdateChangedOrganisaatio(TestCase):
     def test_update_changed_organisaatios(self):
         oid_with_changes = '1.2.246.562.10.9395737548810'
         responses.add(responses.GET,
-                      'https://virkailija.testiopintopolku.fi/organisaatio-service/rest/organisaatio/v2/muutetut/oid',
+                      'https://virkailija.testiopintopolku.fi/organisaatio-service/api/muutetut/oid',
                       json={'oids': [oid_with_changes]},
                       status=200)
         # Reuse data defined for another test.
@@ -25,7 +25,7 @@ class TestUpdateChangedOrganisaatio(TestCase):
         # and notice that the response doesn't match what is in the database.
         # It should then update the data to match what we supplied, and we check to confirm.
         responses.add(responses.POST,
-                      'https://virkailija.testiopintopolku.fi/organisaatio-service/rest/organisaatio/v4/findbyoids',
+                      'https://virkailija.testiopintopolku.fi/organisaatio-service/api/findbyoids',
                       json=[TestFetchAndSaveToimipaikkaData.get_organisaatio_json(oid=oid_with_changes)],
                       status=200)
         update_all_organisaatio_service_organisations()
@@ -83,7 +83,7 @@ class TestUpdateChangedOrganisaatio(TestCase):
     @responses.activate
     def test_nothing_changed(self):
         responses.add(responses.GET,
-                      'https://virkailija.testiopintopolku.fi/organisaatio-service/rest/organisaatio/v2/muutetut/oid',
+                      'https://virkailija.testiopintopolku.fi/organisaatio-service/api/muutetut/oid',
                       json={'oids': []},
                       status=200)
         update_all_organisaatio_service_organisations()

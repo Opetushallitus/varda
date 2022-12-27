@@ -12,12 +12,11 @@ from varda.misc import get_json_from_external_service, post_json_to_external_ser
 
 logger = logging.getLogger(__name__)
 SERVICE_NAME = 'organisaatio-service'
-ORGANISAATIOPALVELU_API_V2 = '/rest/organisaatio/v2/'
-ORGANISAATIOPALVELU_API_V4 = '/rest/organisaatio/v4/'
+ORGANISAATIOPALVELU_API = '/api/'
 
 
 def get_organisaatiopalvelu_info(organisaatio_oid):
-    url = settings.OPINTOPOLKU_DOMAIN + '/' + SERVICE_NAME + ORGANISAATIOPALVELU_API_V4 + organisaatio_oid
+    url = settings.OPINTOPOLKU_DOMAIN + '/' + SERVICE_NAME + ORGANISAATIOPALVELU_API + organisaatio_oid
     result_info = {'result_ok': False}
     headers = get_contenttype_header()
     try:
@@ -76,7 +75,7 @@ def _parse_organisaatio_data(response, organisaatio_oid):
 
 
 def get_parent_oid(child_oid):
-    organisaatio_url = ORGANISAATIOPALVELU_API_V4 + 'hae?aktiiviset=true&oid=' + child_oid
+    organisaatio_url = ORGANISAATIOPALVELU_API + 'hae?aktiiviset=true&oid=' + child_oid
     reply_msg = get_json_from_external_service(SERVICE_NAME, organisaatio_url, auth=True)
     if not reply_msg['is_ok']:
         return None
@@ -148,7 +147,7 @@ def is_of_type(organisation_data, *args):
 
 
 def organization_is_vakajarjestaja(organisaatio_oid):
-    organisaatio_url = ORGANISAATIOPALVELU_API_V4 + 'hae?aktiiviset=true&oid=' + organisaatio_oid
+    organisaatio_url = ORGANISAATIOPALVELU_API + 'hae?aktiiviset=true&oid=' + organisaatio_oid
     reply_msg = get_json_from_external_service(SERVICE_NAME, organisaatio_url, auth=True)
     if not reply_msg['is_ok']:
         return True
@@ -174,7 +173,7 @@ def organization_is_vakajarjestaja(organisaatio_oid):
 
 def is_vakajarjestaja(organisation):
     """
-    Different apis return this in different fields. General rule: /organisaatio-service/rest/organisaatio?oid=# returns
+    Different apis return this in different fields. General rule: /organisaatio-service/api/<OID> returns
     organisaatiotyypit while other apis return tyypit.
     :param organisation: Organisation data
     :return: Is organisation vakajarjestaja
@@ -192,7 +191,7 @@ def check_if_toimipaikka_exists_by_name(toimipaikka_name, parent_oid):
 
     If something fails, we send logs, and return True <-> We do not want to let user POST a new toimipaikka when there were errors.
     """
-    http_url_suffix = (ORGANISAATIOPALVELU_API_V4 + 'hae?aktiiviset=true&suunnitellut=true&lakkautetut=true&oidRestrictionList=' +
+    http_url_suffix = (ORGANISAATIOPALVELU_API + 'hae?aktiiviset=true&suunnitellut=true&lakkautetut=true&oidRestrictionList=' +
                        parent_oid + '&organisaatiotyyppi=organisaatiotyyppi_08&searchStr=' + toimipaikka_name)
     reply_msg = get_json_from_external_service(SERVICE_NAME, http_url_suffix, auth=True)
 
@@ -224,7 +223,7 @@ def get_organisaatio(organisaatio_oid, internal_id=None):
     :param organisaatio_oid: organisaatio oid
     :return: json data from organisaatio service
     """
-    url_path = ORGANISAATIOPALVELU_API_V4 + organisaatio_oid + '?includeImage=false'
+    url_path = ORGANISAATIOPALVELU_API + organisaatio_oid + '?includeImage=false'
     reply_msg = get_json_from_external_service(SERVICE_NAME, url_path, auth=True)
 
     if reply_msg['is_ok']:
@@ -236,7 +235,7 @@ def get_organisaatio(organisaatio_oid, internal_id=None):
 
 def create_organisaatio(organisaatio_json):
     expected_status_code = 200  # organisaatiopalvelu returns 200 on successful POSTs
-    response = post_json_to_external_service('organisaatio-service', ORGANISAATIOPALVELU_API_V4, organisaatio_json, expected_status_code)
+    response = post_json_to_external_service('organisaatio-service', ORGANISAATIOPALVELU_API, organisaatio_json, expected_status_code)
     if response['is_ok']:
         oid = response['json_msg']['organisaatio']['oid']
         return {'toimipaikka_created': True, 'organisaatio_oid': oid}
@@ -246,7 +245,7 @@ def create_organisaatio(organisaatio_json):
 
 def update_organisaatio(organisaatio_oid, organisaatio_update_json, internal_id=None):
     expected_status_code = 200
-    http_url_suffix_put = ORGANISAATIOPALVELU_API_V4 + organisaatio_oid
+    http_url_suffix_put = ORGANISAATIOPALVELU_API + organisaatio_oid
     response = put_json_to_external_service('organisaatio-service', http_url_suffix_put, organisaatio_update_json, expected_status_code)
     if not response['is_ok']:
         logger.error('Could not update organisaatio in Org-palvelu. Id: ' + str(internal_id) + ', oid: ' + organisaatio_oid)
@@ -260,7 +259,7 @@ def get_changed_since(since):
     """
     # Organisaatio-service formats: 'yyyy-MM-dd', 'yyyy-MM-dd HH:mm'
     formatted_time = since.strftime('%Y-%m-%d %H:%M')
-    url_path_query = ORGANISAATIOPALVELU_API_V2 + 'muutetut/oid?lastModifiedSince=' + formatted_time
+    url_path_query = ORGANISAATIOPALVELU_API + 'muutetut/oid?lastModifiedSince=' + formatted_time
     result = get_json_from_external_service(SERVICE_NAME, url_path_query, auth=True)
     oids = result['json_msg']['oids']
     return list(filter(lambda oid: oid != '', oids))
@@ -275,7 +274,7 @@ def get_multiple_organisaatio(organisaatio_oids):
     """
     if not organisaatio_oids:
         return []
-    url_path = ORGANISAATIOPALVELU_API_V4 + 'findbyoids'
+    url_path = ORGANISAATIOPALVELU_API + 'findbyoids'
     data = json.dumps(list(organisaatio_oids))
     response = post_json_to_external_service('organisaatio-service', url_path, data, 200, auth=True)
     return response['json_msg']

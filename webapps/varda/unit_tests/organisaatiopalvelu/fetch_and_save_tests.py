@@ -16,7 +16,7 @@ class TestFetchAndSaveToimipaikkaData(TestCase):
     @responses.activate
     def test_fetch_and_save_toimipaikka_data(self):
         responses.add(responses.GET,
-                      'https://virkailija.testiopintopolku.fi/organisaatio-service/rest/organisaatio/v4/1.2.246.562.10.9395737548810',
+                      'https://virkailija.testiopintopolku.fi/organisaatio-service/api/1.2.246.562.10.9395737548810',
                       json=self.get_organisaatio_json(),
                       status=200)
         fetch_and_save_toimipaikka_data(Toimipaikka.objects.get(id=1))
@@ -65,7 +65,7 @@ class TestFetchAndSaveToimipaikkaData(TestCase):
     @responses.activate
     def test_fetch_and_save_vakajarjestaja_data(self):
         responses.add(responses.GET,
-                      'https://virkailija.testiopintopolku.fi/organisaatio-service/rest/organisaatio/v4/1.2.246.562.10.34683023489',
+                      'https://virkailija.testiopintopolku.fi/organisaatio-service/api/1.2.246.562.10.34683023489',
                       json=self.get_organisaatio_json(True),
                       status=200)
         vakajarjestaja_id = 1
@@ -88,7 +88,7 @@ class TestFetchAndSaveToimipaikkaData(TestCase):
     @responses.activate
     def test_fetch_and_save_vakajarjestaja_lakkautettu(self):
         responses.add(responses.GET,
-                      'https://virkailija.testiopintopolku.fi/organisaatio-service/rest/organisaatio/v4/1.2.246.562.10.34683023489',
+                      'https://virkailija.testiopintopolku.fi/organisaatio-service/api/1.2.246.562.10.34683023489',
                       json=self.get_organisaatio_json(True, '2020-08-01'),
                       status=200)
         vakajarjestaja_id = 1

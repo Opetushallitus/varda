@@ -124,6 +124,6 @@ def _mock_cas_responses(kayttooikeus_json, organisaatio_oid):
                   json=kayttooikeus_json,
                   status=status.HTTP_200_OK)
     responses.add(responses.POST,
-                  'https://virkailija.testiopintopolku.fi/organisaatio-service/rest/organisaatio/v4/findbyoids',
+                  'https://virkailija.testiopintopolku.fi/organisaatio-service/api/findbyoids',
                   json=[{'oid': organisaatio_oid, 'tyypit': ['organisaatiotyyppi_07'], 'status': 'AKTIIVINEN'}],
                   status=status.HTTP_200_OK)

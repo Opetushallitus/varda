@@ -19,7 +19,7 @@ def get_organization_type(organisaatio_oid):
     We know that organization is vaka-organization but we want to know which type.
     """
     service_name = 'organisaatio-service'
-    organisaatio_url = '/rest/organisaatio/v4/hae?aktiiviset=true&suunnitellut=true&lakkautetut=true&oid=' + organisaatio_oid
+    organisaatio_url = '/api/hae?aktiiviset=true&suunnitellut=true&lakkautetut=true&oid=' + organisaatio_oid
     reply_msg = get_json_from_external_service(service_name, organisaatio_url)
     if not reply_msg['is_ok']:
         return True

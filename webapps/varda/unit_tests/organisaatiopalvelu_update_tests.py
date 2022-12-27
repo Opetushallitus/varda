@@ -19,7 +19,7 @@ class VardaOrganisaatiopalveluTests(TestCase):
     toimipaikka_4_organisaatio_oid = '1.2.246.562.10.9395737548811'
     toimipaikka_6727877596658_organisaatio_oid = '1.2.246.562.10.6727877596658'
 
-    org_palvelu_url = settings.OPINTOPOLKU_DOMAIN + '/organisaatio-service/rest/organisaatio/v4/'
+    org_palvelu_url = settings.OPINTOPOLKU_DOMAIN + '/organisaatio-service/api/'
     oid_regex = '([0-2])((\\.0)|(\\.[1-9][0-9]*))*'
     toimipaikka_1_4_regex = '(' + toimipaikka_1_organisaatio_oid + '|' + toimipaikka_4_organisaatio_oid + ')'
     toimipaikka_2_regex = toimipaikka_2_organisaatio_oid
