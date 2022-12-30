@@ -40,6 +40,7 @@
                                  (updateTyontekija)="updateTyontekija($event)">
   </app-varda-tyontekija-tutkinto>
   <ng-container *ngIf="tyontekijaKooste">
+    <app-varda-tyontekija-extra></app-varda-tyontekija-extra>
     <ng-container *ngIf="tyontekijaKooste.tutkinnot.length ||
       (!toimipaikkaAccess.tyontekijatiedot.katselija && toimipaikkaAccess.taydennyskoulutustiedot.katselija)">
       <app-varda-palvelussuhteet [henkilonToimipaikka]="henkilonToimipaikka"

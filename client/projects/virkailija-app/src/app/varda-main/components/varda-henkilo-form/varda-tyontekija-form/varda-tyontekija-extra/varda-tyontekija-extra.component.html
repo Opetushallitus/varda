@@ -1,0 +1,47 @@
+<div class="tyontekija-extra">
+  <h2 class="varda-fieldset-legend">{{ i18n.tyontekija_sahkopostiosoite | translate}}</h2>
+  <form [formGroup]="formGroup"
+        (submit)="saveExtra(formGroup)"
+        autocomplete="off">
+    <app-varda-form-field name="sahkopostiosoite"
+                          [form]="formGroup"
+                          [label]="i18n.tyontekija_sahkopostiosoite | translate"
+                          [errorText]="i18n.tyontekija_error_sahkopostiosoite | translate"
+                          [placeholder]="i18n.tyontekija_placeholder_sahkopostiosoite | translate"
+                          [instructionText]="i18n.tyontekija_instruction_sahkopostiosoite | translate"
+                          [hideLabel]="true">
+      <input #fieldItem
+             *ngIf="isEdit; else noEditEmail"
+             type="text"
+             class="oph-input"
+             formControlName="sahkopostiosoite" />
+      <ng-template #noEditEmail>
+          <span class="email-edit">
+          {{ tyontekijaKooste.sahkopostiosoite ?
+            tyontekijaKooste.sahkopostiosoite :
+            (i18n.tyontekija_missing_sahkopostiosoite | translate) }}
+
+            <button class="varda-text-button"
+                    *ngIf="orgUserAccess?.tyontekijatiedot.tallentaja && !isEdit"
+                    (click)="enableForm()">
+              <mat-icon alt="">edit</mat-icon>
+                {{ i18n.edit | translate }}
+            </button>
+          </span>
+      </ng-template>
+    </app-varda-form-field>
+
+    <app-varda-error-field [errors]="formErrors"></app-varda-error-field>
+
+    <app-varda-action-row *ngIf="isEdit"
+                          [saveDisabled]="formGroup.pristine || isSubmitting"
+                          [saveAccess]="orgUserAccess?.tyontekijatiedot.tallentaja"
+                          [formExists]="true"
+                          [isEdit]="isEdit"
+                          [noDelete]="true"
+                          [noToggle]="true"
+                          [noMargin]="true"
+                          (enableEdit)="enableForm()"
+                          (disableEdit)="disableForm()"></app-varda-action-row>
+  </form>
+</div>

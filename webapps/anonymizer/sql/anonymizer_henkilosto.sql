@@ -63,6 +63,9 @@ UPDATE varda_taydennyskoulutustyontekija tkt SET tehtavanimike_koodi = (select t
 
 -- Table varda_tyontekija
 UPDATE varda_tyontekija SET tunniste = id;
+-- Force at least every 50th Tyontekija to have sahkopostiosoite, and anonymize existing ones
+UPDATE varda_tyontekija SET sahkopostiosoite = CONCAT('email-', trunc(random() * 8999 + 1000)::text, '@example.com')
+    WHERE (sahkopostiosoite IS NOT NULL AND sahkopostiosoite != '') OR id % 50 = 0;
 
 -- Table varda_tilapainenhenkilosto
 UPDATE varda_tilapainenhenkilosto SET tuntimaara=random(),
@@ -105,7 +108,7 @@ WHERE varda_historicalpalvelussuhde.id = t.id;
 
 --varda_historicaltyontekija
 UPDATE varda_historicaltyontekija
-SET tunniste = t.tunniste
+SET tunniste = t.tunniste, sahkopostiosoite = t.sahkopostiosoite
 FROM varda_tyontekija t
 WHERE varda_historicaltyontekija.id = t.id;
 

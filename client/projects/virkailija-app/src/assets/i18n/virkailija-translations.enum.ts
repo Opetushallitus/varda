@@ -478,6 +478,13 @@ export enum VirkailijaTranslations {
   tyontekija_delete_success = 'tyontekija.delete-success',
   tyontekija_save_success = 'tyontekija.save-success',
 
+  tyontekija_extra_save_success = 'tyontekija.extra.save-success',
+  tyontekija_sahkopostiosoite = 'tyontekija.sahkopostiosoite',
+  tyontekija_error_sahkopostiosoite = 'tyontekija.error.sahkopostiosoite',
+  tyontekija_placeholder_sahkopostiosoite = 'tyontekija.placeholder.sahkopostiosoite',
+  tyontekija_instruction_sahkopostiosoite = 'tyontekija.instruction.sahkopostiosoite',
+  tyontekija_missing_sahkopostiosoite = 'tyontekija.missing.sahkopostiosoite',
+
   paginator_page_of_max = 'paginator.page-of-max',
   paginator_items_per_page = 'paginator.items-per-page',
   paginator_first_page = 'paginator.first-page',

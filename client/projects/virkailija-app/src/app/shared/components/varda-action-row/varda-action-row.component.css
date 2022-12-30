@@ -7,20 +7,24 @@
   padding: 1em 0.5em;
 }
 
+.mat-action-row.margin-none {
+  padding: 0;
+}
+
 .action-button-wrapper {
   justify-content: space-between;
-  padding: 0 0.5em;
   width: 100%;
   display: flex;
   flex-wrap: wrap;
 }
 
-.action-button-wrapper>* {
+.action-button-wrapper.margin-normal > * {
   padding: 0 0.25rem;
 }
 
 .action-button-wrapper.margin-normal {
   margin: 1em 0;
+  padding: 0 0.5em;
 }
 
 .action-button-wrapper button {

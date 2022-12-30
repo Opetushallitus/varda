@@ -11,6 +11,7 @@ import { BehaviorSubject, Observable } from 'rxjs';
 import { VirkailijaTranslations } from 'projects/virkailija-app/src/assets/i18n/virkailija-translations.enum';
 import { VardaVakajarjestajaApiService } from '../../../core/services/varda-vakajarjestaja-api.service';
 import { TranslateService } from '@ngx-translate/core';
+import { EMAIL_REGEX } from '../../../utilities/constants';
 
 @Component({
   selector: 'app-varda-vakatoimija',
@@ -53,7 +54,7 @@ export class VardaVakatoimijaComponent {
 
     this.vakatoimijaForm = new FormGroup({
       sahkopostiosoite: new FormControl(vakajarjestaja.sahkopostiosoite,
-        [Validators.required, VardaFormValidators.validStringFormat.bind(null, { regex: '^[_A-Za-z0-9-+!#$%&\'*/=?^`{|}~]+(\\.[_A-Za-z0-9-+!#$%&\'*/=?^`{|}~]+)*@[A-Za-z0-9][A-Za-z0-9-]+(\\.[A-Za-z0-9-]+)*(\\.[A-Za-z]{2,})$' })]),
+        [Validators.required, VardaFormValidators.validStringFormat.bind(null, { regex: EMAIL_REGEX })]),
       puhelinnumero: new FormControl(vakajarjestaja.puhelinnumero, [Validators.required, VardaFormValidators.validStringFormat.bind(null, { regex: '^(\\+358)[1-9]\\d{5,10}$' })]),
     });
 

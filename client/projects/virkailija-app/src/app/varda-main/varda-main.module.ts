@@ -94,6 +94,7 @@ import { VardaTransferOutageComponent } from './components/varda-raportit/varda-
 import { VardaRequestSummaryComponent } from './components/varda-raportit/varda-request-summary/varda-request-summary.component';
 import { VardaSetPaattymisPvmComponent } from './components/varda-set-paattymis-pvm/varda-set-paattymis-pvm.component';
 import { MatTableDummyComponent } from '../shared/components/mat-table-dummy/mat-table-dummy.component';
+import { VardaTyontekijaExtraComponent } from './components/varda-henkilo-form/varda-tyontekija-form/varda-tyontekija-extra/varda-tyontekija-extra.component';
 
 @NgModule({
   imports: [
@@ -190,7 +191,8 @@ import { MatTableDummyComponent } from '../shared/components/mat-table-dummy/mat
     VardaTransferOutageComponent,
     VardaRequestSummaryComponent,
     VardaSetPaattymisPvmComponent,
-    MatTableDummyComponent
+    MatTableDummyComponent,
+    VardaTyontekijaExtraComponent,
   ],
   entryComponents: [EiHenkilostoaDialogComponent],
   exports: [

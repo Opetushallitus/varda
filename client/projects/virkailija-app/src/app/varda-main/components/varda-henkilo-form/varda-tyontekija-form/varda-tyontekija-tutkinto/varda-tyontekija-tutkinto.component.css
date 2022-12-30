@@ -28,7 +28,11 @@ mat-form-field {
   z-index: 1051;
 }
 
-.action-button-wrapper button {
+.tutkinto-section .action-button-wrapper {
+  margin-top: 0.5em;
+}
+
+.tutkinto-section .action-button-wrapper button {
   margin: 0.5em;
 }
 

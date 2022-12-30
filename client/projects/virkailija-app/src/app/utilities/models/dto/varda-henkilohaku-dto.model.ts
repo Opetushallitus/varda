@@ -112,6 +112,7 @@ export interface TyontekijaKooste {
   id: number;
   vakajarjestaja_id: number;
   vakajarjestaja_nimi: string;
+  sahkopostiosoite: string | null;
   tutkinnot: Array<TyontekijaTutkinto>;
   henkilo: TyontekijaHenkilo;
   taydennyskoulutukset: Array<TyontekijaTaydennyskoulutus>;

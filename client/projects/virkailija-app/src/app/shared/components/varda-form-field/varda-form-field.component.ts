@@ -43,6 +43,7 @@ export class VardaFormFieldComponent implements OnInit, AfterViewInit, OnChanges
   @Input() readOnly: boolean;
   @Input() required: boolean;
   @Input() form!: FormGroup;
+  @Input() hideLabel = false;
 
   @ContentChildren('fieldItem', { descendants: true }) childComponents:
     QueryList<ElementRef | MatSelect | VardaAutocompleteSelectorComponent<any>>;

@@ -982,6 +982,7 @@ class TyontekijaKoosteSerializer(serializers.Serializer):
     vakajarjestaja_id = serializers.IntegerField(source='tyontekija.vakajarjestaja.id')
     vakajarjestaja_nimi = serializers.CharField(source='tyontekija.vakajarjestaja.nimi')
     vakajarjestaja_organisaatio_oid = serializers.CharField(source='tyontekija.vakajarjestaja.organisaatio_oid')
+    sahkopostiosoite = serializers.CharField(source='tyontekija.sahkopostiosoite')
     lahdejarjestelma = serializers.CharField(source='tyontekija.lahdejarjestelma')
     tunniste = serializers.CharField(source='tyontekija.tunniste')
     henkilo = TyontekijaKoosteHenkiloSerializer(source='tyontekija.henkilo')

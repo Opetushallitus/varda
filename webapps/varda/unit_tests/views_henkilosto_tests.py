@@ -400,6 +400,28 @@ class VardaHenkilostoViewSetTests(RollbackTestCase):
         self.assertFalse(henkilo_obj.kotikunta_koodi or henkilo_obj.katuosoite or
                          henkilo_obj.postinumero or henkilo_obj.postitoimipaikka)
 
+    def test_api_push_tyontekija_sahkopostiosoite_correct(self):
+        client = SetUpTestClient('tester10').client()
+
+        tyontekija_patch = {'sahkopostiosoite': 'correct@email.fi'}
+
+        resp = client.patch('/api/henkilosto/v1/tyontekijat/1:testing-tyontekija6/', tyontekija_patch)
+        assert_status_code(resp, status.HTTP_200_OK)
+
+    def test_api_push_tyontekija_sahkopostiosoite_incorrect(self):
+        client = SetUpTestClient('tester10').client()
+        url = '/api/henkilosto/v1/tyontekijat/1:testing-tyontekija6/'
+
+        tyontekija_patch_list = [
+            {'sahkopostiosoite': 'fake@helsinki.f'},
+            {'sahkopostiosoite': 'almostcorrect.com'}
+        ]
+
+        for tyontekija_patch in tyontekija_patch_list:
+            resp = client.patch(url, tyontekija_patch)
+            assert_status_code(resp, status.HTTP_400_BAD_REQUEST)
+            assert_validation_error(resp, 'sahkopostiosoite', 'GE024', 'This field must be an email address.')
+
     @mock_date_decorator_factory(datetime_path, '2020-12-01')
     def test_api_push_tilapainen_henkilosto_correct(self):
         client = SetUpTestClient('tilapaiset_tallentaja').client()

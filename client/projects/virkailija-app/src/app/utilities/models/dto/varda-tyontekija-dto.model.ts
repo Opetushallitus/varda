@@ -8,6 +8,7 @@ export class VardaTyontekijaDTO {
   henkilo_oid: string;
   vakajarjestaja: string;
   vakajarjestaja_oid: string;
+  sahkopostiosoite: string | null;
   lahdejarjestelma: Lahdejarjestelma;
   tunniste: string | null;
   muutos_pvm: string;

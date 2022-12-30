@@ -48,6 +48,10 @@ export class VardaHenkilostoApiService {
     return this.http.post(`${this.henkilostoApiPath}/tyontekijat/`, tyontekijaDTO);
   }
 
+  updateTyontekija(tyontekijaId: number, tyontekijaDTO: Record<string, any>): Observable<VardaTyontekijaDTO> {
+    return this.http.patch(`${this.henkilostoApiPath}/tyontekijat/${tyontekijaId}/`, tyontekijaDTO);
+  }
+
   deleteTyontekija(tyontekijaId: number): Observable<void> {
     return this.http.delete(`${this.henkilostoApiPath}/tyontekijat/${tyontekijaId}/`);
   }

@@ -471,6 +471,7 @@ class PaosOikeus(HistoryAbstractModel):
 class Tyontekija(UniqueLahdejarjestelmaTunnisteMixin, HistoryAbstractModel):
     henkilo = models.ForeignKey(Henkilo, related_name='tyontekijat', on_delete=models.PROTECT)
     vakajarjestaja = models.ForeignKey(Organisaatio, related_name='tyontekijat', on_delete=models.PROTECT)
+    sahkopostiosoite = models.CharField(max_length=200, blank=True, null=True, validators=[validators.validate_email])
     lahdejarjestelma = models.CharField(max_length=2, validators=[validators.validate_lahdejarjestelma_koodi])
     tunniste = models.CharField(max_length=120, null=True, blank=True, validators=[validators.validate_tunniste])
     luonti_pvm = models.DateTimeField(auto_now_add=True)
