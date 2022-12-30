@@ -6,7 +6,7 @@ from django.conf import settings
 from django.contrib.auth.models import AnonymousUser, Group
 from django.contrib.contenttypes.models import ContentType
 from django.db import transaction, IntegrityError
-from django.db.models import IntegerField, Q, Model, QuerySet
+from django.db.models import F, IntegerField, Q, Model, QuerySet, Value
 from django.db.models.functions import Cast
 from django.forms import model_to_dict
 from guardian.models import UserObjectPermission, GroupObjectPermission
@@ -164,7 +164,11 @@ def _user_has_certificate_access(user, request):
         return False
 
     is_cert_auth, common_name = get_certificate_login_info(request)
-    login_certificate = LoginCertificate.objects.filter(api_path=request.path, common_name=common_name, user=user).first()
+    # Compare request.path to api_path, api_path can also be just the beginning of the full path
+    login_certificate = (LoginCertificate.objects
+                         .alias(request_path=Value(request.path))
+                         .filter(request_path__startswith=F('api_path'), common_name=common_name, user=user)
+                         .first())
     if not login_certificate:
         return False
 

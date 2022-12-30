@@ -1959,13 +1959,13 @@ class VardaViewsTests(TestCase):
         result = json.loads(resp.content)
         count = result['count']
         kunnallinen_kytkin = result['results'][0]['kunnallinen_kytkin']
-        self.assertEqual(count, 4)
+        self.assertEqual(count, 7)
         self.assertEqual(kunnallinen_kytkin, False)
 
         resp = client.get('/api/v1/vakajarjestajat/')
         result = json.loads(resp.content)
         count = result['count']
-        self.assertEqual(count, 8)
+        self.assertEqual(count, 11)
 
     def test_push_incorrect_varhaiskasvatuspaatos_tuntimaara(self):
         varhaiskasvatuspaatos = {

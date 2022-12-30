@@ -110,7 +110,8 @@ class TunnisteIdSchema(ReadWriteAutoSchema):
         if match and match.group(1):
             # Override id path parameter description to include lahdejarjestelma:tunniste option
             path_model = getattr(getattr(self.view, 'swagger_path_model', None), '__name__', None)
-            model_name = path_model or self.view.get_queryset().model.__name__
+            parent_model = getattr(getattr(self.view, 'parent_model', None), '__name__', None)
+            model_name = path_model or parent_model or self.view.get_queryset().model.__name__
             query_params.append(
                 openapi.Parameter(match.group(1), openapi.IN_PATH,
                                   description=self.param_description.format(model_name),
@@ -122,6 +123,10 @@ class TunnisteIdSchema(ReadWriteAutoSchema):
 class IntegerIdSchema(TunnisteIdSchema):
     param_type = openapi.TYPE_INTEGER
     param_description = 'A unique integer value identifying this {}.'
+
+
+class OidIdSchema(TunnisteIdSchema):
+    param_description = 'A unique integer or OID value identifying this {}.'
 
 
 class ActionPaginationSwaggerAutoSchema(ReadWriteAutoSchema):

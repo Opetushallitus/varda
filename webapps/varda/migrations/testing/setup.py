@@ -39,7 +39,10 @@ def add_test_users():
     User.objects.create(username='tester11', password='pbkdf2_sha256$150000$9HnlY5WRksmT$J5TselErYqb9w2upEbgzsFwJ8tvfbU5U8y7Zj5QQJPk=')
     User.objects.create(username='tester-no-known-privileges', password='pbkdf2_sha256$120000$6ihvwx47epob$a2xDB6OLThL4eeEuMVw8+3QB1QBxi5hU2gZxnMwA2nE=')
     User.objects.create(username='henkilosto_tallentaja_93957375488', password='pbkdf2_sha256$150000$WMst0ZmwKf3p$Fqyz4SSdybbBdAexKCjxXyqiUfYafn7XxGaxQsALqoo=')
-    User.objects.create(username='kela_luovutuspalvelu', password='pbkdf2_sha256$150000$WMst0ZmwKQ5P$Fqyz1KLMdybbBdjLmKCjxXyqiUfYafn7XxGaxQsALqoo=')
+    User.objects.create(username='kela_luovutuspalvelu', password='pbkdf2_sha256$390000$sKLGfSOMYueGetSLpa2285$dsD+iLqwCfLoRszplj76FPwzFH1vlNAbWQyExBZekbM=')
+    User.objects.create(username='tilastokeskus_luovutuspalvelu', password='pbkdf2_sha256$390000$L5EpAc1ZKy1prUWl9vaGCx$S7TUxswyWt+0jNwb6B4I3ZWNz417n7IqJCteBkZSMSs=')
+    User.objects.create(username='avi_luovutuspalvelu', password='pbkdf2_sha256$390000$IgSmCp8w9XgxNLBNw0DaWz$By/jpQ9rtPjyL9UO5SddY65DXCKTFfZiCM1eoQFHwd0=')
+    User.objects.create(username='karvi_luovutuspalvelu', password='pbkdf2_sha256$390000$axAhybgkgB3Uh52QyQsSuB$/99rzY0e7VXwZr2Fh2Oibd7s1ePOrT5WeZY/s0XtGKM=')
     User.objects.create(username='varda_system', password='pbkdf2_sha256$150000$WMst9QvKQ5P$Fqyz1HDLdybbBdjiKlCjxXyqiUfYafn7XxGaxQsALqoo=')
     User.objects.create(username='user_toimipaikka_9395737548810', password='pbkdf2_sha256$150000$WMst0ZmwKf3p$Fqyz4SSdybbBdAexKCjxXyqiUfYafn7XxGaxQsALqoo=')
 
@@ -93,6 +96,9 @@ def add_test_user_permissions():
     group_toimijatiedot_tallentaja_52966755795 = Group.objects.get(name='VARDA_TOIMIJATIEDOT_TALLENTAJA_1.2.246.562.10.52966755795')
     group_raporttien_katselija_34683023489 = Group.objects.get(name='VARDA_RAPORTTIEN_KATSELIJA_1.2.246.562.10.34683023489')
     group_kela_luovutuspalvelu = Group.objects.get(name='VARDA_LUOVUTUSPALVELU_1.2.246.562.10.2013121014482686198719')
+    group_tilastokeskus_luovutuspalvelu = Group.objects.get(name='VARDA_LUOVUTUSPALVELU_1.2.246.562.10.35939310928')
+    group_avi_luovutuspalvelu = Group.objects.get(name='VARDA_LUOVUTUSPALVELU_1.2.246.562.10.11908146316')
+    group_karvi_luovutuspalvelu = Group.objects.get(name='VARDA_LUOVUTUSPALVELU_1.2.246.562.10.12218193316')
 
     user_tester = User.objects.get(username='tester')
     user_tester.groups.add(group_tallentaja_toimipaikka_1)
@@ -206,6 +212,15 @@ def add_test_user_permissions():
 
     kela_luovutuspalvelu = User.objects.get(username='kela_luovutuspalvelu')
     kela_luovutuspalvelu.groups.add(group_kela_luovutuspalvelu)
+
+    tilastokeskus_luovutuspalvelu = User.objects.get(username='tilastokeskus_luovutuspalvelu')
+    tilastokeskus_luovutuspalvelu.groups.add(group_tilastokeskus_luovutuspalvelu)
+
+    avi_luovutuspalvelu = User.objects.get(username='avi_luovutuspalvelu')
+    avi_luovutuspalvelu.groups.add(group_avi_luovutuspalvelu)
+
+    karvi_luovutuspalvelu = User.objects.get(username='karvi_luovutuspalvelu')
+    karvi_luovutuspalvelu.groups.add(group_karvi_luovutuspalvelu)
 
 
 def create_vakajarjestajat():
@@ -364,6 +379,63 @@ def create_vakajarjestajat():
             puhelinnumero='',
             yritysmuoto='0',
             alkamis_pvm='1970-01-01',
+            paattymis_pvm=None,
+            integraatio_organisaatio=[],
+            organisaatiotyyppi=[Organisaatiotyyppi.MUU.value]
+        ),
+        Organisaatio.objects.create(
+            nimi='Tilastokeskus',
+            y_tunnus='0245491-1',
+            organisaatio_oid='1.2.246.562.10.35939310928',
+            kunta_koodi='091',
+            sahkopostiosoite='',
+            kayntiosoite='',
+            kayntiosoite_postinumero='',
+            kayntiosoite_postitoimipaikka='',
+            postiosoite='',
+            postitoimipaikka='',
+            postinumero='',
+            puhelinnumero='',
+            yritysmuoto='40',
+            alkamis_pvm='1979-01-02',
+            paattymis_pvm=None,
+            integraatio_organisaatio=[],
+            organisaatiotyyppi=[Organisaatiotyyppi.MUU.value]
+        ),
+        Organisaatio.objects.create(
+            nimi='Etelä-Suomen aluehallintovirasto',
+            y_tunnus='1094544-6',
+            organisaatio_oid='1.2.246.562.10.11908146316',
+            kunta_koodi='091',
+            sahkopostiosoite='',
+            kayntiosoite='',
+            kayntiosoite_postinumero='',
+            kayntiosoite_postitoimipaikka='',
+            postiosoite='',
+            postitoimipaikka='',
+            postinumero='',
+            puhelinnumero='',
+            yritysmuoto='40',
+            alkamis_pvm='1997-08-13',
+            paattymis_pvm=None,
+            integraatio_organisaatio=[],
+            organisaatiotyyppi=[Organisaatiotyyppi.MUU.value]
+        ),
+        Organisaatio.objects.create(
+            nimi='Kansallinen koulutuksen arviointikeskus',
+            y_tunnus='',
+            organisaatio_oid='1.2.246.562.10.12218193316',
+            kunta_koodi='091',
+            sahkopostiosoite='',
+            kayntiosoite='',
+            kayntiosoite_postinumero='',
+            kayntiosoite_postitoimipaikka='',
+            postiosoite='',
+            postitoimipaikka='',
+            postinumero='',
+            puhelinnumero='',
+            yritysmuoto='0',
+            alkamis_pvm='2015-03-16',
             paattymis_pvm=None,
             integraatio_organisaatio=[],
             organisaatiotyyppi=[Organisaatiotyyppi.MUU.value]
@@ -2774,7 +2846,7 @@ def create_henkilosto():
                         'kelpoisuus_kytkin': True,
                         'kiertava_tyontekija_kytkin': False,
                         'lahdejarjestelma': '1',
-                        'tunniste': 'testing-tyoskentylypaikka5-1'
+                        'tunniste': 'testing-tyoskentelypaikka5-1'
                     },
                     {
                         'toimipaikka_oid': '1.2.246.562.10.9395737548810',
@@ -2784,7 +2856,7 @@ def create_henkilosto():
                         'kelpoisuus_kytkin': True,
                         'kiertava_tyontekija_kytkin': False,
                         'lahdejarjestelma': '1',
-                        'tunniste': 'testing-tyoskentylypaikka5-2'
+                        'tunniste': 'testing-tyoskentelypaikka5-2'
                     },
                 ),
                 (),
@@ -2820,7 +2892,7 @@ def create_henkilosto():
                         'kelpoisuus_kytkin': True,
                         'kiertava_tyontekija_kytkin': True,
                         'lahdejarjestelma': '1',
-                        'tunniste': 'testing-tyoskentylypaikka-kiertava',
+                        'tunniste': 'testing-tyoskentelypaikka-kiertava',
                     },
                 ),
                 (),
@@ -2854,7 +2926,7 @@ def create_henkilosto():
                         'kelpoisuus_kytkin': True,
                         'kiertava_tyontekija_kytkin': False,
                         'lahdejarjestelma': '1',
-                        'tunniste': 'testing-tyoskentylypaikka6-1',
+                        'tunniste': 'testing-tyoskentelypaikka6-1',
                     },
                     {
                         'toimipaikka_oid': '1.2.246.562.10.2565458382544',
@@ -2863,7 +2935,7 @@ def create_henkilosto():
                         'kelpoisuus_kytkin': True,
                         'kiertava_tyontekija_kytkin': False,
                         'lahdejarjestelma': '1',
-                        'tunniste': 'testing-tyoskentylypaikka6-2',
+                        'tunniste': 'testing-tyoskentelypaikka6-2',
                     },
                 ),
                 (
@@ -2881,6 +2953,7 @@ def create_henkilosto():
         {
             'henkilo_oid': '1.2.246.562.24.5826267847674',
             'vakajarjestaja_oid': '1.2.246.562.10.52966755795',
+            'sahkopostiosoite': 'tyontekija7@email.fi',
             'lahdejarjestelma': '1',
             'tunniste': 'testing-tyontekija7'
         },
@@ -2904,7 +2977,7 @@ def create_henkilosto():
                         'kelpoisuus_kytkin': True,
                         'kiertava_tyontekija_kytkin': False,
                         'lahdejarjestelma': '1',
-                        'tunniste': 'testing-tyoskentylypaikka7',
+                        'tunniste': 'testing-tyoskentelypaikka7',
                     },
                 ),
                 (
@@ -3026,14 +3099,34 @@ def create_login_certs():
     from django.contrib.auth.models import User
     from varda.models import LoginCertificate, Organisaatio
 
-    user = User.objects.get(username='kela_luovutuspalvelu')
-    kela_organisaatio = Organisaatio.objects.get(organisaatio_oid='1.2.246.562.10.2013121014482686198719')
+    user_kela = User.objects.get(username='kela_luovutuspalvelu')
+    organisaatio_kela = Organisaatio.objects.get(organisaatio_oid='1.2.246.562.10.2013121014482686198719')
+    for url in ['/api/reporting/v1/kela/etuusmaksatus/aloittaneet/',
+                '/api/reporting/v1/kela/etuusmaksatus/lopettaneet/',
+                '/api/reporting/v1/kela/etuusmaksatus/maaraaikaiset/',
+                '/api/reporting/v1/kela/etuusmaksatus/korjaustiedot/',
+                '/api/reporting/v1/kela/etuusmaksatus/korjaustiedotpoistetut/']:
+        LoginCertificate.objects.update_or_create(organisaatio=organisaatio_kela, common_name='kela cert',
+                                                  user=user_kela, api_path=url)
 
-    LoginCertificate.objects.update_or_create(organisaatio=kela_organisaatio, api_path='/api/reporting/v1/kela/etuusmaksatus/aloittaneet/', common_name='kela cert', user=user)
-    LoginCertificate.objects.update_or_create(organisaatio=kela_organisaatio, api_path='/api/reporting/v1/kela/etuusmaksatus/lopettaneet/', common_name='kela cert', user=user)
-    LoginCertificate.objects.update_or_create(organisaatio=kela_organisaatio, api_path='/api/reporting/v1/kela/etuusmaksatus/maaraaikaiset/', common_name='kela cert', user=user)
-    LoginCertificate.objects.update_or_create(organisaatio=kela_organisaatio, api_path='/api/reporting/v1/kela/etuusmaksatus/korjaustiedot/', common_name='kela cert', user=user)
-    LoginCertificate.objects.update_or_create(organisaatio=kela_organisaatio, api_path='/api/reporting/v1/kela/etuusmaksatus/korjaustiedotpoistetut/', common_name='kela cert', user=user)
+    user_tilastokeskus = User.objects.get(username='tilastokeskus_luovutuspalvelu')
+    organisaatio_tilastokeskus = Organisaatio.objects.get(organisaatio_oid='1.2.246.562.10.35939310928')
+    for url in ['/api/reporting/v1/tilastokeskus/organisaatiot/',
+                '/api/reporting/v1/tilastokeskus/varhaiskasvatustiedot/',
+                '/api/reporting/v1/tilastokeskus/henkilostotiedot/']:
+        LoginCertificate.objects.update_or_create(organisaatio=organisaatio_tilastokeskus, common_name='stat.fi',
+                                                  user=user_tilastokeskus, api_path=url)
+
+    user_avi = User.objects.get(username='avi_luovutuspalvelu')
+    organisaatio_avi = Organisaatio.objects.get(organisaatio_oid='1.2.246.562.10.11908146316')
+    LoginCertificate.objects.update_or_create(organisaatio=organisaatio_avi, common_name='avi.fi', user=user_avi,
+                                              api_path='/api/reporting/v1/avi/')
+
+    user_karvi = User.objects.get(username='karvi_luovutuspalvelu')
+    organisaatio_karvi = Organisaatio.objects.get(organisaatio_oid='1.2.246.562.10.12218193316')
+    for url in ['/api/reporting/v1/valssi/organisaatiot/', '/api/reporting/v1/valssi/toimipaikat/']:
+        LoginCertificate.objects.update_or_create(organisaatio=organisaatio_karvi, common_name='karvi.fi',
+                                                  user=user_karvi, api_path=url)
 
 
 def create_test_data():

@@ -7,8 +7,9 @@ from django.conf import settings
 from django.contrib.auth.models import AnonymousUser, User
 from django.contrib.postgres.aggregates import ArrayAgg
 from django.db import connection, transaction
-from django.db.models import Case, Count, DateField, F, FloatField, IntegerField, Max, Q, Subquery, Sum, Value, When
-from django.db.models.functions import Cast
+from django.db.models import (Case, CharField, Count, DateField, Exists, F, FloatField, IntegerField, Max, OuterRef,
+                              Q, Subquery, Sum, Value, When)
+from django.db.models.functions import Cast, Coalesce, Lower
 from django.http import Http404, HttpResponse
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
@@ -32,17 +33,19 @@ from varda.enums.supported_language import SupportedLanguage
 from varda.excel_export import create_excel_report_task, ExcelReportType, get_excel_local_file_path
 from varda.enums.reporting import ReportStatus
 from varda.filters import (CustomParameter, CustomParametersFilterBackend, ExcelReportFilter, RequestSummaryFilter,
-                           TiedonsiirtoFilter, TransferOutageReportFilter)
+                           TiedonsiirtoFilter, TransferOutageReportFilter, ValssiTyontekijaFilter)
 from varda.misc import encrypt_string
-from varda.misc_queries import get_related_object_changed_id_qs
-from varda.misc_viewsets import ViewSetValidator
-from varda.models import (KieliPainotus, Lapsi, Maksutieto, Organisaatio, Palvelussuhde, PaosOikeus, PaosToiminta,
+from varda.misc_queries import get_active_filter, get_related_object_changed_id_qs
+from varda.misc_viewsets import ParentObjectByOidMixin, ViewSetValidator
+from varda.models import (KieliPainotus, Lapsi, Maksutieto, Organisaatio, Palvelussuhde, PaosOikeus,
+                          PaosToiminta, PidempiPoissaolo, Taydennyskoulutus, TaydennyskoulutusTyontekija,
                           ToiminnallinenPainotus, Toimipaikka, Tyontekija, Tyoskentelypaikka, Varhaiskasvatuspaatos,
-                          Varhaiskasvatussuhde, Z10_KelaVarhaiskasvatussuhde, Z2_Koodisto, Z4_CasKayttoOikeudet,
-                          Z6_LastRequest, Z6_RequestLog, Z6_RequestSummary, Z8_ExcelReport)
-from varda.pagination import (ChangeablePageSizePagination, ChangeableReportingPageSizePagination, DateCursorPagination,
-                              DateReverseCursorPagination, IdCursorPagination, IdReverseCursorPagination,
-                              TkCursorPagination)
+                          Varhaiskasvatussuhde, Z10_KelaVarhaiskasvatussuhde, Z2_Code, Z2_Koodisto,
+                          Z4_CasKayttoOikeudet, Z6_LastRequest, Z6_RequestLog, Z6_RequestSummary, Z8_ExcelReport)
+from varda.pagination import (ChangeablePageSizePagination, ChangeablePageSizePaginationLarge,
+                              ChangeableReportingPageSizePagination, DateCursorPagination, DateReverseCursorPagination,
+                              HistoricalLargePagination, IdCursorPagination, IdReverseCursorPagination,
+                              HistoricalCursorPagination)
 from varda.permissions import (auditlogclass, get_vakajarjestajat_filter_for_raportit, is_oph_staff,
                                IsCertificateAccess, RaportitPermissions, ReadAdminOrOPHUser,
                                user_permission_groups_in_organization)
@@ -56,7 +59,9 @@ from varda.serializers_reporting import (DuplicateLapsiSerializer, ErrorReportLa
                                          RequestSummarySerializer, TiedonsiirtoSerializer,
                                          TiedonsiirtotilastoSerializer, TiedonsiirtoYhteenvetoSerializer,
                                          TkHenkilostotiedotSerializer, TkOrganisaatiotSerializer,
-                                         TkVakatiedotSerializer, TransferOutageReportSerializer)
+                                         TkVakatiedotSerializer, TransferOutageReportSerializer,
+                                         ValssiOrganisaatioSerializer, ValssiTaustatiedotSerializer,
+                                         ValssiToimipaikkaSerializer, ValssiTyontekijaSerializer)
 from varda.validators import validate_kela_api_datetimefield
 
 
@@ -1151,9 +1156,9 @@ class RequestSummaryViewSet(GenericViewSet, ListModelMixin):
                     .order_by('-ratio', '-unsuccessful_count', '-summary_date'))
 
 
-class TkBaseViewSet(GenericViewSet, ListModelMixin):
+class HistoricalAbstractViewSet(GenericViewSet, ListModelMixin):
     permission_classes = (IsCertificateAccess,)
-    pagination_class = TkCursorPagination
+    pagination_class = HistoricalCursorPagination
     filter_backends = (CustomParametersFilterBackend,)
     custom_parameters = (CustomParameter(name='datetime_gt', required=False, location='query', data_type='string',
                                          description='ISO DateTime (YYYY-MM-DDTHH:MM:SSZ), '
@@ -1197,7 +1202,7 @@ class TkBaseViewSet(GenericViewSet, ListModelMixin):
 
 
 @auditlogclass
-class TkOrganisaatiot(TkBaseViewSet):
+class TkOrganisaatiot(HistoricalAbstractViewSet):
     queryset = Organisaatio.objects.none()
     serializer_class = TkOrganisaatiotSerializer
 
@@ -1209,7 +1214,7 @@ class TkOrganisaatiot(TkBaseViewSet):
 
 
 @auditlogclass
-class TkVakatiedot(TkBaseViewSet):
+class TkVakatiedot(HistoricalAbstractViewSet):
     queryset = Lapsi.objects.none()
     serializer_class = TkVakatiedotSerializer
 
@@ -1221,7 +1226,7 @@ class TkVakatiedot(TkBaseViewSet):
 
 
 @auditlogclass
-class TkHenkilostotiedot(TkBaseViewSet):
+class TkHenkilostotiedot(HistoricalAbstractViewSet):
     queryset = Tyontekija.objects.none()
     serializer_class = TkHenkilostotiedotSerializer
 
@@ -1230,3 +1235,246 @@ class TkHenkilostotiedot(TkBaseViewSet):
         return (Tyontekija.history
                 .filter(id__in=Subquery(id_qs), history_date__lte=self.datetime_lte)
                 .distinct('id').order_by('id', '-history_date'))
+
+
+class SimpleHistoricalViewSet(HistoricalAbstractViewSet):
+    pagination_class = HistoricalLargePagination
+
+    def get_queryset(self):
+        base_queryset = self.queryset.model.history.filter(history_date__gt=self.datetime_gt,
+                                                           history_date__lte=self.datetime_lte)
+        include_ids = (base_queryset
+                       .values('id')
+                       .annotate(history_type_array=ArrayAgg('history_type', distinct=True))
+                       .exclude(history_type_array__contains=['+', '-'])
+                       .values('id'))
+        return base_queryset.filter(id__in=include_ids).distinct('id').order_by('id', '-history_date')
+
+
+# Use ParentObjectByOidMixin, NestedSimpleRouter must get the correct lookup_value_regex for ValssiTaustatiedotViewSet
+@auditlogclass
+class ValssiOrganisaatioViewSet(ParentObjectByOidMixin, SimpleHistoricalViewSet):
+    queryset = Organisaatio.objects.none()
+    serializer_class = ValssiOrganisaatioSerializer
+
+
+# Use ParentObjectByOidMixin, NestedSimpleRouter must get the correct lookup_value_regex for ValssiTyontekijaViewSet
+@auditlogclass
+class ValssiToimipaikkaViewSet(ParentObjectByOidMixin, SimpleHistoricalViewSet):
+    queryset = Toimipaikka.objects.none()
+    serializer_class = ValssiToimipaikkaSerializer
+
+
+@auditlogclass
+class ValssiTaustatiedotViewSet(ParentObjectByOidMixin, GenericViewSet, ListModelMixin):
+    permission_classes = (IsCertificateAccess,)
+    queryset = Organisaatio.vakajarjestajat.all()
+    serializer_class = ValssiTaustatiedotSerializer
+    pagination_class = None
+    parent_model = Organisaatio
+    # Luovutuspalvelu user does not have object permissions
+    check_parent_permissions = False
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.organisaatio = None
+        self.today = None
+
+    def get_toimipaikka_data(self, result):
+        toimipaikka_qs = Toimipaikka.objects.filter(get_active_filter(self.today), vakajarjestaja=self.organisaatio)
+        result['toimipaikat'] = {
+            'total': toimipaikka_qs.count(),
+            'toimintamuodot': {}
+        }
+
+        # Number of Toimipaikka objects per toimintamuoto_koodi and jarjestamismuoto_koodi
+        toimintamuoto_codes = (Z2_Code.objects
+                               .filter(koodisto__name=Koodistot.toimintamuoto_koodit.value)
+                               .annotate(code_lower=Lower('code_value'))
+                               .values_list('code_lower', flat=True)
+                               .order_by('code_lower'))
+        jarjestamismuoto_codes = (Z2_Code.objects
+                                  .filter(koodisto__name=Koodistot.jarjestamismuoto_koodit.value)
+                                  .annotate(code_lower=Lower('code_value'))
+                                  .values_list('code_lower', flat=True)
+                                  .order_by('code_lower'))
+        for toimintamuoto_code in toimintamuoto_codes:
+            toimintamuoto_qs = toimipaikka_qs.filter(toimintamuoto_koodi__iexact=toimintamuoto_code)
+            result['toimipaikat']['toimintamuodot'][toimintamuoto_code] = {'total': toimintamuoto_qs.count()}
+            for jarjestamismuoto_code in jarjestamismuoto_codes:
+                jarjestamismuoto_qs = toimintamuoto_qs.filter(jarjestamismuoto_koodi__icontains=jarjestamismuoto_code)
+                result['toimipaikat']['toimintamuodot'][toimintamuoto_code][jarjestamismuoto_code] = jarjestamismuoto_qs.count()
+
+    def get_lapsi_data(self, result):
+        # Distinct Henkilo objects that have active Varhaiskasvatussuhde and Varhaiskasvatuspaatos object
+        result['lapset_voimassa'] = (
+            Lapsi.objects
+            .filter((Q(vakatoimija=self.organisaatio) | Q(oma_organisaatio=self.organisaatio) |
+                     Q(paos_organisaatio=self.organisaatio)) &
+                    get_active_filter(self.today, prefix='varhaiskasvatuspaatokset') &
+                    get_active_filter(self.today, prefix='varhaiskasvatuspaatokset__varhaiskasvatussuhteet'))
+            .distinct('henkilo_id').count()
+        )
+
+    def get_henkilosto_data(self, result):
+        active_filter = get_active_filter(self.today)
+
+        # Distinct Henkilo objects that have active Tyoskentelypaikka and Palvelussuhde object, and not active
+        # PidempiPoissaolo object
+        tyontekija_qs = (
+            Tyontekija.objects
+            .filter(Q(vakajarjestaja=self.organisaatio) & get_active_filter(self.today, prefix='palvelussuhteet') &
+                    get_active_filter(self.today, prefix='palvelussuhteet__tyoskentelypaikat') &
+                    ~Exists(PidempiPoissaolo.objects.filter(active_filter, palvelussuhde=OuterRef('palvelussuhteet'))))
+            .distinct('henkilo_id')
+        )
+        result['tyontekijat'] = {
+            'total': tyontekija_qs.count(),
+            'tehtavanimikkeet': {},
+            'tehtavanimikkeet_kelpoiset': {}
+        }
+
+        # Tyoskentelypaikka count by tehtavanimike_koodi
+        tehtavanimike_codes = (Z2_Code.objects
+                               .filter(koodisto__name=Koodistot.tehtavanimike_koodit.value)
+                               .annotate(code_lower=Lower('code_value'))
+                               .values_list('code_lower', flat=True).order_by('code_lower'))
+        tehtavanimike_annotations = {}
+        for tn_code in tehtavanimike_codes:
+            tehtavanimike_annotations[tn_code] = Coalesce(
+                Count(Case(When(tehtavanimike_koodi__iexact=tn_code,
+                                then=F('palvelussuhde__tyontekija__henkilo_id'))),
+                      # Count tehtavanimike_koodi per henkilo_id only once
+                      distinct=True),
+                0
+            )
+
+        tyoskentelypaikka_qs = (
+            Tyoskentelypaikka.objects
+            .filter(active_filter & get_active_filter(self.today, prefix='palvelussuhde') &
+                    ~Exists(PidempiPoissaolo.objects.filter(active_filter, palvelussuhde=OuterRef('palvelussuhde'))) &
+                    Q(palvelussuhde__tyontekija__vakajarjestaja=self.organisaatio))
+            # Avoid Django's default group by id with 'temp' field
+            .annotate(temp=Value(0)).values('temp')
+            .annotate(**tehtavanimike_annotations).values(*tehtavanimike_codes)
+        )
+
+        result['tyontekijat']['tehtavanimikkeet'] = tyoskentelypaikka_qs[0]
+        result['tyontekijat']['tehtavanimikkeet_kelpoiset'] = tyoskentelypaikka_qs.filter(kelpoisuus_kytkin=True)[0]
+
+        # Taydennyskoulutus data
+        # Get data from previous toimintavuosi (1.8.-31.7.)
+        if self.today.month < 8:
+            suoritus_pvm_gte = datetime.date(year=self.today.year - 2, month=8, day=1)
+            suoritus_pvm_lte = datetime.date(year=self.today.year - 1, month=7, day=31)
+        else:
+            suoritus_pvm_gte = datetime.date(year=self.today.year - 1, month=8, day=1)
+            suoritus_pvm_lte = datetime.date(year=self.today.year, month=7, day=31)
+
+        # Get list of koulutuspaivia for Organisaatio, do not sum in QuerySet as annotations + distinct is not supported
+        koulutuspaivia_qs = (Taydennyskoulutus.objects
+                             .filter(suoritus_pvm__gte=suoritus_pvm_gte, suoritus_pvm__lte=suoritus_pvm_lte,
+                                     tyontekijat__vakajarjestaja=self.organisaatio)
+                             .distinct('id')
+                             .values_list('koulutuspaivia', flat=True))
+
+        result['taydennyskoulutukset'] = {
+            'tehtavanimikkeet': {},
+            'koulutuspaivat': str(float(sum(koulutuspaivia_qs))),
+            'tehtavanimikkeet_koulutuspaivat': {}
+        }
+
+        # Tyoskentelypaikka count by tehtavanimike_koodi, with Taydennyskoulutus during toimintavuosi
+        taydennyskoulutus_annotations = {}
+        for tn_code in tehtavanimike_codes:
+            taydennyskoulutus_annotations[tn_code] = Coalesce(
+                Count(Case(When(tehtavanimike_koodi__iexact=tn_code,
+                                then=F('tyontekija__henkilo_id'))),
+                      # Count tehtavanimike_koodi per henkilo_id only once
+                      distinct=True),
+                0
+            )
+
+        taydennyskoulutus_tehtavanimike_qs = (
+            TaydennyskoulutusTyontekija.objects
+            .filter(taydennyskoulutus__suoritus_pvm__gte=suoritus_pvm_gte,
+                    taydennyskoulutus__suoritus_pvm__lte=suoritus_pvm_lte,
+                    tyontekija__vakajarjestaja=self.organisaatio)
+            # Avoid Django's default group by id with 'temp' field
+            .annotate(temp=Value(0)).values('temp')
+            .annotate(**taydennyskoulutus_annotations).values(*tehtavanimike_codes)
+        )
+        result['taydennyskoulutukset']['tehtavanimikkeet'] = taydennyskoulutus_tehtavanimike_qs[0]
+
+        # Koulutuspaivia sum by tehtavanimike_koodi, count tehtavanimike_koodi per henkilo_id only once
+        koulutuspaivia_annotations = {}
+        for tn_code in tehtavanimike_codes:
+            koulutuspaivia_annotations[tn_code] = Cast(
+                Coalesce(
+                    Sum(Case(When(tehtavanimike_koodi__iexact=tn_code, then=F('taydennyskoulutus__koulutuspaivia')),
+                             default=0.0, output_field=FloatField())),
+                    0.0
+                ),
+                output_field=CharField()
+            )
+
+        koulutuspaivia_tehtavanimike_qs = (
+            TaydennyskoulutusTyontekija.objects
+            .filter(taydennyskoulutus__suoritus_pvm__gte=suoritus_pvm_gte,
+                    taydennyskoulutus__suoritus_pvm__lte=suoritus_pvm_lte,
+                    tyontekija__vakajarjestaja=self.organisaatio)
+            # Avoid Django's default group by id with 'temp' field
+            .annotate(temp=Value(0)).values('temp')
+            .annotate(**koulutuspaivia_annotations).values(*tehtavanimike_codes)
+        )
+        result['taydennyskoulutukset']['tehtavanimikkeet_koulutuspaivat'] = koulutuspaivia_tehtavanimike_qs[0]
+
+    @swagger_auto_schema(responses={status.HTTP_200_OK: ValssiTaustatiedotSerializer(many=False)})
+    def list(self, request, *args, **kwargs):
+        self.organisaatio = self.get_parent_object()
+        self.today = datetime.date.today()
+
+        result = {
+            'id': self.organisaatio.id,
+            'organisaatio_oid': self.organisaatio.organisaatio_oid
+        }
+
+        self.get_toimipaikka_data(result)
+        self.get_lapsi_data(result)
+        self.get_henkilosto_data(result)
+
+        return Response(result, status=status.HTTP_200_OK)
+
+
+@auditlogclass
+class ValssiTyontekijaViewSet(ParentObjectByOidMixin, GenericViewSet, ListModelMixin):
+    permission_classes = (IsCertificateAccess,)
+    queryset = Tyontekija.objects.all()
+    serializer_class = ValssiTyontekijaSerializer
+    filter_backends = (DjangoFilterBackend,)
+    filterset_class = ValssiTyontekijaFilter
+    pagination_class = ChangeablePageSizePaginationLarge
+    parent_model = Toimipaikka
+    # Luovutuspalvelu user does not have object permissions
+    check_parent_permissions = False
+
+    def __init__(self, *args, **kwargs):
+        self.toimipaikka = None
+        super().__init__(*args, **kwargs)
+
+    def list(self, request, *args, **kwargs):
+        self.toimipaikka = self.get_parent_object()
+
+        today = datetime.date.today()
+        tyontekija_active_filter = (get_active_filter(today, prefix='palvelussuhteet') &
+                                    get_active_filter(today, prefix='palvelussuhteet__tyoskentelypaikat') &
+                                    ~Exists(PidempiPoissaolo.objects
+                                            .filter(get_active_filter(today),
+                                                    palvelussuhde=OuterRef('palvelussuhteet'))))
+        self.queryset = (Tyontekija.objects
+                         .filter(tyontekija_active_filter,
+                                 palvelussuhteet__tyoskentelypaikat__toimipaikka=self.toimipaikka)
+                         # Tyontekija must have sahkopostiosoite
+                         .exclude(Q(sahkopostiosoite__isnull=True) | Q(sahkopostiosoite=''))
+                         .distinct().order_by('id'))
+        return super().list(request, *args, **kwargs)

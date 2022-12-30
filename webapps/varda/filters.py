@@ -737,3 +737,7 @@ class RequestSummaryFilter(django_filters.FilterSet):
     lahdejarjestelma = django_filters.CharFilter(lookup_expr='iexact')
     username = django_filters.CharFilter(lookup_expr='icontains', field_name='user__username')
     request_url_simple = django_filters.CharFilter(lookup_expr='icontains')
+
+
+class ValssiTyontekijaFilter(django_filters.FilterSet):
+    tyontekija_id = django_filters.NumberFilter(field_name='id')

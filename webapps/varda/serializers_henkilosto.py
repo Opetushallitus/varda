@@ -414,7 +414,7 @@ class TyoskentelypaikkaUpdateSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = Tyoskentelypaikka
         exclude = ('luonti_pvm',)
-        read_only = ('url', 'palvelussuhde', 'toimipaikka', "kiertava_tyontekija_kytkin", "muutos_pvm",)
+        read_only = ('url', 'palvelussuhde', 'toimipaikka', 'kiertava_tyontekija_kytkin', 'muutos_pvm',)
 
     @caching_to_representation('tyoskentelypaikka')
     def to_representation(self, instance):

@@ -36,7 +36,8 @@ from varda.constants import SWAGGER_DESCRIPTION
 from varda.custom_swagger import PublicSchemaGenerator, PublicSwaggerRenderer
 from varda.monkey_patch import cas_views, oppija_cas_views
 
-schema_view = get_schema_view(title='VARDA API', renderer_classes=[CoreJSONRenderer])
+
+# /api/admin/
 router_admin = routers.DefaultRouter()
 router_admin.register(r'users', viewsets.UserViewSet)
 router_admin.register(r'groups', viewsets.GroupViewSet)
@@ -49,17 +50,21 @@ router_admin.register(r'anonymisointi-yhteenveto', viewsets_admin.AnonymisointiY
 router_admin.register(r'duplicate-lapsi-objects', viewsets_reporting.DuplicateLapsiViewSet, basename='duplicate-lapsi-objects')
 router_admin.register(r'set-paattymis-pvm', viewsets_admin.SetPaattymisPvmViewSet, basename='set-paattymis-pvm')
 
+# /api/admin/huoltajat/.../
+router_admin_nested_huoltaja = nested_routers.NestedSimpleRouter(router_admin, r'huoltajat', lookup='huoltaja')
+# /api/admin/huoltajat/{id}/lapset/
+router_admin_nested_huoltaja.register(r'lapset', viewsets.NestedLapsiViewSet)
+
+# /api/user/
 router_user = routers.DefaultRouter()
 router_user.register(r'data', viewsets.ActiveUserViewSet)
 router_user.register(r'apikey', viewsets.ApikeyViewSet)
 
+# /api/pulssi/
 router_pulssi = routers.DefaultRouter()
 router_pulssi.register(r'vakajarjestajat', viewsets.PulssiVakajarjestajat, basename='pulssi-vakajarjestajat')
 
-router_ui = routers.DefaultRouter()
-# /api/ui/vakajarjestajat/
-router_ui.register(r'vakajarjestajat', viewsets_ui.UiVakajarjestajatViewSet, basename='hae-vakajarjestajat')
-
+# /api/v1/
 router = routers.DefaultRouter()
 router.register(r'vakajarjestajat', viewsets.OrganisaatioViewSet)
 router.register(r'toimipaikat', viewsets.ToimipaikkaViewSet)
@@ -74,73 +79,71 @@ router.register(r'varhaiskasvatussuhteet', viewsets.VarhaiskasvatussuhdeViewSet)
 router.register(r'paos-toiminnat', viewsets.PaosToimintaViewSet)
 router.register(r'paos-oikeudet', viewsets.PaosOikeusViewSet)
 
-# Nested routers are needed to support e.g. /api/v1/vakajarjestajat/33/toimipaikat/
-
-nested_vakajarjestaja_router_ui = nested_routers.NestedSimpleRouter(router, r'vakajarjestajat', lookup='organisaatio')
-# /api/ui/vakajarjestajat/{id}/toimipaikat/
-nested_vakajarjestaja_router_ui.register(r'toimipaikat', viewsets_ui.NestedToimipaikkaViewSet)
-# /api/ui/vakajarjestajat/{id}/lapset/
-nested_vakajarjestaja_router_ui.register(r'lapset', viewsets_ui.UiNestedLapsiViewSet)
-# /api/ui/vakajarjestajat/{id}/tyontekijat/
-nested_vakajarjestaja_router_ui.register(r'tyontekijat', viewsets_ui.UiNestedTyontekijaViewSet)
-# /api/ui/vakajarjestajat/<id>/all-toimipaikat/
-all_toimipaikat_router = nested_routers.NestedSimpleRouter(router, r'vakajarjestajat', lookup='organisaatio')
-all_toimipaikat_router.register(r'all-toimipaikat', viewsets_ui.NestedAllToimipaikkaViewSet)
-# /api/ui/toimipaikat/
-ui_toimipaikat_router = routers.SimpleRouter()
-ui_toimipaikat_router.register(r'toimipaikat', viewsets.ToimipaikkaViewSet)
-
-# /api/ui/all-vakajarjestajat/
-vakajarjestaja_router = routers.SimpleRouter()
-vakajarjestaja_router.register(r'all-vakajarjestajat', viewsets_ui.AllVakajarjestajaViewSet, basename='all-vakajarjestajat')
+# /api/v1/vakajarjestajat/.../
+router_nested_vakajarjestaja = nested_routers.NestedSimpleRouter(router, r'vakajarjestajat', lookup='organisaatio')
 # /api/v1/vakajarjestajat/{id}/toimipaikat/
-nested_vakajarjestaja_router = nested_routers.NestedSimpleRouter(router, r'vakajarjestajat', lookup='organisaatio')
-nested_vakajarjestaja_router.register(r'toimipaikat', viewsets.NestedToimipaikkaViewSet)
+router_nested_vakajarjestaja.register(r'toimipaikat', viewsets.NestedToimipaikkaViewSet)
 # /api/v1/vakajarjestajat/{id}/yhteenveto/
-nested_vakajarjestaja_router.register(r'yhteenveto', viewsets.NestedOrganisaatioYhteenvetoViewSet)
+router_nested_vakajarjestaja.register(r'yhteenveto', viewsets.NestedOrganisaatioYhteenvetoViewSet)
 # /api/v1/vakajarjestajat/{id}/error-report-lapset/
-nested_vakajarjestaja_router.register('error-report-lapset', viewsets_reporting.ErrorReportLapsetViewSet, basename='error-report-lapset')
+router_nested_vakajarjestaja.register('error-report-lapset', viewsets_reporting.ErrorReportLapsetViewSet, basename='error-report-lapset')
 # /api/v1/vakajarjestajat/{id}/error-report-tyontekijat/
-nested_vakajarjestaja_router.register('error-report-tyontekijat', viewsets_reporting.ErrorReportTyontekijatViewSet, basename='error-report-tyontekijat')
+router_nested_vakajarjestaja.register('error-report-tyontekijat', viewsets_reporting.ErrorReportTyontekijatViewSet, basename='error-report-tyontekijat')
 # /api/v1/vakajarjestajat/{id}/error-report-toimipaikat/
-nested_vakajarjestaja_router.register('error-report-toimipaikat', viewsets_reporting.ErrorReportToimipaikatViewSet, basename='error-report-toimipaikat')
-
-nested_toimipaikka_router = nested_routers.NestedSimpleRouter(router, r'toimipaikat', lookup='toimipaikka')
-# /api/v1/toimipaikat/{id}/toiminnallisetpainotukset/
-nested_toimipaikka_router.register(r'toiminnallisetpainotukset', viewsets.NestedToiminnallinenPainotusViewSet)
-# /api/v1/toimipaikat/{id}/kielipainotukset/
-nested_toimipaikka_router.register(r'kielipainotukset', viewsets.NestedKieliPainotusViewSet)
-# /api/v1/toimipaikat/{id}/varhaiskasvatussuhteet/
-nested_toimipaikka_router.register(r'varhaiskasvatussuhteet', viewsets.NestedVarhaiskasvatussuhdeToimipaikkaViewSet)
-
-nested_lapsi_router = nested_routers.NestedSimpleRouter(router, r'lapset', lookup='lapsi')
-# /api/v1/lapset/{id}/huoltajat/
-nested_lapsi_router.register(r'huoltajat', viewsets.NestedHuoltajaViewSet)
-# /api/v1/lapset/{id}/varhaiskasvatuspaatokset/
-nested_lapsi_router.register(r'varhaiskasvatuspaatokset', viewsets.NestedVarhaiskasvatuspaatosViewSet)
-# /api/v1/lapset/{id}/maksutiedot/
-nested_lapsi_router.register(r'maksutiedot', viewsets.NestedLapsiMaksutietoViewSet)
-# /api/v1/lapset/{id}/varhaiskasvatussuhteet/
-nested_lapsi_router.register(r'varhaiskasvatussuhteet', viewsets.NestedLapsenVarhaiskasvatussuhdeViewSet)
-# /api/v1/lapset/{id}/kooste/
-nested_lapsi_router.register(r'kooste', viewsets.NestedLapsiKoosteViewSet)
-
-# /api/v1/huoltajat/{id}/lapset/
-nested_huoltaja_router = nested_routers.NestedSimpleRouter(router_admin, r'huoltajat', lookup='huoltaja')
-nested_huoltaja_router.register(r'lapset', viewsets.NestedLapsiViewSet)
-# /api/v1/varhaiskasvatuspaatokset/{id}/varhaiskasvatussuhteet/
-nested_varhaiskasvatuspaatos_router = nested_routers.NestedSimpleRouter(router, r'varhaiskasvatuspaatokset', lookup='varhaiskasvatuspaatos')
-nested_varhaiskasvatuspaatos_router.register(r'varhaiskasvatussuhteet', viewsets.NestedVarhaiskasvatussuhdeViewSet)
+router_nested_vakajarjestaja.register('error-report-toimipaikat', viewsets_reporting.ErrorReportToimipaikatViewSet, basename='error-report-toimipaikat')
 # /api/v1/vakajarjestajat/{id}/paos-toimijat/
-nested_vakajarjestaja_router.register(r'paos-toimijat', viewsets.NestedVakajarjestajaPaosToimijatViewSet)
+router_nested_vakajarjestaja.register(r'paos-toimijat', viewsets.NestedVakajarjestajaPaosToimijatViewSet)
 # /api/v1/vakajarjestajat/{id}/paos-toimipaikat/
-nested_vakajarjestaja_router.register(r'paos-toimipaikat', viewsets.NestedVakajarjestajaPaosToimipaikatViewSet)
+router_nested_vakajarjestaja.register(r'paos-toimipaikat', viewsets.NestedVakajarjestajaPaosToimipaikatViewSet)
 
-# Routes for ONR-URLs
+# /api/v1/toimipaikat/.../
+router_nested_toimipaikka = nested_routers.NestedSimpleRouter(router, r'toimipaikat', lookup='toimipaikka')
+# /api/v1/toimipaikat/{id}/toiminnallisetpainotukset/
+router_nested_toimipaikka.register(r'toiminnallisetpainotukset', viewsets.NestedToiminnallinenPainotusViewSet)
+# /api/v1/toimipaikat/{id}/kielipainotukset/
+router_nested_toimipaikka.register(r'kielipainotukset', viewsets.NestedKieliPainotusViewSet)
+# /api/v1/toimipaikat/{id}/varhaiskasvatussuhteet/
+router_nested_toimipaikka.register(r'varhaiskasvatussuhteet', viewsets.NestedVarhaiskasvatussuhdeToimipaikkaViewSet)
+
+# /api/v1/lapset/.../
+router_nested_lapsi = nested_routers.NestedSimpleRouter(router, r'lapset', lookup='lapsi')
+# /api/v1/lapset/{id}/huoltajat/
+router_nested_lapsi.register(r'huoltajat', viewsets.NestedHuoltajaViewSet)
+# /api/v1/lapset/{id}/varhaiskasvatuspaatokset/
+router_nested_lapsi.register(r'varhaiskasvatuspaatokset', viewsets.NestedVarhaiskasvatuspaatosViewSet)
+# /api/v1/lapset/{id}/maksutiedot/
+router_nested_lapsi.register(r'maksutiedot', viewsets.NestedLapsiMaksutietoViewSet)
+# /api/v1/lapset/{id}/varhaiskasvatussuhteet/
+router_nested_lapsi.register(r'varhaiskasvatussuhteet', viewsets.NestedLapsenVarhaiskasvatussuhdeViewSet)
+# /api/v1/lapset/{id}/kooste/
+router_nested_lapsi.register(r'kooste', viewsets.NestedLapsiKoosteViewSet)
+
+# /api/v1/varhaiskasvatuspaatokset/.../
+router_nested_varhaiskasvatuspaatos = nested_routers.NestedSimpleRouter(router, r'varhaiskasvatuspaatokset', lookup='varhaiskasvatuspaatos')
+# /api/v1/varhaiskasvatuspaatokset/{id}/varhaiskasvatussuhteet/
+router_nested_varhaiskasvatuspaatos.register(r'varhaiskasvatussuhteet', viewsets.NestedVarhaiskasvatussuhdeViewSet)
+
+# /api/ui/
+router_ui = routers.DefaultRouter()
+router_ui.register(r'vakajarjestajat', viewsets_ui.UiVakajarjestajatViewSet, basename='hae-vakajarjestajat')
+router_ui.register(r'all-vakajarjestajat', viewsets_ui.AllVakajarjestajaViewSet, basename='all-vakajarjestajat')
+
+# /api/ui/vakajarjestajat/.../
+router_ui_nested_vakajarjestaja = nested_routers.NestedSimpleRouter(router_ui, r'vakajarjestajat', lookup='organisaatio')
+# /api/ui/vakajarjestajat/{id}/toimipaikat/
+router_ui_nested_vakajarjestaja.register(r'toimipaikat', viewsets_ui.NestedToimipaikkaViewSet)
+# /api/ui/vakajarjestajat/{id}/lapset/
+router_ui_nested_vakajarjestaja.register(r'lapset', viewsets_ui.UiNestedLapsiViewSet)
+# /api/ui/vakajarjestajat/{id}/tyontekijat/
+router_ui_nested_vakajarjestaja.register(r'tyontekijat', viewsets_ui.UiNestedTyontekijaViewSet)
+# /api/ui/vakajarjestajat/{id}/all-toimipaikat/
+router_ui_nested_vakajarjestaja.register(r'all-toimipaikat', viewsets_ui.NestedAllToimipaikkaViewSet)
+
+# /api/onr/
 router_onr = routers.DefaultRouter()
 router_onr.register(r'external-permissions', viewsets.ExternalPermissionsViewSet, 'external-permissions')
 
-# Routes for Reporting-URLs
+# /api/reporting/
 router_reporting = routers.DefaultRouter()
 # /api/reporting/v1/tiedonsiirtotilasto/
 router_reporting.register(r'tiedonsiirtotilasto', viewsets_reporting.TiedonsiirtotilastoViewSet, basename='tiedonsiirtotilasto')
@@ -155,27 +158,36 @@ router_reporting.register(r'transfer-outage', viewsets_reporting.TransferOutageR
 # /api/reporting/v1/request-summary/
 router_reporting.register(r'request-summary', viewsets_reporting.RequestSummaryViewSet, basename='request-summary')
 
+# /api/reporting/v1/kela/etuusmaksatus/
 router_kela_reporting = routers.DefaultRouter()
-# /api/reporting/v1/kela/etuusmaksatus/aloittaneet
 router_kela_reporting.register(r'aloittaneet', viewsets_reporting.KelaEtuusmaksatusAloittaneetViewset, basename='aloittaneet')
-# /api/reporting/v1/kela/etuusmaksatus/lopettaneet
 router_kela_reporting.register(r'lopettaneet', viewsets_reporting.KelaEtuusmaksatusLopettaneetViewSet, 'lopettaneet')
-# /api/reporting/v1/kela/etuusmaksatus/maaraaikaiset
 router_kela_reporting.register(r'maaraaikaiset', viewsets_reporting.KelaEtuusmaksatusMaaraaikaisetViewSet, 'maaraaikaset')
-# /api/reporting/v1/kela/etuusmaksatus/korjaustiedot
 router_kela_reporting.register(r'korjaustiedot', viewsets_reporting.KelaEtuusmaksatusKorjaustiedotViewSet, 'korjaustiedot')
-# /api/reporting/v1/kela/etuusmaksatus/korjaustiedotpoistetut
 router_kela_reporting.register(r'korjaustiedotpoistetut', viewsets_reporting.KelaEtuusmaksatusKorjaustiedotPoistetutViewSet, 'korjaustiedotpoistetut')
 
+# /api/reporting/v1/tilastokeskus/
 router_tilastokeskus_reporting = routers.DefaultRouter()
-# /api/reporting/v1/tilastokeskus/organisaatiot/
 router_tilastokeskus_reporting.register(r'organisaatiot', viewsets_reporting.TkOrganisaatiot, basename='organisaatiot')
-# /api/reporting/v1/tilastokeskus/varhaiskasvatustiedot/
 router_tilastokeskus_reporting.register(r'varhaiskasvatustiedot', viewsets_reporting.TkVakatiedot, basename='varhaiskasvatustiedot')
-# /api/reporting/v1/tilastokeskus/henkilostotiedot/
 router_tilastokeskus_reporting.register(r'henkilostotiedot', viewsets_reporting.TkHenkilostotiedot, basename='henkilostotiedot')
 
-# Routes for Oppija-URLs
+# /api/reporting/v1/valssi/
+router_valssi_reporting = routers.DefaultRouter()
+router_valssi_reporting.register(r'organisaatiot', viewsets_reporting.ValssiOrganisaatioViewSet, basename='valssi-organisaatiot')
+router_valssi_reporting.register(r'toimipaikat', viewsets_reporting.ValssiToimipaikkaViewSet, basename='valssi-toimipaikat')
+
+# /api/reporting/v1/valssi/organisaatiot/.../
+router_valssi_reporting_nested_organisaatio = nested_routers.NestedSimpleRouter(router_valssi_reporting, r'organisaatiot', lookup='organisaatio')
+# /api/reporting/v1/valssi/organisaatiot/{id}/taustatiedot/
+router_valssi_reporting_nested_organisaatio.register(r'taustatiedot', viewsets_reporting.ValssiTaustatiedotViewSet)
+
+# /api/reporting/v1/valssi/toimipaikat/.../
+router_valssi_reporting_nested_toimipaikka = nested_routers.NestedSimpleRouter(router_valssi_reporting, r'toimipaikat', lookup='toimipaikka')
+# /api/reporting/v1/valssi/toimipaikat/{id}/tyontekijat/
+router_valssi_reporting_nested_toimipaikka.register(r'tyontekijat', viewsets_reporting.ValssiTyontekijaViewSet)
+
+# /api/oppija/v1/
 router_oppija = routers.DefaultRouter()
 # /api/oppija/v1/henkilotiedot/{oid}/
 router_oppija.register(r'henkilotiedot', viewsets_oppija.HenkilotiedotViewSet)
@@ -186,7 +198,7 @@ router_oppija.register(r'huoltajatiedot', viewsets_oppija.HuoltajatiedotViewSet)
 # /api/oppija/v1/tyontekijatiedot/{oid}/
 router_oppija.register(r'tyontekijatiedot', viewsets_oppija.TyontekijatiedotViewSet)
 
-# Routes for Henkilöstö-URLs
+# /api/henkilosto/v1/
 router_henkilosto = routers.DefaultRouter()
 router_henkilosto.register(r'tyontekijat', viewsets_henkilosto.TyontekijaViewSet)
 router_henkilosto.register(r'tilapainen-henkilosto', viewsets_henkilosto.TilapainenHenkilostoViewSet)
@@ -196,25 +208,28 @@ router_henkilosto.register(r'tyoskentelypaikat', viewsets_henkilosto.Tyoskentely
 router_henkilosto.register(r'pidemmatpoissaolot', viewsets_henkilosto.PidempiPoissaoloViewSet)
 router_henkilosto.register(r'taydennyskoulutukset', viewsets_henkilosto.TaydennyskoulutusViewSet)
 
-nested_tyontekija_router = nested_routers.NestedSimpleRouter(router_henkilosto, r'tyontekijat', lookup='tyontekija')
+# /api/henkilosto/v1/tyontekijat/.../
+router_henkilosto_nested_tyontekija = nested_routers.NestedDefaultRouter(router_henkilosto, r'tyontekijat', lookup='tyontekija')
 # /api/henkilosto/v1/tyontekijat/{id}/kooste/
-nested_tyontekija_router.register(r'kooste', viewsets_henkilosto.NestedTyontekijaKoosteViewSet)
+router_henkilosto_nested_tyontekija.register(r'kooste', viewsets_henkilosto.NestedTyontekijaKoosteViewSet)
 
+# /api/henkilosto/v2/
 router_henkilosto_v2 = routers.DefaultRouter()
 router_henkilosto_v2.register(r'taydennyskoulutukset', viewsets_henkilosto.TaydennyskoulutusV2ViewSet, basename='taydennyskoulutukset-v2')
 
-# Routes for Julkinen-URLs
+# /api/julkinen/v1/
 router_julkinen = routers.DefaultRouter()
-# /api/julkinen/v1/koodistot/
 router_julkinen.register(r'koodistot', viewsets_julkinen.KoodistotViewSet)
-# /api/julkinen/v1/localisation/
 router_julkinen.register(r'localisation', viewsets_julkinen.LocalisationViewSet, basename='get-localisation')
-# /api/julkinen/v1/pulssi/
 router_julkinen.register(r'pulssi', viewsets_julkinen.PulssiViewSet, basename='get-pulssi')
+
+# /api/v1/schema/
+schema_view = get_schema_view(title='VARDA API', renderer_classes=[CoreJSONRenderer])
 
 # In production environment public-app accesses iframes via nginx proxy, so we can use a stricter policy
 xframe_options = xframe_options_sameorigin if settings.PRODUCTION_ENV or settings.QA_ENV else xframe_options_exempt
 
+# /api/julkinen/v1/swagger/
 schema_view_public = get_schema_view_yasg(
     openapi.Info(
         title='VARDA REST API',
@@ -231,6 +246,7 @@ public_swagger_view = xframe_options(
                                       renderer_classes=(PublicSwaggerRenderer,) + schema_view_public.renderer_classes)
 )
 
+# /api/julkinen/v1/data-model/
 excluded_model_regex = re.compile(r'^(historical.*)|(z\d.*)|(logdata)|(aikaleima)|(batcherror)|(logincertificate)$')
 model_visualization_view = xframe_options(
     Plate.as_view(
@@ -244,7 +260,8 @@ model_visualization_view = xframe_options(
 
 urlpatterns = [
     re_path(r'^$', views.index, name='index'),
-    re_path(r'^admin/', admin.site.urls),
+    re_path(r'^admin/', admin.site.urls, name='admin'),
+    re_path(r'^varda/', include('varda.urls'), name='varda'),
     re_path(r'^accounts/login$', cas_views.LoginView.as_view(), name='cas_ng_login'),
     re_path(r'^accounts/logout$', cas_views.LogoutView.as_view(), name='cas_ng_logout'),
     re_path(r'^accounts/callback$', cas_views.CallbackView.as_view(), name='cas_ng_proxy_callback'),
@@ -254,32 +271,31 @@ urlpatterns = [
     re_path(r'^accounts/password-reset/done/?$', auth_views.PasswordResetDoneView.as_view(), name='password_reset_done'),
     re_path(r'^accounts/reset/(?P<uidb64>.+)/(?P<token>.+)/?$', auth_views.PasswordResetConfirmView.as_view(), name='password_reset_confirm'),
     re_path(r'^accounts/reset/done/?$', auth_views.PasswordResetCompleteView.as_view(), name='password_reset_complete'),
-    re_path(r'^api/admin/', include(router_admin.urls), name='api_admin'),
-    re_path(r'^api/pulssi/', include(router_pulssi.urls), name='api-pulssi'),
-    re_path(r'^api/ui/', include(router_ui.urls), name='api-ui'),
-    re_path(r'^api/ui/', include(nested_vakajarjestaja_router_ui.urls), name='nested-vakajarjestaja-api-ui'),
-    re_path(r'^api/ui/', include(all_toimipaikat_router.urls), name='nested-all-vakajarjestaja-api-ui'),
-    re_path(r'^api/ui/', include(ui_toimipaikat_router.urls), name='toimipaikat'),
-    re_path(r'^api/ui/', include(vakajarjestaja_router.urls), name='all-vakajarjestaja-api-ui'),
+    re_path(r'^api-auth/', include('varda.custom_login_urls', namespace='rest_framework'), name='api_auth'),
+    re_path(r'^api/onr/', include(router_onr.urls), name='api_onr'),
     re_path(r'^api/user/', include(router_user.urls), name='api_user'),
-    re_path(r'^api/v1/', include(router.urls), name='api-v1'),
-    re_path(r'^api/v1/', include(nested_vakajarjestaja_router.urls), name='nested-vakajarjestaja-api-v1'),
-    re_path(r'^api/v1/', include(nested_toimipaikka_router.urls), name='nested-toimipaikka-api-v1'),
-    re_path(r'^api/v1/', include(nested_lapsi_router.urls), name='nested-lapsi-api-v1'),
-    re_path(r'^api/admin/', include(nested_huoltaja_router.urls), name='nested-huoltaja-admin'),
-    re_path(r'^api/v1/', include(nested_varhaiskasvatuspaatos_router.urls), name='nested-varhaiskasvatuspaatos-api-v1'),
-    re_path(r'^api/v1/schema/', schema_view, name='schema-v1'),
-    re_path(r'^api-auth/', include('varda.custom_login_urls', namespace='rest_framework'), name='api-auth'),
-    re_path(r'^api/onr/', include(router_onr.urls), name='api-onr'),
-    re_path(r'^api/reporting/v1/', include(router_reporting.urls), name='api-v1-reporting'),
-    re_path(r'^api/reporting/v1/kela/etuusmaksatus/', include(router_kela_reporting.urls), name='kela-v1-reporting'),
-    re_path(r'^api/reporting/v1/tilastokeskus/', include(router_tilastokeskus_reporting.urls), name='tilastokeskus-v1-reporting'),
-    re_path(r'^varda/', include('varda.urls'), name='varda'),
-    re_path(r'^api/henkilosto/v1/', include(router_henkilosto.urls), name='api-henkilosto-v1'),
-    re_path(r'^api/henkilosto/v1/', include(nested_tyontekija_router.urls), name='api-nested-tyontekija-v1'),
-    re_path(r'^api/henkilosto/v2/', include(router_henkilosto_v2.urls), name='api-henkilosto-v2'),
-    re_path(r'^api/oppija/v1/', include(router_oppija.urls), name='api-oppija-v1'),
-    re_path(r'^api/julkinen/v1/', include(router_julkinen.urls), name='api-julkinen-v1'),
-    re_path(r'^api/julkinen/v1/swagger/$', public_swagger_view, name='swagger-public'),
-    re_path(r'^api/julkinen/v1/data-model/$', model_visualization_view, name='data-model-public'),
+    re_path(r'^api/admin/', include(router_admin.urls), name='api_admin'),
+    re_path(r'^api/admin/', include(router_admin_nested_huoltaja.urls), name='api_admin_nested_huoltaja'),
+    re_path(r'^api/pulssi/', include(router_pulssi.urls), name='api_pulssi'),
+    re_path(r'^api/ui/', include(router_ui.urls), name='api_ui'),
+    re_path(r'^api/ui/', include(router_ui_nested_vakajarjestaja.urls), name='api_ui_nested_vakajarjestaja'),
+    re_path(r'^api/v1/', include(router.urls), name='api_v1'),
+    re_path(r'^api/v1/', include(router_nested_vakajarjestaja.urls), name='api_v1_nested_vakajarjestaja'),
+    re_path(r'^api/v1/', include(router_nested_toimipaikka.urls), name='api_v1_nested_toimipaikka'),
+    re_path(r'^api/v1/', include(router_nested_lapsi.urls), name='api_v1_nested_lapsi'),
+    re_path(r'^api/v1/', include(router_nested_varhaiskasvatuspaatos.urls), name='api_v1_nested_varhaiskasvatuspaatos'),
+    re_path(r'^api/v1/schema/', schema_view, name='api_v1_schema'),
+    re_path(r'^api/reporting/v1/', include(router_reporting.urls), name='api_reporting_v1'),
+    re_path(r'^api/reporting/v1/kela/etuusmaksatus/', include(router_kela_reporting.urls), name='api_reporting_v1_kela'),
+    re_path(r'^api/reporting/v1/tilastokeskus/', include(router_tilastokeskus_reporting.urls), name='api_reporting_v1_tilastokeskus'),
+    re_path(r'^api/reporting/v1/valssi/', include(router_valssi_reporting.urls), name='api_reporting_v1_valssi'),
+    re_path(r'^api/reporting/v1/valssi/', include(router_valssi_reporting_nested_organisaatio.urls), name='api_reporting_v1_valssi_nested_organisaatio'),
+    re_path(r'^api/reporting/v1/valssi/', include(router_valssi_reporting_nested_toimipaikka.urls), name='api_reporting_v1_valssi_nested_toimipaikka'),
+    re_path(r'^api/henkilosto/v1/', include(router_henkilosto.urls), name='api_henkilosto_v1'),
+    re_path(r'^api/henkilosto/v1/', include(router_henkilosto_nested_tyontekija.urls), name='api_henkilosto_v1_nested_tyontekija'),
+    re_path(r'^api/henkilosto/v2/', include(router_henkilosto_v2.urls), name='api_henkilosto_v2'),
+    re_path(r'^api/oppija/v1/', include(router_oppija.urls), name='api_oppija_v1'),
+    re_path(r'^api/julkinen/v1/', include(router_julkinen.urls), name='api_julkinen_v1'),
+    re_path(r'^api/julkinen/v1/swagger/$', public_swagger_view, name='api_julkinen_v1_swagger'),
+    re_path(r'^api/julkinen/v1/data-model/$', model_visualization_view, name='api_julkinen_v1_data_model'),
 ]

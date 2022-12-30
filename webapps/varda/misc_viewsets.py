@@ -7,7 +7,7 @@ from rest_framework.exceptions import ValidationError
 from rest_framework.mixins import ListModelMixin
 
 from varda.cache import get_object_ids_user_has_permissions
-from varda.custom_swagger import TunnisteIdSchema
+from varda.custom_swagger import OidIdSchema, TunnisteIdSchema
 from varda.enums.error_messages import ErrorMessages
 from varda.permissions import is_oph_staff
 from webapps.api_throttles import SustainedModifyRateThrottle, BurstRateThrottle
@@ -195,20 +195,45 @@ class ParentObjectMixin:
     @DynamicAttrs
     """
     parent_model = None
+    check_parent_permissions = True
+
+    def _get_object(self, parent_object_id):
+        if not isinstance(parent_object_id, int) and not parent_object_id.isdigit():
+            raise Http404
+
+        return get_object_or_404(self.parent_model, pk=parent_object_id)
 
     def get_parent_object(self):
         parent_model_name = self.parent_model.get_name()
-        parent_model_id = self.kwargs[f'{parent_model_name}_pk']
+        parent_object_id = self.kwargs[f'{parent_model_name}_pk']
 
-        if not parent_model_id.isdigit():
-            raise Http404
-
-        parent_object = get_object_or_404(self.parent_model, pk=parent_model_id)
+        parent_object = self._get_object(parent_object_id)
         user = self.request.user
-        if user.has_perm(f'view_{parent_model_name}', parent_object):
+
+        # Verify view-permission if self.check_parent_permissions = True
+        if not self.check_parent_permissions or user.has_perm(f'view_{parent_model_name}', parent_object):
             return parent_object
         else:
             raise Http404
+
+
+class ParentObjectByOidMixin(ParentObjectMixin):
+    """
+    @DynamicAttrs
+    """
+    swagger_schema = OidIdSchema
+    lookup_value_regex = r'(\d+)|([.\d]{26,})'
+    oid_field_name = 'organisaatio_oid'
+
+    def _get_object(self, parent_object_id):
+        # Lookup can be made with ID or organisaatio_oid
+        if not parent_object_id.isdigit():
+            parent_qs = self.parent_model.objects.filter(**{self.oid_field_name: parent_object_id})
+            if not parent_qs.exists():
+                raise Http404
+            parent_object_id = parent_qs.first().id
+
+        return super()._get_object(parent_object_id)
 
 
 class PermissionListMixin(ListModelMixin):

@@ -17,7 +17,7 @@ from varda.models import (Henkilo, Huoltaja, Huoltajuussuhde, KieliPainotus, Lap
                           Tyoskentelypaikka, Organisaatio, Varhaiskasvatuspaatos, Varhaiskasvatussuhde, Z2_Code)
 from varda.organisation_transformations import transfer_toimipaikat_to_vakajarjestaja
 from varda.unit_tests.test_utils import (assert_status_code, assert_validation_error, mock_admin_user,
-                                         mock_date_decorator_factory, SetUpTestClient)
+                                         mock_date_decorator_factory, post_henkilo_to_get_permissions, SetUpTestClient)
 from varda.unit_tests.views_tests import mock_check_if_toimipaikka_exists_by_name, mock_create_organisaatio
 
 
@@ -25,6 +25,19 @@ kela_headers = {
     'HTTP_X_SSL_Authenticated': 'SUCCESS',
     'HTTP_X_SSL_User_DN': 'CN=kela cert,O=user1 company,ST=Some-State,C=FI',
 }
+tilastokeskus_headers = {
+    'HTTP_X_SSL_Authenticated': 'SUCCESS',
+    'HTTP_X_SSL_User_DN': 'CN=stat.fi,O=user1 company,ST=Some-State,C=FI',
+}
+avi_headers = {
+    'HTTP_X_SSL_Authenticated': 'SUCCESS',
+    'HTTP_X_SSL_User_DN': 'CN=avi.fi,O=user1 company,ST=Some-State,C=FI',
+}
+karvi_headers = {
+    'HTTP_X_SSL_Authenticated': 'SUCCESS',
+    'HTTP_X_SSL_User_DN': 'CN=karvi.fi,O=user1 company,ST=Some-State,C=FI',
+}
+
 kela_base_url = '/api/reporting/v1/kela/etuusmaksatus/'
 
 
@@ -1483,8 +1496,8 @@ class VardaViewsReportingTests(TestCase):
 
         # Create situations where active Palvelussuhde does not have active Tyoskentelypaikka or PidempiPoissaolo
         palvelussuhde_tunniste = 'testing-palvelussuhde5'
-        tyoskentelypaikka_1_tunniste = 'testing-tyoskentylypaikka5-1'
-        tyoskentelypaikka_2_tunniste = 'testing-tyoskentylypaikka5-2'
+        tyoskentelypaikka_1_tunniste = 'testing-tyoskentelypaikka5-1'
+        tyoskentelypaikka_2_tunniste = 'testing-tyoskentelypaikka5-2'
         pidempi_poissaolo_tunniste = 'pidempi_poissaolo500'
         Tyoskentelypaikka.objects.filter(tunniste=tyoskentelypaikka_1_tunniste).update(paattymis_pvm=yesterday)
         resp = client.get(url)
@@ -1781,8 +1794,7 @@ class VardaViewsReportingTests(TestCase):
         self.assertDictEqual(json.loads(resp.content)['results'][0], accepted_response)
 
     def test_tk_organisaatiot_all(self):
-        mock_admin_user('tester2')
-        client = SetUpTestClient('tester2').client()
+        client = SetUpTestClient('tilastokeskus_luovutuspalvelu').client()
 
         vakajarjestaja_count = 0
         toimipaikka_count = 0
@@ -1791,7 +1803,7 @@ class VardaViewsReportingTests(TestCase):
 
         url = '/api/reporting/v1/tilastokeskus/organisaatiot/'
         while url:
-            resp = client.get(url)
+            resp = client.get(url, **tilastokeskus_headers)
             response = json.loads(resp.content)
             for result in response['results']:
                 vakajarjestaja_count += 1
@@ -1807,11 +1819,10 @@ class VardaViewsReportingTests(TestCase):
         self.assertEqual(ToiminnallinenPainotus.objects.count(), toiminnallinen_painotus_count)
 
     def test_tk_organisaatiot_invalid_format(self):
-        mock_admin_user('tester2')
-        client = SetUpTestClient('tester2').client()
+        client = SetUpTestClient('tilastokeskus_luovutuspalvelu').client()
 
         resp = client.get('/api/reporting/v1/tilastokeskus/organisaatiot/?datetime_gt=2021-01-01T00:00:00'
-                          '&datetime_lte=2022-01-0100:00:00%2B0300')
+                          '&datetime_lte=2022-01-0100:00:00%2B0300', **tilastokeskus_headers)
         assert_status_code(resp, status.HTTP_400_BAD_REQUEST)
         assert_validation_error(resp, 'datetime_gt', 'GE020',
                                 'This field must be a datetime string in YYYY-MM-DDTHH:MM:SSZ format.')
@@ -1819,8 +1830,8 @@ class VardaViewsReportingTests(TestCase):
                                 'This field must be a datetime string in YYYY-MM-DDTHH:MM:SSZ format.')
 
     def test_tk_organisaatiot_no_change(self):
-        mock_admin_user('tester2')
-        client = SetUpTestClient('tester2').client()
+        client = SetUpTestClient('tilastokeskus_luovutuspalvelu').client()
+        client_modify = SetUpTestClient('pkvakajarjestaja2').client()
 
         datetime_gt = _get_iso_datetime_now()
         vakajarjestaja_id = Organisaatio.objects.get(organisaatio_oid='1.2.246.562.10.93957375488').id
@@ -1831,28 +1842,28 @@ class VardaViewsReportingTests(TestCase):
             'alkamis_pvm': '2018-09-05',
             'lahdejarjestelma': '1'
         }
-        resp = client.post('/api/v1/kielipainotukset/', kielipainotus)
+        resp = client_modify.post('/api/v1/kielipainotukset/', kielipainotus)
         assert_status_code(resp, status.HTTP_201_CREATED)
         kielipainotus_id = json.loads(resp.content)['id']
         datetime_lte = _get_iso_datetime_now()
 
         resp = client.get(f'/api/reporting/v1/tilastokeskus/organisaatiot/?datetime_gt={datetime_gt}'
-                          f'&datetime_lte={datetime_lte}')
+                          f'&datetime_lte={datetime_lte}', **tilastokeskus_headers)
         _test_tk_kielipainotus_action(self, resp, vakajarjestaja_id, toimipaikka_id, kielipainotus_id,
                                       ChangeType.CREATED.value)
 
         datetime_gt_2 = _get_iso_datetime_now()
-        resp = client.delete(f'/api/v1/kielipainotukset/{kielipainotus_id}/')
+        resp = client_modify.delete(f'/api/v1/kielipainotukset/{kielipainotus_id}/')
         assert_status_code(resp, status.HTTP_204_NO_CONTENT)
         datetime_lte = _get_iso_datetime_now()
 
         resp = client.get(f'/api/reporting/v1/tilastokeskus/organisaatiot/?datetime_gt={datetime_gt_2}'
-                          f'&datetime_lte={datetime_lte}')
+                          f'&datetime_lte={datetime_lte}', **tilastokeskus_headers)
         _test_tk_kielipainotus_action(self, resp, vakajarjestaja_id, toimipaikka_id, kielipainotus_id,
                                       ChangeType.DELETED.value)
 
         resp = client.get(f'/api/reporting/v1/tilastokeskus/organisaatiot/?datetime_gt={datetime_gt}'
-                          f'&datetime_lte={datetime_lte}')
+                          f'&datetime_lte={datetime_lte}', **tilastokeskus_headers)
         # Object was created and deleted within the time range
         self.assertEqual(len(json.loads(resp.content)['results']), 0)
 
@@ -1861,8 +1872,8 @@ class VardaViewsReportingTests(TestCase):
     @mock.patch('varda.organisaatiopalvelu.create_organisaatio',
                 mock_create_organisaatio)
     def test_tk_organisaatiot_modifified_displayed_as_created(self):
-        mock_admin_user('tester2')
-        client = SetUpTestClient('tester2').client()
+        client = SetUpTestClient('tilastokeskus_luovutuspalvelu').client()
+        client_modify = SetUpTestClient('pkvakajarjestaja1').client()
 
         datetime_gt = _get_iso_datetime_now()
         vakajarjestaja_id = Organisaatio.objects.get(organisaatio_oid='1.2.246.562.10.34683023489').id
@@ -1888,7 +1899,7 @@ class VardaViewsReportingTests(TestCase):
             'lahdejarjestelma': '1',
         }
 
-        resp = client.post('/api/v1/toimipaikat/', toimipaikka)
+        resp = client_modify.post('/api/v1/toimipaikat/', toimipaikka)
         assert_status_code(resp, status.HTTP_201_CREATED)
         toimipaikka_id = json.loads(resp.content)['id']
 
@@ -1896,26 +1907,27 @@ class VardaViewsReportingTests(TestCase):
         toimipaikka_patch = {
             'puhelinnumero': '+35810123457'
         }
-        resp = client.patch(f'/api/v1/toimipaikat/{toimipaikka_id}/', toimipaikka_patch)
+        resp = client_modify.patch(f'/api/v1/toimipaikat/{toimipaikka_id}/', toimipaikka_patch)
         assert_status_code(resp, status.HTTP_200_OK)
 
         datetime_lte = _get_iso_datetime_now()
 
         resp = client.get(f'/api/reporting/v1/tilastokeskus/organisaatiot/?datetime_gt={datetime_gt}'
-                          f'&datetime_lte={datetime_lte}')
+                          f'&datetime_lte={datetime_lte}', **tilastokeskus_headers)
         toimipaikka_result = json.loads(resp.content)['results'][0]['toimipaikat'][0]
         self.assertEqual(toimipaikka_result['id'], toimipaikka_id)
         self.assertEqual(toimipaikka_result['action'], ChangeType.CREATED.value)
 
         resp = client.get(f'/api/reporting/v1/tilastokeskus/organisaatiot/?datetime_gt={datetime_gt_2}'
-                          f'&datetime_lte={datetime_lte}')
+                          f'&datetime_lte={datetime_lte}', **tilastokeskus_headers)
         toimipaikka_result = json.loads(resp.content)['results'][0]['toimipaikat'][0]
         self.assertEqual(toimipaikka_result['id'], toimipaikka_id)
         self.assertEqual(toimipaikka_result['action'], ChangeType.MODIFIED.value)
 
     def test_tk_organisaatiot_nested_delete(self):
+        client = SetUpTestClient('tilastokeskus_luovutuspalvelu').client()
         mock_admin_user('tester2')
-        client = SetUpTestClient('tester2').client()
+        client_modify = SetUpTestClient('tester2').client()
 
         toimipaikka = Toimipaikka.objects.get(tunniste='testing-toimipaikka6')
         toimipaikka_id = toimipaikka.id
@@ -1925,7 +1937,7 @@ class VardaViewsReportingTests(TestCase):
             'alkamis_pvm': '2018-09-05',
             'lahdejarjestelma': '1'
         }
-        resp = client.post('/api/v1/kielipainotukset/', kielipainotus)
+        resp = client_modify.post('/api/v1/kielipainotukset/', kielipainotus)
         assert_status_code(resp, status.HTTP_201_CREATED)
         kielipainotus_id = json.loads(resp.content)['id']
         toiminnallinen_painotus = {
@@ -1934,20 +1946,21 @@ class VardaViewsReportingTests(TestCase):
             'alkamis_pvm': '2018-09-05',
             'lahdejarjestelma': '1'
         }
-        resp = client.post('/api/v1/toiminnallisetpainotukset/', toiminnallinen_painotus)
+        resp = client_modify.post('/api/v1/toiminnallisetpainotukset/', toiminnallinen_painotus)
         assert_status_code(resp, status.HTTP_201_CREATED)
         toiminnallinen_painotus_id = json.loads(resp.content)['id']
 
         datetime_gt = _get_iso_datetime_now()
-        assert_status_code(client.delete(f'/api/v1/kielipainotukset/{kielipainotus_id}/'), status.HTTP_204_NO_CONTENT)
-        assert_status_code(client.delete(f'/api/v1/toiminnallisetpainotukset/{toiminnallinen_painotus_id}/'),
+        assert_status_code(client_modify.delete(f'/api/v1/kielipainotukset/{kielipainotus_id}/'),
+                           status.HTTP_204_NO_CONTENT)
+        assert_status_code(client_modify.delete(f'/api/v1/toiminnallisetpainotukset/{toiminnallinen_painotus_id}/'),
                            status.HTTP_204_NO_CONTENT)
         PaosToiminta.objects.filter(paos_toimipaikka=toimipaikka).delete()
         toimipaikka.delete()
         datetime_lte = _get_iso_datetime_now()
 
         resp = client.get(f'/api/reporting/v1/tilastokeskus/organisaatiot/?datetime_gt={datetime_gt}'
-                          f'&datetime_lte={datetime_lte}')
+                          f'&datetime_lte={datetime_lte}', **tilastokeskus_headers)
         toimipaikka_result = json.loads(resp.content)['results'][0]['toimipaikat'][0]
         self.assertEqual(toimipaikka_result['id'], toimipaikka_id)
         self.assertEqual(toimipaikka_result['action'], ChangeType.DELETED.value)
@@ -1959,8 +1972,7 @@ class VardaViewsReportingTests(TestCase):
         self.assertEqual(toiminnallinen_painotus_result['action'], ChangeType.DELETED.value)
 
     def test_tk_vakatiedot_all(self):
-        mock_admin_user('tester2')
-        client = SetUpTestClient('tester2').client()
+        client = SetUpTestClient('tilastokeskus_luovutuspalvelu').client()
 
         # Initialize count variables
         lapsi_count = 0
@@ -1971,7 +1983,7 @@ class VardaViewsReportingTests(TestCase):
 
         url = '/api/reporting/v1/tilastokeskus/varhaiskasvatustiedot/'
         while url:
-            resp = client.get(url)
+            resp = client.get(url, **tilastokeskus_headers)
             response = json.loads(resp.content)
             for result in response['results']:
                 lapsi_count += 1
@@ -1989,8 +2001,8 @@ class VardaViewsReportingTests(TestCase):
         self.assertEqual(Varhaiskasvatussuhde.objects.count(), vakasuhde_count)
 
     def test_tk_vakatiedot_no_change(self):
-        mock_admin_user('tester2')
-        client = SetUpTestClient('tester2').client()
+        client = SetUpTestClient('tilastokeskus_luovutuspalvelu').client()
+        client_modify = SetUpTestClient('pkvakajarjestaja1').client()
 
         datetime_gt = _get_iso_datetime_now()
         lapsi_id = Lapsi.objects.get(tunniste='testing-lapsi3').id
@@ -2001,32 +2013,32 @@ class VardaViewsReportingTests(TestCase):
             'alkamis_pvm': '2018-09-05',
             'lahdejarjestelma': '1'
         }
-        resp = client.post('/api/v1/varhaiskasvatussuhteet/', vakasuhde)
+        resp = client_modify.post('/api/v1/varhaiskasvatussuhteet/', vakasuhde)
         assert_status_code(resp, status.HTTP_201_CREATED)
         vakasuhde_id = json.loads(resp.content)['id']
         datetime_lte = _get_iso_datetime_now()
 
         resp = client.get(f'/api/reporting/v1/tilastokeskus/varhaiskasvatustiedot/?datetime_gt={datetime_gt}'
-                          f'&datetime_lte={datetime_lte}')
+                          f'&datetime_lte={datetime_lte}', **tilastokeskus_headers)
         _test_tk_vakasuhde_action(self, resp, lapsi_id, vakapaatos_id, vakasuhde_id, ChangeType.CREATED.value)
 
         datetime_gt_2 = _get_iso_datetime_now()
-        resp = client.delete(f'/api/v1/varhaiskasvatussuhteet/{vakasuhde_id}/')
+        resp = client_modify.delete(f'/api/v1/varhaiskasvatussuhteet/{vakasuhde_id}/')
         assert_status_code(resp, status.HTTP_204_NO_CONTENT)
         datetime_lte = _get_iso_datetime_now()
 
         resp = client.get(f'/api/reporting/v1/tilastokeskus/varhaiskasvatustiedot/?datetime_gt={datetime_gt_2}'
-                          f'&datetime_lte={datetime_lte}')
+                          f'&datetime_lte={datetime_lte}', **tilastokeskus_headers)
         _test_tk_vakasuhde_action(self, resp, lapsi_id, vakapaatos_id, vakasuhde_id, ChangeType.DELETED.value)
 
         resp = client.get(f'/api/reporting/v1/tilastokeskus/varhaiskasvatustiedot/?datetime_gt={datetime_gt}'
-                          f'&datetime_lte={datetime_lte}')
+                          f'&datetime_lte={datetime_lte}', **tilastokeskus_headers)
         # Object was created and deleted within the time range
         self.assertEqual(len(json.loads(resp.content)['results']), 0)
 
     def test_tk_vakatiedot_nested_delete(self):
-        mock_admin_user('tester2')
-        client = SetUpTestClient('tester2').client()
+        client = SetUpTestClient('tilastokeskus_luovutuspalvelu').client()
+        client_modify = SetUpTestClient('pkvakajarjestaja2').client()
 
         datetime_gt = _get_iso_datetime_now()
         vakasuhde_1_id = Varhaiskasvatussuhde.objects.get(tunniste='testing-varhaiskasvatussuhde10').id
@@ -2036,21 +2048,21 @@ class VardaViewsReportingTests(TestCase):
         maksutieto_id = Maksutieto.objects.get(tunniste='testing-maksutieto5').id
         lapsi_id = Lapsi.objects.get(tunniste='testing-lapsi10').id
 
-        assert_status_code(client.delete(f'/api/v1/varhaiskasvatussuhteet/{vakasuhde_1_id}/'),
+        assert_status_code(client_modify.delete(f'/api/v1/varhaiskasvatussuhteet/{vakasuhde_1_id}/'),
                            status.HTTP_204_NO_CONTENT)
-        assert_status_code(client.delete(f'/api/v1/varhaiskasvatussuhteet/{vakasuhde_2_id}/'),
+        assert_status_code(client_modify.delete(f'/api/v1/varhaiskasvatussuhteet/{vakasuhde_2_id}/'),
                            status.HTTP_204_NO_CONTENT)
-        assert_status_code(client.delete(f'/api/v1/varhaiskasvatuspaatokset/{vakapaatos_1_id}/'),
+        assert_status_code(client_modify.delete(f'/api/v1/varhaiskasvatuspaatokset/{vakapaatos_1_id}/'),
                            status.HTTP_204_NO_CONTENT)
-        assert_status_code(client.delete(f'/api/v1/varhaiskasvatuspaatokset/{vakapaatos_2_id}/'),
+        assert_status_code(client_modify.delete(f'/api/v1/varhaiskasvatuspaatokset/{vakapaatos_2_id}/'),
                            status.HTTP_204_NO_CONTENT)
-        assert_status_code(client.delete(f'/api/v1/maksutiedot/{maksutieto_id}/'), status.HTTP_204_NO_CONTENT)
-        assert_status_code(client.delete(f'/api/v1/lapset/{lapsi_id}/'), status.HTTP_204_NO_CONTENT)
+        assert_status_code(client_modify.delete(f'/api/v1/maksutiedot/{maksutieto_id}/'), status.HTTP_204_NO_CONTENT)
+        assert_status_code(client_modify.delete(f'/api/v1/lapset/{lapsi_id}/'), status.HTTP_204_NO_CONTENT)
         datetime_lte = _get_iso_datetime_now()
 
         resp = client.get(f'/api/reporting/v1/tilastokeskus/varhaiskasvatustiedot/?datetime_gt={datetime_gt}'
-                          f'&datetime_lte={datetime_lte}')
-        lapsi_result = _validate_tk_basic_single_result(self, resp, lapsi_id, ChangeType.DELETED.value)
+                          f'&datetime_lte={datetime_lte}', **tilastokeskus_headers)
+        lapsi_result = _validate_historical_basic_single_result(self, resp, lapsi_id, ChangeType.DELETED.value)
         for vakapaatos_result in lapsi_result['varhaiskasvatuspaatokset']:
             self.assertIn(vakapaatos_result['id'], (vakapaatos_1_id, vakapaatos_2_id,))
             self.assertEqual(vakapaatos_result['action'], ChangeType.DELETED.value)
@@ -2062,8 +2074,7 @@ class VardaViewsReportingTests(TestCase):
         self.assertEqual(maksutieto_result['action'], ChangeType.DELETED.value)
 
     def test_tk_vakatiedot_huoltaja(self):
-        mock_admin_user('tester2')
-        client = SetUpTestClient('tester2').client()
+        client = SetUpTestClient('tilastokeskus_luovutuspalvelu').client()
 
         lapsi_id = Lapsi.objects.get(tunniste='testing-lapsi2').id
         henkilo_obj = Henkilo.objects.get(henkilo_oid='1.2.246.562.24.5826267847674')
@@ -2078,8 +2089,8 @@ class VardaViewsReportingTests(TestCase):
         datetime_lte = _get_iso_datetime_now()
 
         resp = client.get(f'/api/reporting/v1/tilastokeskus/varhaiskasvatustiedot/?datetime_gt={datetime_gt}'
-                          f'&datetime_lte={datetime_lte}')
-        lapsi_result = _validate_tk_basic_single_result(self, resp, lapsi_id, ChangeType.UNCHANGED.value)
+                          f'&datetime_lte={datetime_lte}', **tilastokeskus_headers)
+        lapsi_result = _validate_historical_basic_single_result(self, resp, lapsi_id, ChangeType.UNCHANGED.value)
         self.assertEqual(len(lapsi_result['huoltajat']), 1)
         huoltaja_result = lapsi_result['huoltajat'][0]
         self.assertEqual(huoltaja_result['id'], huoltajuussuhde_id)
@@ -2095,8 +2106,8 @@ class VardaViewsReportingTests(TestCase):
         datetime_lte_2 = _get_iso_datetime_now()
 
         resp = client.get(f'/api/reporting/v1/tilastokeskus/varhaiskasvatustiedot/?datetime_gt={datetime_gt_2}'
-                          f'&datetime_lte={datetime_lte_2}')
-        lapsi_result = _validate_tk_basic_single_result(self, resp, lapsi_id, ChangeType.UNCHANGED.value)
+                          f'&datetime_lte={datetime_lte_2}', **tilastokeskus_headers)
+        lapsi_result = _validate_historical_basic_single_result(self, resp, lapsi_id, ChangeType.UNCHANGED.value)
         self.assertEqual(len(lapsi_result['huoltajat']), 1)
         huoltaja_result = lapsi_result['huoltajat'][0]
         self.assertEqual(huoltaja_result['id'], huoltajuussuhde_id)
@@ -2111,15 +2122,15 @@ class VardaViewsReportingTests(TestCase):
         datetime_lte_3 = _get_iso_datetime_now()
 
         resp = client.get(f'/api/reporting/v1/tilastokeskus/varhaiskasvatustiedot/?datetime_gt={datetime_gt_3}'
-                          f'&datetime_lte={datetime_lte_3}')
-        lapsi_result = _validate_tk_basic_single_result(self, resp, lapsi_id, ChangeType.UNCHANGED.value)
+                          f'&datetime_lte={datetime_lte_3}', **tilastokeskus_headers)
+        lapsi_result = _validate_historical_basic_single_result(self, resp, lapsi_id, ChangeType.UNCHANGED.value)
         self.assertEqual(len(lapsi_result['huoltajat']), 1)
         huoltaja_result = lapsi_result['huoltajat'][0]
         self.assertEqual(huoltaja_result['id'], huoltajuussuhde_id)
         self.assertEqual(huoltaja_result['action'], ChangeType.DELETED.value)
 
         resp = client.get(f'/api/reporting/v1/tilastokeskus/varhaiskasvatustiedot/?datetime_gt={datetime_gt}'
-                          f'&datetime_lte={datetime_lte_3}')
+                          f'&datetime_lte={datetime_lte_3}', **tilastokeskus_headers)
         self.assertEqual(len(json.loads(resp.content)['results']), 0)
 
         datetime_gt_4 = _get_iso_datetime_now()
@@ -2130,12 +2141,12 @@ class VardaViewsReportingTests(TestCase):
         datetime_lte_4 = _get_iso_datetime_now()
 
         resp = client.get(f'/api/reporting/v1/tilastokeskus/varhaiskasvatustiedot/?datetime_gt={datetime_gt_4}'
-                          f'&datetime_lte={datetime_lte_4}')
+                          f'&datetime_lte={datetime_lte_4}', **tilastokeskus_headers)
         self.assertEqual(len(json.loads(resp.content)['results']), 0)
 
     def test_tk_vakatiedot_maksutieto(self):
-        mock_admin_user('tester2')
-        client = SetUpTestClient('tester2').client()
+        client = SetUpTestClient('tilastokeskus_luovutuspalvelu').client()
+        client_modify = SetUpTestClient('tester10').client()
 
         lapsi_id = Lapsi.objects.get(tunniste='testing-lapsi11').id
         huoltaja_1 = Henkilo.objects.get(henkilo_oid='1.2.246.562.24.2434693467574')
@@ -2159,14 +2170,15 @@ class VardaViewsReportingTests(TestCase):
         }
 
         datetime_gt = _get_iso_datetime_now()
-        maksutieto_resp = client.post('/api/v1/maksutiedot/', json.dumps(maksutieto), content_type='application/json')
+        maksutieto_resp = client_modify.post('/api/v1/maksutiedot/', json.dumps(maksutieto),
+                                             content_type='application/json')
         assert_status_code(maksutieto_resp, status.HTTP_201_CREATED)
         maksutieto_id = json.loads(maksutieto_resp.content)['id']
         datetime_lte = _get_iso_datetime_now()
 
         resp = client.get(f'/api/reporting/v1/tilastokeskus/varhaiskasvatustiedot/?datetime_gt={datetime_gt}'
-                          f'&datetime_lte={datetime_lte}')
-        lapsi_result = _validate_tk_basic_single_result(self, resp, lapsi_id, ChangeType.UNCHANGED.value)
+                          f'&datetime_lte={datetime_lte}', **tilastokeskus_headers)
+        lapsi_result = _validate_historical_basic_single_result(self, resp, lapsi_id, ChangeType.UNCHANGED.value)
         self.assertEqual(len(lapsi_result['maksutiedot']), 1)
         maksutieto_result = lapsi_result['maksutiedot'][0]
         self.assertEqual(maksutieto_result['id'], maksutieto_id)
@@ -2183,13 +2195,13 @@ class VardaViewsReportingTests(TestCase):
         }
 
         datetime_gt_2 = _get_iso_datetime_now()
-        assert_status_code(client.patch(f'/api/v1/maksutiedot/{maksutieto_id}/', json.dumps(maksutieto_patch),
-                                        content_type='application/json'), status.HTTP_200_OK)
+        assert_status_code(client_modify.patch(f'/api/v1/maksutiedot/{maksutieto_id}/', json.dumps(maksutieto_patch),
+                                               content_type='application/json'), status.HTTP_200_OK)
         datetime_lte_2 = _get_iso_datetime_now()
 
         resp = client.get(f'/api/reporting/v1/tilastokeskus/varhaiskasvatustiedot/?datetime_gt={datetime_gt_2}'
-                          f'&datetime_lte={datetime_lte_2}')
-        lapsi_result = _validate_tk_basic_single_result(self, resp, lapsi_id, ChangeType.UNCHANGED.value)
+                          f'&datetime_lte={datetime_lte_2}', **tilastokeskus_headers)
+        lapsi_result = _validate_historical_basic_single_result(self, resp, lapsi_id, ChangeType.UNCHANGED.value)
         self.assertEqual(len(lapsi_result['maksutiedot']), 1)
         maksutieto_result = lapsi_result['maksutiedot'][0]
         self.assertEqual(maksutieto_result['id'], maksutieto_id)
@@ -2199,8 +2211,8 @@ class VardaViewsReportingTests(TestCase):
                                {'henkilotunnus': huoltaja_2_hetu, 'henkilo_oid': huoltaja_2.henkilo_oid}])
 
         resp = client.get(f'/api/reporting/v1/tilastokeskus/varhaiskasvatustiedot/?datetime_gt={datetime_gt}'
-                          f'&datetime_lte={datetime_lte_2}')
-        lapsi_result = _validate_tk_basic_single_result(self, resp, lapsi_id, ChangeType.UNCHANGED.value)
+                          f'&datetime_lte={datetime_lte_2}', **tilastokeskus_headers)
+        lapsi_result = _validate_historical_basic_single_result(self, resp, lapsi_id, ChangeType.UNCHANGED.value)
         self.assertEqual(len(lapsi_result['maksutiedot']), 1)
         maksutieto_result = lapsi_result['maksutiedot'][0]
         self.assertEqual(maksutieto_result['id'], maksutieto_id)
@@ -2210,8 +2222,8 @@ class VardaViewsReportingTests(TestCase):
                                {'henkilotunnus': huoltaja_2_hetu, 'henkilo_oid': huoltaja_2.henkilo_oid}])
 
         resp = client.get(f'/api/reporting/v1/tilastokeskus/varhaiskasvatustiedot/?datetime_gt={datetime_gt}'
-                          f'&datetime_lte={datetime_lte}')
-        lapsi_result = _validate_tk_basic_single_result(self, resp, lapsi_id, ChangeType.UNCHANGED.value)
+                          f'&datetime_lte={datetime_lte}', **tilastokeskus_headers)
+        lapsi_result = _validate_historical_basic_single_result(self, resp, lapsi_id, ChangeType.UNCHANGED.value)
         self.assertEqual(len(lapsi_result['maksutiedot']), 1)
         maksutieto_result = lapsi_result['maksutiedot'][0]
         self.assertEqual(maksutieto_result['id'], maksutieto_id)
@@ -2220,24 +2232,24 @@ class VardaViewsReportingTests(TestCase):
                               [{'henkilotunnus': huoltaja_1_hetu, 'henkilo_oid': huoltaja_1.henkilo_oid}])
 
         datetime_gt_3 = _get_iso_datetime_now()
-        assert_status_code(client.delete(f'/api/v1/maksutiedot/{maksutieto_id}/'), status.HTTP_204_NO_CONTENT)
+        assert_status_code(client_modify.delete(f'/api/v1/maksutiedot/{maksutieto_id}/'), status.HTTP_204_NO_CONTENT)
         datetime_lte_3 = _get_iso_datetime_now()
 
         resp = client.get(f'/api/reporting/v1/tilastokeskus/varhaiskasvatustiedot/?datetime_gt={datetime_gt_3}'
-                          f'&datetime_lte={datetime_lte_3}')
-        lapsi_result = _validate_tk_basic_single_result(self, resp, lapsi_id, ChangeType.UNCHANGED.value)
+                          f'&datetime_lte={datetime_lte_3}', **tilastokeskus_headers)
+        lapsi_result = _validate_historical_basic_single_result(self, resp, lapsi_id, ChangeType.UNCHANGED.value)
         self.assertEqual(len(lapsi_result['maksutiedot']), 1)
         maksutieto_result = lapsi_result['maksutiedot'][0]
         self.assertEqual(maksutieto_result['id'], maksutieto_id)
         self.assertEqual(maksutieto_result['action'], ChangeType.DELETED.value)
 
         resp = client.get(f'/api/reporting/v1/tilastokeskus/varhaiskasvatustiedot/?datetime_gt={datetime_gt}'
-                          f'&datetime_lte={datetime_lte_3}')
+                          f'&datetime_lte={datetime_lte_3}', **tilastokeskus_headers)
         self.assertEqual(len(json.loads(resp.content)['results']), 0)
 
     def test_tk_vakatiedot_henkilo(self):
-        mock_admin_user('tester2')
-        client = SetUpTestClient('tester2').client()
+        client = SetUpTestClient('tilastokeskus_luovutuspalvelu').client()
+        client_modify = SetUpTestClient('pkvakajarjestaja1').client()
 
         henkilo = Henkilo.objects.get(henkilo_oid='1.2.246.562.24.4473262898463')
         original_lapsi_id = Lapsi.objects.get(tunniste='testing-lapsi15').id
@@ -2248,14 +2260,15 @@ class VardaViewsReportingTests(TestCase):
             'lahdejarjestelma': '1'
         }
         datetime_gt = _get_iso_datetime_now()
-        resp_lapsi = client.post('/api/v1/lapset/', lapsi)
+        post_henkilo_to_get_permissions(client_modify, henkilo_id=henkilo.id)
+        resp_lapsi = client_modify.post('/api/v1/lapset/', lapsi)
         assert_status_code(resp_lapsi, status.HTTP_201_CREATED)
         lapsi_id = json.loads(resp_lapsi.content)['id']
         datetime_lte = _get_iso_datetime_now()
 
         resp = client.get(f'/api/reporting/v1/tilastokeskus/varhaiskasvatustiedot/?datetime_gt={datetime_gt}'
-                          f'&datetime_lte={datetime_lte}')
-        _validate_tk_basic_single_result(self, resp, lapsi_id, ChangeType.CREATED.value)
+                          f'&datetime_lte={datetime_lte}', **tilastokeskus_headers)
+        _validate_historical_basic_single_result(self, resp, lapsi_id, ChangeType.CREATED.value)
 
         datetime_gt_2 = _get_iso_datetime_now()
         # Wait for 0.1 seconds so database action happens after datetime_gt_2
@@ -2265,23 +2278,22 @@ class VardaViewsReportingTests(TestCase):
         datetime_lte_2 = _get_iso_datetime_now()
 
         resp = client.get(f'/api/reporting/v1/tilastokeskus/varhaiskasvatustiedot/?datetime_gt={datetime_gt_2}'
-                          f'&datetime_lte={datetime_lte_2}')
+                          f'&datetime_lte={datetime_lte_2}', **tilastokeskus_headers)
         results = json.loads(resp.content)['results']
         self.assertEqual(len(results), 2)
         for lapsi_result in results:
             self.assertEqual(lapsi_result['action'], ChangeType.MODIFIED.value)
             self.assertIn(lapsi_result['id'], (original_lapsi_id, lapsi_id,))
 
-        assert_status_code(client.delete(f'/api/v1/lapset/{lapsi_id}/'), status.HTTP_204_NO_CONTENT)
+        assert_status_code(client_modify.delete(f'/api/v1/lapset/{lapsi_id}/'), status.HTTP_204_NO_CONTENT)
         datetime_lte_3 = _get_iso_datetime_now()
 
         resp = client.get(f'/api/reporting/v1/tilastokeskus/varhaiskasvatustiedot/?datetime_gt={datetime_gt}'
-                          f'&datetime_lte={datetime_lte_3}')
-        _validate_tk_basic_single_result(self, resp, original_lapsi_id, ChangeType.MODIFIED.value)
+                          f'&datetime_lte={datetime_lte_3}', **tilastokeskus_headers)
+        _validate_historical_basic_single_result(self, resp, original_lapsi_id, ChangeType.MODIFIED.value)
 
     def test_tk_henkilostotiedot_all(self):
-        mock_admin_user('tester2')
-        client = SetUpTestClient('tester2').client()
+        client = SetUpTestClient('tilastokeskus_luovutuspalvelu').client()
 
         tyontekija_count = 0
         tutkinto_count = 0
@@ -2293,7 +2305,7 @@ class VardaViewsReportingTests(TestCase):
 
         url = '/api/reporting/v1/tilastokeskus/henkilostotiedot/'
         while url:
-            resp = client.get(url)
+            resp = client.get(url, **tilastokeskus_headers)
             response = json.loads(resp.content)
             for result in response['results']:
                 tyontekija_count += 1
@@ -2316,8 +2328,8 @@ class VardaViewsReportingTests(TestCase):
         self.assertEqual(TaydennyskoulutusTyontekija.objects.count(), taydennyskoulutus_tyontekija_count)
 
     def test_tk_henkilostotiedot_tyoskentelypaikka_no_change(self):
-        mock_admin_user('tester2')
-        client = SetUpTestClient('tester2').client()
+        client = SetUpTestClient('tilastokeskus_luovutuspalvelu').client()
+        client_modify = SetUpTestClient('tyontekija_tallentaja').client()
 
         datetime_gt = _get_iso_datetime_now()
         tyontekija_id = Tyontekija.objects.get(tunniste='testing-tyontekija2').id
@@ -2332,34 +2344,34 @@ class VardaViewsReportingTests(TestCase):
             'kiertava_tyontekija_kytkin': False,
             'lahdejarjestelma': '1'
         }
-        resp = client.post('/api/henkilosto/v1/tyoskentelypaikat/', tyoskentelypaikka)
+        resp = client_modify.post('/api/henkilosto/v1/tyoskentelypaikat/', tyoskentelypaikka)
         assert_status_code(resp, status.HTTP_201_CREATED)
         tyoskentelypaikka_id = json.loads(resp.content)['id']
         datetime_lte = _get_iso_datetime_now()
 
         resp = client.get(f'/api/reporting/v1/tilastokeskus/henkilostotiedot/?datetime_gt={datetime_gt}'
-                          f'&datetime_lte={datetime_lte}')
+                          f'&datetime_lte={datetime_lte}', **tilastokeskus_headers)
         _test_tk_henkilostotieto_action(self, resp, tyontekija_id, palvelussuhde_id, ChangeType.CREATED.value,
                                         model=Tyoskentelypaikka, instance_id=tyoskentelypaikka_id)
 
         datetime_gt_2 = _get_iso_datetime_now()
-        resp = client.delete(f'/api/henkilosto/v1/tyoskentelypaikat/{tyoskentelypaikka_id}/')
+        resp = client_modify.delete(f'/api/henkilosto/v1/tyoskentelypaikat/{tyoskentelypaikka_id}/')
         assert_status_code(resp, status.HTTP_204_NO_CONTENT)
         datetime_lte = _get_iso_datetime_now()
 
         resp = client.get(f'/api/reporting/v1/tilastokeskus/henkilostotiedot/?datetime_gt={datetime_gt_2}'
-                          f'&datetime_lte={datetime_lte}')
+                          f'&datetime_lte={datetime_lte}', **tilastokeskus_headers)
         _test_tk_henkilostotieto_action(self, resp, tyontekija_id, palvelussuhde_id, ChangeType.DELETED.value,
                                         model=Tyoskentelypaikka, instance_id=tyoskentelypaikka_id)
 
         resp = client.get(f'/api/reporting/v1/tilastokeskus/henkilostotiedot/?datetime_gt={datetime_gt}'
-                          f'&datetime_lte={datetime_lte}')
+                          f'&datetime_lte={datetime_lte}', **tilastokeskus_headers)
         # Object was created and deleted within the time range
         self.assertEqual(len(json.loads(resp.content)['results']), 0)
 
     def test_tk_henkilostotiedot_pidempi_poissaolo_no_change(self):
-        mock_admin_user('tester2')
-        client = SetUpTestClient('tester2').client()
+        client = SetUpTestClient('tilastokeskus_luovutuspalvelu').client()
+        client_modify = SetUpTestClient('tyontekija_tallentaja').client()
 
         datetime_gt = _get_iso_datetime_now()
         tyontekija_id = Tyontekija.objects.get(tunniste='testing-tyontekija2').id
@@ -2370,60 +2382,60 @@ class VardaViewsReportingTests(TestCase):
             'paattymis_pvm': '2023-01-01',
             'lahdejarjestelma': '1'
         }
-        resp = client.post('/api/henkilosto/v1/pidemmatpoissaolot/', pidempi_poissaolo)
+        resp = client_modify.post('/api/henkilosto/v1/pidemmatpoissaolot/', pidempi_poissaolo)
         assert_status_code(resp, status.HTTP_201_CREATED)
         pidempi_poissaolo_id = json.loads(resp.content)['id']
         datetime_lte = _get_iso_datetime_now()
 
         resp = client.get(f'/api/reporting/v1/tilastokeskus/henkilostotiedot/?datetime_gt={datetime_gt}'
-                          f'&datetime_lte={datetime_lte}')
+                          f'&datetime_lte={datetime_lte}', **tilastokeskus_headers)
         _test_tk_henkilostotieto_action(self, resp, tyontekija_id, palvelussuhde_id, ChangeType.CREATED.value,
                                         model=PidempiPoissaolo, instance_id=pidempi_poissaolo_id)
 
         datetime_gt_2 = _get_iso_datetime_now()
-        resp = client.delete(f'/api/henkilosto/v1/pidemmatpoissaolot/{pidempi_poissaolo_id}/')
+        resp = client_modify.delete(f'/api/henkilosto/v1/pidemmatpoissaolot/{pidempi_poissaolo_id}/')
         assert_status_code(resp, status.HTTP_204_NO_CONTENT)
         datetime_lte = _get_iso_datetime_now()
 
         resp = client.get(f'/api/reporting/v1/tilastokeskus/henkilostotiedot/?datetime_gt={datetime_gt_2}'
-                          f'&datetime_lte={datetime_lte}')
+                          f'&datetime_lte={datetime_lte}', **tilastokeskus_headers)
         _test_tk_henkilostotieto_action(self, resp, tyontekija_id, palvelussuhde_id, ChangeType.DELETED.value,
                                         model=PidempiPoissaolo, instance_id=pidempi_poissaolo_id)
 
         resp = client.get(f'/api/reporting/v1/tilastokeskus/henkilostotiedot/?datetime_gt={datetime_gt}'
-                          f'&datetime_lte={datetime_lte}')
+                          f'&datetime_lte={datetime_lte}', **tilastokeskus_headers)
         # Object was created and deleted within the time range
         self.assertEqual(len(json.loads(resp.content)['results']), 0)
 
     def test_tk_henkilostotiedot_nested_delete(self):
-        mock_admin_user('tester2')
-        client = SetUpTestClient('tester2').client()
+        client = SetUpTestClient('tilastokeskus_luovutuspalvelu').client()
+        client_modify = SetUpTestClient('tester11').client()
 
         datetime_gt = _get_iso_datetime_now()
         tyontekija = Tyontekija.objects.get(tunniste='testing-tyontekija7')
         tyontekija_id = tyontekija.id
         tutkinto_id = Tutkinto.objects.get(henkilo=tyontekija.henkilo, vakajarjestaja=tyontekija.vakajarjestaja).id
         taydennyskoulutus_id = Taydennyskoulutus.objects.get(tunniste='testing-taydennyskoulutus4').id
-        tyoskentelypaikka_id = Tyoskentelypaikka.objects.get(tunniste='testing-tyoskentylypaikka7').id
+        tyoskentelypaikka_id = Tyoskentelypaikka.objects.get(tunniste='testing-tyoskentelypaikka7').id
         pidempi_poissaolo_id = PidempiPoissaolo.objects.get(tunniste='testing-pidempipoissaolo3').id
         palvelussuhde_id = Palvelussuhde.objects.get(tunniste='testing-palvelussuhde7').id
 
-        assert_status_code(client.delete(f'/api/henkilosto/v1/taydennyskoulutukset/{taydennyskoulutus_id}/'),
+        assert_status_code(client_modify.delete(f'/api/henkilosto/v1/taydennyskoulutukset/{taydennyskoulutus_id}/'),
                            status.HTTP_204_NO_CONTENT)
-        assert_status_code(client.delete(f'/api/henkilosto/v1/tyoskentelypaikat/{tyoskentelypaikka_id}/'),
+        assert_status_code(client_modify.delete(f'/api/henkilosto/v1/tyoskentelypaikat/{tyoskentelypaikka_id}/'),
                            status.HTTP_204_NO_CONTENT)
-        assert_status_code(client.delete(f'/api/henkilosto/v1/pidemmatpoissaolot/{pidempi_poissaolo_id}/'),
+        assert_status_code(client_modify.delete(f'/api/henkilosto/v1/pidemmatpoissaolot/{pidempi_poissaolo_id}/'),
                            status.HTTP_204_NO_CONTENT)
-        assert_status_code(client.delete(f'/api/henkilosto/v1/palvelussuhteet/{palvelussuhde_id}/'),
+        assert_status_code(client_modify.delete(f'/api/henkilosto/v1/palvelussuhteet/{palvelussuhde_id}/'),
                            status.HTTP_204_NO_CONTENT)
-        assert_status_code(client.delete(f'/api/henkilosto/v1/tutkinnot/{tutkinto_id}/'),
+        assert_status_code(client_modify.delete(f'/api/henkilosto/v1/tutkinnot/{tutkinto_id}/'),
                            status.HTTP_204_NO_CONTENT)
-        assert_status_code(client.delete(f'/api/henkilosto/v1/tyontekijat/{tyontekija_id}/'),
+        assert_status_code(client_modify.delete(f'/api/henkilosto/v1/tyontekijat/{tyontekija_id}/'),
                            status.HTTP_204_NO_CONTENT)
         datetime_lte = _get_iso_datetime_now()
 
         resp = client.get(f'/api/reporting/v1/tilastokeskus/henkilostotiedot/?datetime_gt={datetime_gt}'
-                          f'&datetime_lte={datetime_lte}')
+                          f'&datetime_lte={datetime_lte}', **tilastokeskus_headers)
         tyontekija_result = json.loads(resp.content)['results'][0]
         self.assertEqual(tyontekija_result['id'], tyontekija_id)
         self.assertEqual(tyontekija_result['action'], ChangeType.DELETED.value)
@@ -2444,8 +2456,8 @@ class VardaViewsReportingTests(TestCase):
         self.assertEqual(tutkinto_result['action'], ChangeType.DELETED.value)
 
     def test_tk_henkilostotiedot_taydennyskoulutus(self):
-        mock_admin_user('tester2')
-        client = SetUpTestClient('tester2').client()
+        client = SetUpTestClient('tilastokeskus_luovutuspalvelu').client()
+        client_modify = SetUpTestClient('taydennyskoulutus_tallentaja').client()
 
         tyontekija_id = Tyontekija.objects.get(tunniste='testing-tyontekija1').id
         tyontekija_2_id = Tyontekija.objects.get(tunniste='testing-tyontekija2').id
@@ -2462,15 +2474,16 @@ class VardaViewsReportingTests(TestCase):
         }
 
         datetime_gt = _get_iso_datetime_now()
-        taydennyskoulutus_resp = client.post('/api/henkilosto/v1/taydennyskoulutukset/',
-                                             json.dumps(taydennyskoulutus), content_type='application/json')
+        taydennyskoulutus_resp = client_modify.post('/api/henkilosto/v1/taydennyskoulutukset/',
+                                                    json.dumps(taydennyskoulutus), content_type='application/json')
         assert_status_code(taydennyskoulutus_resp, status.HTTP_201_CREATED)
         taydennyskoulutus_id = json.loads(taydennyskoulutus_resp.content)['id']
         datetime_lte = _get_iso_datetime_now()
 
         resp = client.get(f'/api/reporting/v1/tilastokeskus/henkilostotiedot/?datetime_gt={datetime_gt}'
-                          f'&datetime_lte={datetime_lte}')
-        tyontekija_result = _validate_tk_basic_single_result(self, resp, tyontekija_id, ChangeType.UNCHANGED.value)
+                          f'&datetime_lte={datetime_lte}', **tilastokeskus_headers)
+        tyontekija_result = _validate_historical_basic_single_result(self, resp, tyontekija_id,
+                                                                     ChangeType.UNCHANGED.value)
         self.assertEqual(len(tyontekija_result['taydennyskoulutukset']), 1)
         taydennyskoulutus_result = tyontekija_result['taydennyskoulutukset'][0]
         self.assertEqual(taydennyskoulutus_result['id'], taydennyskoulutus_id)
@@ -2485,14 +2498,14 @@ class VardaViewsReportingTests(TestCase):
         }
 
         datetime_gt_2 = _get_iso_datetime_now()
-        assert_status_code(client.patch(f'/api/henkilosto/v1/taydennyskoulutukset/{taydennyskoulutus_id}/',
-                                        json.dumps(taydennyskoulutus_patch), content_type='application/json'),
+        assert_status_code(client_modify.patch(f'/api/henkilosto/v1/taydennyskoulutukset/{taydennyskoulutus_id}/',
+                                               json.dumps(taydennyskoulutus_patch), content_type='application/json'),
                            status.HTTP_200_OK)
         datetime_lte_2 = _get_iso_datetime_now()
 
         resp = client.get(f'/api/reporting/v1/tilastokeskus/henkilostotiedot/?datetime_gt={datetime_gt_2}'
-                          f'&datetime_lte={datetime_lte_2}')
-        tyontekija_result = _validate_tk_basic_single_result(self, resp, tyontekija_id, ChangeType.UNCHANGED.value)
+                          f'&datetime_lte={datetime_lte_2}', **tilastokeskus_headers)
+        tyontekija_result = _validate_historical_basic_single_result(self, resp, tyontekija_id, ChangeType.UNCHANGED.value)
         self.assertEqual(len(tyontekija_result['taydennyskoulutukset']), 1)
         taydennyskoulutus_result = tyontekija_result['taydennyskoulutukset'][0]
         self.assertEqual(taydennyskoulutus_result['id'], taydennyskoulutus_id)
@@ -2500,8 +2513,8 @@ class VardaViewsReportingTests(TestCase):
         self.assertCountEqual(taydennyskoulutus_result['tehtavanimikkeet'], ['39407', '64212'])
 
         resp = client.get(f'/api/reporting/v1/tilastokeskus/henkilostotiedot/?datetime_gt={datetime_gt}'
-                          f'&datetime_lte={datetime_lte_2}')
-        tyontekija_result = _validate_tk_basic_single_result(self, resp, tyontekija_id, ChangeType.UNCHANGED.value)
+                          f'&datetime_lte={datetime_lte_2}', **tilastokeskus_headers)
+        tyontekija_result = _validate_historical_basic_single_result(self, resp, tyontekija_id, ChangeType.UNCHANGED.value)
         self.assertEqual(len(tyontekija_result['taydennyskoulutukset']), 1)
         taydennyskoulutus_result = tyontekija_result['taydennyskoulutukset'][0]
         self.assertEqual(taydennyskoulutus_result['id'], taydennyskoulutus_id)
@@ -2509,8 +2522,8 @@ class VardaViewsReportingTests(TestCase):
         self.assertCountEqual(taydennyskoulutus_result['tehtavanimikkeet'], ['39407', '64212'])
 
         resp = client.get(f'/api/reporting/v1/tilastokeskus/henkilostotiedot/?datetime_gt={datetime_gt}'
-                          f'&datetime_lte={datetime_lte}')
-        tyontekija_result = _validate_tk_basic_single_result(self, resp, tyontekija_id, ChangeType.UNCHANGED.value)
+                          f'&datetime_lte={datetime_lte}', **tilastokeskus_headers)
+        tyontekija_result = _validate_historical_basic_single_result(self, resp, tyontekija_id, ChangeType.UNCHANGED.value)
         self.assertEqual(len(tyontekija_result['taydennyskoulutukset']), 1)
         taydennyskoulutus_result = tyontekija_result['taydennyskoulutukset'][0]
         self.assertEqual(taydennyskoulutus_result['id'], taydennyskoulutus_id)
@@ -2525,13 +2538,13 @@ class VardaViewsReportingTests(TestCase):
         }
 
         datetime_gt_3 = _get_iso_datetime_now()
-        assert_status_code(client.patch(f'/api/henkilosto/v1/taydennyskoulutukset/{taydennyskoulutus_id}/',
-                                        json.dumps(taydennyskoulutus_patch), content_type='application/json'),
+        assert_status_code(client_modify.patch(f'/api/henkilosto/v1/taydennyskoulutukset/{taydennyskoulutus_id}/',
+                                               json.dumps(taydennyskoulutus_patch), content_type='application/json'),
                            status.HTTP_200_OK)
         datetime_lte_3 = _get_iso_datetime_now()
 
         resp = client.get(f'/api/reporting/v1/tilastokeskus/henkilostotiedot/?datetime_gt={datetime_gt_3}'
-                          f'&datetime_lte={datetime_lte_3}')
+                          f'&datetime_lte={datetime_lte_3}', **tilastokeskus_headers)
         result_list = json.loads(resp.content)['results']
         self.assertEqual(len(result_list), 2)
         for result in result_list:
@@ -2556,13 +2569,13 @@ class VardaViewsReportingTests(TestCase):
         }
 
         datetime_gt_4 = _get_iso_datetime_now()
-        assert_status_code(client.patch(f'/api/henkilosto/v1/taydennyskoulutukset/{taydennyskoulutus_id}/',
-                                        json.dumps(taydennyskoulutus_patch), content_type='application/json'),
+        assert_status_code(client_modify.patch(f'/api/henkilosto/v1/taydennyskoulutukset/{taydennyskoulutus_id}/',
+                                               json.dumps(taydennyskoulutus_patch), content_type='application/json'),
                            status.HTTP_200_OK)
         datetime_lte_4 = _get_iso_datetime_now()
 
         resp = client.get(f'/api/reporting/v1/tilastokeskus/henkilostotiedot/?datetime_gt={datetime_gt_4}'
-                          f'&datetime_lte={datetime_lte_4}')
+                          f'&datetime_lte={datetime_lte_4}', **tilastokeskus_headers)
         result_list = json.loads(resp.content)['results']
         self.assertEqual(len(result_list), 2)
         for result in result_list:
@@ -2581,14 +2594,14 @@ class VardaViewsReportingTests(TestCase):
         }
 
         datetime_gt_5 = _get_iso_datetime_now()
-        assert_status_code(client.patch(f'/api/henkilosto/v1/taydennyskoulutukset/{taydennyskoulutus_id}/',
-                                        json.dumps(taydennyskoulutus_patch), content_type='application/json'),
+        assert_status_code(client_modify.patch(f'/api/henkilosto/v1/taydennyskoulutukset/{taydennyskoulutus_id}/',
+                                               json.dumps(taydennyskoulutus_patch), content_type='application/json'),
                            status.HTTP_200_OK)
         datetime_lte_5 = _get_iso_datetime_now()
 
         resp = client.get(f'/api/reporting/v1/tilastokeskus/henkilostotiedot/?datetime_gt={datetime_gt_5}'
-                          f'&datetime_lte={datetime_lte_5}')
-        tyontekija_result = _validate_tk_basic_single_result(self, resp, tyontekija_2_id, ChangeType.UNCHANGED.value)
+                          f'&datetime_lte={datetime_lte_5}', **tilastokeskus_headers)
+        tyontekija_result = _validate_historical_basic_single_result(self, resp, tyontekija_2_id, ChangeType.UNCHANGED.value)
         self.assertEqual(len(tyontekija_result['taydennyskoulutukset']), 1)
         taydennyskoulutus_result = tyontekija_result['taydennyskoulutukset'][0]
         self.assertEqual(taydennyskoulutus_result['id'], taydennyskoulutus_id)
@@ -2596,43 +2609,44 @@ class VardaViewsReportingTests(TestCase):
         self.assertEqual(taydennyskoulutus_result['nimi'], 'Testikoulutus21')
 
         datetime_gt_6 = _get_iso_datetime_now()
-        assert_status_code(client.delete(f'/api/henkilosto/v1/taydennyskoulutukset/{taydennyskoulutus_id}/'),
+        assert_status_code(client_modify.delete(f'/api/henkilosto/v1/taydennyskoulutukset/{taydennyskoulutus_id}/'),
                            status.HTTP_204_NO_CONTENT)
         datetime_lte_6 = _get_iso_datetime_now()
 
         resp = client.get(f'/api/reporting/v1/tilastokeskus/henkilostotiedot/?datetime_gt={datetime_gt_6}'
-                          f'&datetime_lte={datetime_lte_6}')
-        tyontekija_result = _validate_tk_basic_single_result(self, resp, tyontekija_2_id, ChangeType.UNCHANGED.value)
+                          f'&datetime_lte={datetime_lte_6}', **tilastokeskus_headers)
+        tyontekija_result = _validate_historical_basic_single_result(self, resp, tyontekija_2_id, ChangeType.UNCHANGED.value)
         self.assertEqual(len(tyontekija_result['taydennyskoulutukset']), 1)
         taydennyskoulutus_result = tyontekija_result['taydennyskoulutukset'][0]
         self.assertEqual(taydennyskoulutus_result['id'], taydennyskoulutus_id)
         self.assertEqual(taydennyskoulutus_result['action'], ChangeType.DELETED.value)
 
         resp = client.get(f'/api/reporting/v1/tilastokeskus/henkilostotiedot/?datetime_gt={datetime_gt}'
-                          f'&datetime_lte={datetime_lte_6}')
+                          f'&datetime_lte={datetime_lte_6}', **tilastokeskus_headers)
         self.assertEqual(len(json.loads(resp.content)['results']), 0)
 
     def test_tk_henkilostotiedot_henkilo(self):
-        mock_admin_user('tester2')
-        client = SetUpTestClient('tester2').client()
+        client = SetUpTestClient('tilastokeskus_luovutuspalvelu').client()
+        client_modify = SetUpTestClient('tester11').client()
 
         henkilo = Henkilo.objects.get(henkilo_oid='1.2.246.562.24.2431884920042')
         original_tyontekija_id = Tyontekija.objects.get(tunniste='testing-tyontekija2').id
 
+        post_henkilo_to_get_permissions(client_modify, henkilo_id=henkilo.id)
         tyontekija = {
             'henkilo_oid': henkilo.henkilo_oid,
             'vakajarjestaja_oid': '1.2.246.562.10.52966755795',
             'lahdejarjestelma': '1'
         }
         datetime_gt = _get_iso_datetime_now()
-        resp_tyontekija = client.post('/api/henkilosto/v1/tyontekijat/', tyontekija)
+        resp_tyontekija = client_modify.post('/api/henkilosto/v1/tyontekijat/', tyontekija)
         assert_status_code(resp_tyontekija, status.HTTP_201_CREATED)
         tyontekija_id = json.loads(resp_tyontekija.content)['id']
         datetime_lte = _get_iso_datetime_now()
 
         resp = client.get(f'/api/reporting/v1/tilastokeskus/henkilostotiedot/?datetime_gt={datetime_gt}'
-                          f'&datetime_lte={datetime_lte}')
-        _validate_tk_basic_single_result(self, resp, tyontekija_id, ChangeType.CREATED.value)
+                          f'&datetime_lte={datetime_lte}', **tilastokeskus_headers)
+        _validate_historical_basic_single_result(self, resp, tyontekija_id, ChangeType.CREATED.value)
 
         datetime_gt_2 = _get_iso_datetime_now()
         # Wait for 0.1 seconds so database action happens after datetime_gt_2
@@ -2642,24 +2656,24 @@ class VardaViewsReportingTests(TestCase):
         datetime_lte_2 = _get_iso_datetime_now()
 
         resp = client.get(f'/api/reporting/v1/tilastokeskus/henkilostotiedot/?datetime_gt={datetime_gt_2}'
-                          f'&datetime_lte={datetime_lte_2}')
+                          f'&datetime_lte={datetime_lte_2}', **tilastokeskus_headers)
         results = json.loads(resp.content)['results']
         self.assertEqual(len(results), 2)
         for lapsi_result in results:
             self.assertEqual(lapsi_result['action'], ChangeType.MODIFIED.value)
             self.assertIn(lapsi_result['id'], (original_tyontekija_id, tyontekija_id,))
 
-        assert_status_code(client.delete(f'/api/henkilosto/v1/tyontekijat/{tyontekija_id}/'),
+        assert_status_code(client_modify.delete(f'/api/henkilosto/v1/tyontekijat/{tyontekija_id}/'),
                            status.HTTP_204_NO_CONTENT)
         datetime_lte_3 = _get_iso_datetime_now()
 
         resp = client.get(f'/api/reporting/v1/tilastokeskus/henkilostotiedot/?datetime_gt={datetime_gt}'
-                          f'&datetime_lte={datetime_lte_3}')
-        _validate_tk_basic_single_result(self, resp, original_tyontekija_id, ChangeType.MODIFIED.value)
+                          f'&datetime_lte={datetime_lte_3}', **tilastokeskus_headers)
+        _validate_historical_basic_single_result(self, resp, original_tyontekija_id, ChangeType.MODIFIED.value)
 
     def test_tk_henkilostotiedot_tutkinto(self):
-        mock_admin_user('tester2')
-        client = SetUpTestClient('tester2').client()
+        client = SetUpTestClient('tilastokeskus_luovutuspalvelu').client()
+        client_modify = SetUpTestClient('henkilosto_tallentaja_93957375488').client()
 
         tyontekija_id = Tyontekija.objects.get(tunniste='testing-tyontekija5').id
         vakajarjestaja_oid = '1.2.246.562.10.93957375488'
@@ -2672,38 +2686,40 @@ class VardaViewsReportingTests(TestCase):
         }
 
         datetime_gt = _get_iso_datetime_now()
-        resp_tyontekija = client.post('/api/henkilosto/v1/tutkinnot/', tutkinto)
+        resp_tyontekija = client_modify.post('/api/henkilosto/v1/tutkinnot/', tutkinto)
         assert_status_code(resp_tyontekija, status.HTTP_201_CREATED)
         tutkinto_id = json.loads(resp_tyontekija.content)['id']
         datetime_lte = _get_iso_datetime_now()
 
         resp = client.get(f'/api/reporting/v1/tilastokeskus/henkilostotiedot/?datetime_gt={datetime_gt}'
-                          f'&datetime_lte={datetime_lte}')
-        tyontekija_result = _validate_tk_basic_single_result(self, resp, tyontekija_id, ChangeType.UNCHANGED.value)
+                          f'&datetime_lte={datetime_lte}', **tilastokeskus_headers)
+        tyontekija_result = _validate_historical_basic_single_result(self, resp, tyontekija_id, ChangeType.UNCHANGED.value)
         self.assertEqual(len(tyontekija_result['tutkinnot']), 1)
         tutkinto_result = tyontekija_result['tutkinnot'][0]
         self.assertEqual(tutkinto_result['id'], tutkinto_id)
         self.assertEqual(tutkinto_result['action'], ChangeType.CREATED.value)
 
         datetime_gt_2 = _get_iso_datetime_now()
-        assert_status_code(client.delete(f'/api/henkilosto/v1/tutkinnot/{tutkinto_id}/'), status.HTTP_204_NO_CONTENT)
+        assert_status_code(client_modify.delete(f'/api/henkilosto/v1/tutkinnot/{tutkinto_id}/'),
+                           status.HTTP_204_NO_CONTENT)
         datetime_lte_2 = _get_iso_datetime_now()
 
         resp = client.get(f'/api/reporting/v1/tilastokeskus/henkilostotiedot/?datetime_gt={datetime_gt_2}'
-                          f'&datetime_lte={datetime_lte_2}')
-        tyontekija_result = _validate_tk_basic_single_result(self, resp, tyontekija_id, ChangeType.UNCHANGED.value)
+                          f'&datetime_lte={datetime_lte_2}', **tilastokeskus_headers)
+        tyontekija_result = _validate_historical_basic_single_result(self, resp, tyontekija_id, ChangeType.UNCHANGED.value)
         self.assertEqual(len(tyontekija_result['tutkinnot']), 1)
         tutkinto_result = tyontekija_result['tutkinnot'][0]
         self.assertEqual(tutkinto_result['id'], tutkinto_id)
         self.assertEqual(tutkinto_result['action'], ChangeType.DELETED.value)
 
         resp = client.get(f'/api/reporting/v1/tilastokeskus/henkilostotiedot/?datetime_gt={datetime_gt}'
-                          f'&datetime_lte={datetime_lte_2}')
+                          f'&datetime_lte={datetime_lte_2}', **tilastokeskus_headers)
         self.assertEqual(len(json.loads(resp.content)['results']), 0)
 
     def test_tk_transferred_data(self):
-        mock_admin_user('tester2')
-        client = SetUpTestClient('tester2').client()
+        client = SetUpTestClient('tilastokeskus_luovutuspalvelu').client()
+        client_modify = SetUpTestClient('tester10').client()
+        client_modify_2 = SetUpTestClient('tester11').client()
 
         new_vakajarjestaja = Organisaatio.objects.get(organisaatio_oid='1.2.246.562.10.57294396385')
         old_vakajarjestaja = Organisaatio.objects.get(organisaatio_oid='1.2.246.562.10.52966755795')
@@ -2717,41 +2733,43 @@ class VardaViewsReportingTests(TestCase):
         tyontekija_id_list = list(Tyontekija.objects.filter(vakajarjestaja=old_vakajarjestaja)
                                   .values_list('id', flat=True))
         lapsi_oid = '1.2.246.562.24.5289462746686'
+        post_henkilo_to_get_permissions(client_modify, henkilo_oid=lapsi_oid)
         lapsi = {
             'henkilo_oid': lapsi_oid,
             'vakatoimija_oid': new_vakajarjestaja.organisaatio_oid,
             'lahdejarjestelma': '1'
         }
-        assert_status_code(client.post('/api/v1/lapset/', lapsi), status.HTTP_201_CREATED)
+        assert_status_code(client_modify.post('/api/v1/lapset/', lapsi), status.HTTP_201_CREATED)
 
         tyontekija_oid = '1.2.246.562.24.5826267847674'
+        post_henkilo_to_get_permissions(client_modify, henkilo_oid=tyontekija_oid)
         tyontekija = {
             'henkilo_oid': tyontekija_oid,
             'vakajarjestaja_oid': new_vakajarjestaja.organisaatio_oid,
             'lahdejarjestelma': '1'
         }
-        assert_status_code(client.post('/api/henkilosto/v1/tyontekijat/', tyontekija), status.HTTP_201_CREATED)
+        assert_status_code(client_modify.post('/api/henkilosto/v1/tyontekijat/', tyontekija), status.HTTP_201_CREATED)
         tutkinto_1 = {
             'henkilo_oid': tyontekija_oid,
             'vakajarjestaja_oid': old_vakajarjestaja.organisaatio_oid,
             'tutkinto_koodi': '712104',
             'lahdejarjestelma': '1'
         }
-        assert_status_code(client.post('/api/henkilosto/v1/tutkinnot/', tutkinto_1), status.HTTP_201_CREATED)
+        assert_status_code(client_modify_2.post('/api/henkilosto/v1/tutkinnot/', tutkinto_1), status.HTTP_201_CREATED)
         tutkinto_2 = {
             'henkilo_oid': tyontekija_oid,
             'vakajarjestaja_oid': new_vakajarjestaja.organisaatio_oid,
             'tutkinto_koodi': '321901',
             'lahdejarjestelma': '1'
         }
-        assert_status_code(client.post('/api/henkilosto/v1/tutkinnot/', tutkinto_2), status.HTTP_201_CREATED)
+        assert_status_code(client_modify.post('/api/henkilosto/v1/tutkinnot/', tutkinto_2), status.HTTP_201_CREATED)
 
         datetime_gt = _get_iso_datetime_now()
         transfer_toimipaikat_to_vakajarjestaja(new_vakajarjestaja, old_vakajarjestaja)
         datetime_lte = _get_iso_datetime_now()
 
         resp = client.get(f'/api/reporting/v1/tilastokeskus/organisaatiot/?datetime_gt={datetime_gt}'
-                          f'&datetime_lte={datetime_lte}')
+                          f'&datetime_lte={datetime_lte}', **tilastokeskus_headers)
         results = json.loads(resp.content)['results']
         self.assertEqual(len(results), 1)
         toimipaikka_results = results[0]['toimipaikat']
@@ -2766,7 +2784,7 @@ class VardaViewsReportingTests(TestCase):
             self.assertIn(tilapainen_henkilosto_result['id'], tilapainen_henkilosto_id_list)
 
         resp = client.get(f'/api/reporting/v1/tilastokeskus/varhaiskasvatustiedot/?datetime_gt={datetime_gt}'
-                          f'&datetime_lte={datetime_lte}')
+                          f'&datetime_lte={datetime_lte}', **tilastokeskus_headers)
         results = json.loads(resp.content)['results']
         # 1 moved, 1 deleted, 1 existing got new data
         self.assertEqual(len(results), len(lapsi_id_list) + 1)
@@ -2793,7 +2811,7 @@ class VardaViewsReportingTests(TestCase):
                 self.assertEqual(len(lapsi_result['huoltajat']), 0)
 
         resp = client.get(f'/api/reporting/v1/tilastokeskus/henkilostotiedot/?datetime_gt={datetime_gt}'
-                          f'&datetime_lte={datetime_lte}')
+                          f'&datetime_lte={datetime_lte}', **tilastokeskus_headers)
         results = json.loads(resp.content)['results']
         # 1 deleted, 1 existing got new data
         self.assertEqual(len(results), len(tyontekija_id_list) + 1)
@@ -2826,6 +2844,344 @@ class VardaViewsReportingTests(TestCase):
                 self.assertEqual(len(tyontekija_result['palvelussuhteet']), 0)
                 self.assertEqual(len(tyontekija_result['tutkinnot']), 0)
                 self.assertEqual(len(tyontekija_result['taydennyskoulutukset']), 0)
+
+    def test_tk_no_permissions(self):
+        client = SetUpTestClient('kela_luovutuspalvelu').client()
+        for url in ['/api/reporting/v1/tilastokeskus/organisaatiot/',
+                    '/api/reporting/v1/tilastokeskus/varhaiskasvatustiedot/',
+                    '/api/reporting/v1/tilastokeskus/henkilostotiedot/']:
+            resp = client.get(url, **kela_headers)
+            assert_status_code(resp, status.HTTP_403_FORBIDDEN)
+            assert_validation_error(resp, 'errors', 'PE006', 'User does not have permission to perform this action.')
+
+    def test_valssi_organisaatiot(self):
+        create_dict = {
+            'nimi': 'Testiorganisaatio',
+            'y_tunnus': '1200570-7',
+            'organisaatio_oid': '1.2.246.562.10.34683023123',
+            'kunta_koodi': '091',
+            'sahkopostiosoite': 'organization@domain.com',
+            'kayntiosoite': 'Testerkatu 2',
+            'kayntiosoite_postinumero': '00100',
+            'kayntiosoite_postitoimipaikka': 'Helsinki',
+            'postiosoite': 'Testerkatu 2',
+            'postitoimipaikka': 'Helsinki',
+            'postinumero': '00100',
+            'puhelinnumero': '+358501231234',
+            'yritysmuoto': '41',
+            'alkamis_pvm': '2022-03-01',
+            'paattymis_pvm': None,
+            'integraatio_organisaatio': []
+        }
+        patch_dict = {
+            'sahkopostiosoite': 'organization1@domain.com'
+        }
+        _test_simple_historical_api(self, 'karvi_luovutuspalvelu', karvi_headers, Organisaatio, 'valssi/organisaatiot',
+                                    '/api/v1/vakajarjestajat/', create_dict, patch_dict)
+
+    def test_valssi_toimipaikat(self):
+        create_dict = {
+            'vakajarjestaja_id': 1,
+            'organisaatio_oid': '1.2.246.562.10.9395737541234',
+            'nimi': 'Testila',
+            'kunta_koodi': '091',
+            'puhelinnumero': '+35892323234',
+            'kayntiosoite': 'Testerkatu 2',
+            'kayntiosoite_postinumero': '00001',
+            'kayntiosoite_postitoimipaikka': 'Testilä',
+            'postiosoite': 'Testerkatu 2',
+            'postitoimipaikka': 'Testilä',
+            'postinumero': '00001',
+            'sahkopostiosoite': 'hel1234@helsinki.fi',
+            'kasvatusopillinen_jarjestelma_koodi': 'kj03',
+            'toimintamuoto_koodi': 'tm01',
+            'asiointikieli_koodi': ['FI'],
+            'jarjestamismuoto_koodi': ['jm01', 'jm03'],
+            'varhaiskasvatuspaikat': 1000,
+            'alkamis_pvm': '2018-01-01',
+            'paattymis_pvm': None,
+            'lahdejarjestelma': '1'
+        }
+        patch_dict = {
+            'toimintamuoto_koodi': 'tm02',
+            'jarjestamismuoto_koodi': ['jm01', 'jm02', 'jm03'],
+        }
+        _test_simple_historical_api(self, 'karvi_luovutuspalvelu', karvi_headers, Toimipaikka, 'valssi/toimipaikat',
+                                    '/api/v1/toimipaikat/', create_dict, patch_dict)
+
+    @mock_date_decorator_factory('varda.viewsets_reporting.datetime', '2022-08-01')
+    def test_valssi_taustatiedot(self):
+        client = SetUpTestClient('karvi_luovutuspalvelu').client()
+
+        oid = '1.2.246.562.10.93957375488'
+        organisaatio = Organisaatio.objects.get(organisaatio_oid=oid)
+
+        resp_accepted = {
+            'id': organisaatio.id,
+            'organisaatio_oid': oid,
+            'toimipaikat': {
+                'total': 4,
+                'toimintamuodot': {
+                    'tm01': {
+                        'total': 2,
+                        'jm01': 0,
+                        'jm02': 1,
+                        'jm03': 1,
+                        'jm04': 1,
+                        'jm05': 2
+                    },
+                    'tm02': {
+                        'total': 0,
+                        'jm01': 0,
+                        'jm02': 0,
+                        'jm03': 0,
+                        'jm04': 0,
+                        'jm05': 0
+                    },
+                    'tm03': {
+                        'total': 2,
+                        'jm01': 0,
+                        'jm02': 1,
+                        'jm03': 2,
+                        'jm04': 2,
+                        'jm05': 1
+                    }
+                }
+            },
+            'lapset_voimassa': 5,
+            'tyontekijat': {
+                'total': 0,
+                'tehtavanimikkeet': {
+                    '39407': 0,
+                    '41712': 0,
+                    '43525': 0,
+                    '64212': 0,
+                    '77826': 0,
+                    '81787': 0,
+                    '84053': 0,
+                    '84724': 0
+                },
+                'tehtavanimikkeet_kelpoiset': {
+                    '39407': 0,
+                    '41712': 0,
+                    '43525': 0,
+                    '64212': 0,
+                    '77826': 0,
+                    '81787': 0,
+                    '84053': 0,
+                    '84724': 0
+                }
+            },
+            'taydennyskoulutukset': {
+                'tehtavanimikkeet': {
+                    '39407': 0,
+                    '41712': 0,
+                    '43525': 0,
+                    '64212': 0,
+                    '77826': 0,
+                    '81787': 0,
+                    '84053': 0,
+                    '84724': 0
+                },
+                'koulutuspaivat': '0.0',
+                'tehtavanimikkeet_koulutuspaivat': {
+                    '39407': '0.0',
+                    '41712': '0.0',
+                    '43525': '0.0',
+                    '64212': '0.0',
+                    '77826': '0.0',
+                    '81787': '0.0',
+                    '84053': '0.0',
+                    '84724': '0.0'
+                }
+            }
+        }
+        resp = client.get(f'/api/reporting/v1/valssi/organisaatiot/{oid}/taustatiedot/', **karvi_headers)
+        assert_status_code(resp, status.HTTP_200_OK)
+        self.assertDictEqual(json.loads(resp.content), resp_accepted)
+
+    @mock_date_decorator_factory('varda.viewsets_reporting.datetime', '2022-08-01')
+    def test_valssi_taustatiedot_extra(self):
+        client = SetUpTestClient('karvi_luovutuspalvelu').client()
+        client_modify = SetUpTestClient('tyontekija_tallentaja').client()
+        client_modify_2 = SetUpTestClient('taydennyskoulutus_tallentaja').client()
+
+        oid = '1.2.246.562.10.34683023489'
+        url = f'/api/reporting/v1/valssi/organisaatiot/{oid}/taustatiedot/'
+
+        tyoskentelypaikka = {
+            'toimipaikka_oid': '1.2.246.562.10.9395737548815',
+            'palvelussuhde_tunniste': 'testing-palvelussuhde2-2',
+            'alkamis_pvm': '2020-09-20',
+            'paattymis_pvm': '2024-09-20',
+            'tehtavanimike_koodi': '77826',
+            'kelpoisuus_kytkin': True,
+            'kiertava_tyontekija_kytkin': False,
+            'lahdejarjestelma': '1',
+            'tunniste': 'testing-tyoskentelypaikka2-2'
+        }
+        assert_status_code(client_modify.post('/api/henkilosto/v1/tyoskentelypaikat/', tyoskentelypaikka),
+                           status.HTTP_201_CREATED)
+        assert_status_code(
+            client_modify_2.patch('/api/henkilosto/v1/taydennyskoulutukset/1:testing-taydennyskoulutus2/',
+                                  {'suoritus_pvm': '2022-04-01'}),
+            status.HTTP_200_OK
+        )
+
+        resp = client.get(url, **karvi_headers)
+        assert_status_code(resp, status.HTTP_200_OK)
+        result = json.loads(resp.content)
+        self.assertEqual(result['tyontekijat']['total'], 1)
+        self.assertEqual(result['tyontekijat']['tehtavanimikkeet']['77826'], 1)
+        self.assertEqual(result['tyontekijat']['tehtavanimikkeet_kelpoiset']['77826'], 1)
+        self.assertEqual(result['taydennyskoulutukset']['koulutuspaivat'], '1.5')
+        self.assertEqual(result['taydennyskoulutukset']['tehtavanimikkeet']['77826'], 1)
+        self.assertEqual(result['taydennyskoulutukset']['tehtavanimikkeet_koulutuspaivat']['77826'], '1.5')
+
+        assert_status_code(client_modify.patch('/api/henkilosto/v1/tyoskentelypaikat/1:testing-tyoskentelypaikka2-2/',
+                                               {'tehtavanimike_koodi': '39407'}), status.HTTP_200_OK)
+        taydennyskoulutus_patch = {
+            'taydennyskoulutus_tyontekijat_add': [{
+                'lahdejarjestelma': '1',
+                'tunniste': 'testing-tyontekija2',
+                'tehtavanimike_koodi': '39407'}]
+        }
+        assert_status_code(
+            client_modify_2.patch('/api/henkilosto/v1/taydennyskoulutukset/1:testing-taydennyskoulutus2/',
+                                  json.dumps(taydennyskoulutus_patch), content_type='application/json'),
+            status.HTTP_200_OK
+        )
+
+        resp = client.get(url, **karvi_headers)
+        assert_status_code(resp, status.HTTP_200_OK)
+        result = json.loads(resp.content)
+        self.assertEqual(result['tyontekijat']['total'], 1)
+        self.assertEqual(result['tyontekijat']['tehtavanimikkeet']['77826'], 1)
+        self.assertEqual(result['tyontekijat']['tehtavanimikkeet_kelpoiset']['77826'], 0)
+        self.assertEqual(result['tyontekijat']['tehtavanimikkeet']['39407'], 1)
+        self.assertEqual(result['tyontekijat']['tehtavanimikkeet_kelpoiset']['39407'], 1)
+        self.assertEqual(result['taydennyskoulutukset']['koulutuspaivat'], '1.5')
+        self.assertEqual(result['taydennyskoulutukset']['tehtavanimikkeet']['77826'], 1)
+        self.assertEqual(result['taydennyskoulutukset']['tehtavanimikkeet_koulutuspaivat']['77826'], '1.5')
+        self.assertEqual(result['taydennyskoulutukset']['tehtavanimikkeet']['39407'], 1)
+        self.assertEqual(result['taydennyskoulutukset']['tehtavanimikkeet_koulutuspaivat']['39407'], '1.5')
+
+        assert_status_code(client_modify.patch('/api/henkilosto/v1/pidemmatpoissaolot/1:testing-pidempipoissaolo1/',
+                                               {'alkamis_pvm': '2022-01-01'}), status.HTTP_200_OK)
+
+        resp = client.get(url, **karvi_headers)
+        assert_status_code(resp, status.HTTP_200_OK)
+        result = json.loads(resp.content)
+        self.assertEqual(result['tyontekijat']['total'], 1)
+        self.assertEqual(result['tyontekijat']['tehtavanimikkeet']['77826'], 1)
+        self.assertEqual(result['tyontekijat']['tehtavanimikkeet_kelpoiset']['77826'], 0)
+        self.assertEqual(result['tyontekijat']['tehtavanimikkeet']['39407'], 0)
+        self.assertEqual(result['tyontekijat']['tehtavanimikkeet_kelpoiset']['39407'], 0)
+        self.assertEqual(result['taydennyskoulutukset']['koulutuspaivat'], '1.5')
+        self.assertEqual(result['taydennyskoulutukset']['tehtavanimikkeet']['77826'], 1)
+        self.assertEqual(result['taydennyskoulutukset']['tehtavanimikkeet_koulutuspaivat']['77826'], '1.5')
+        self.assertEqual(result['taydennyskoulutukset']['tehtavanimikkeet']['39407'], 1)
+        self.assertEqual(result['taydennyskoulutukset']['tehtavanimikkeet_koulutuspaivat']['39407'], '1.5')
+
+        assert_status_code(client_modify.patch('/api/henkilosto/v1/tyoskentelypaikat/1:testing-tyoskentelypaikka1/',
+                                               {'paattymis_pvm': '2023-01-01'}), status.HTTP_200_OK)
+        assert_status_code(client_modify.patch('/api/henkilosto/v1/tyoskentelypaikat/1:testing-tyoskentelypaikka1-1/',
+                                               {'paattymis_pvm': '2023-01-01'}), status.HTTP_200_OK)
+        assert_status_code(client_modify.patch('/api/henkilosto/v1/tyoskentelypaikat/1:testing-tyoskentelypaikka2/',
+                                               {'paattymis_pvm': '2023-01-01'}), status.HTTP_200_OK)
+        assert_status_code(client_modify.patch('/api/henkilosto/v1/pidemmatpoissaolot/1:testing-pidempipoissaolo1/',
+                                               {'alkamis_pvm': '2024-01-01'}), status.HTTP_200_OK)
+        assert_status_code(
+            client_modify_2.patch('/api/henkilosto/v1/taydennyskoulutukset/1:testing-taydennyskoulutus1/',
+                                  {'suoritus_pvm': '2022-04-01'}),
+            status.HTTP_200_OK
+        )
+
+        resp = client.get(url, **karvi_headers)
+        assert_status_code(resp, status.HTTP_200_OK)
+        result = json.loads(resp.content)
+        self.assertEqual(result['tyontekijat']['total'], 2)
+        self.assertEqual(result['tyontekijat']['tehtavanimikkeet']['77826'], 1)
+        self.assertEqual(result['tyontekijat']['tehtavanimikkeet_kelpoiset']['77826'], 0)
+        self.assertEqual(result['tyontekijat']['tehtavanimikkeet']['39407'], 2)
+        self.assertEqual(result['tyontekijat']['tehtavanimikkeet_kelpoiset']['39407'], 1)
+        self.assertEqual(result['tyontekijat']['tehtavanimikkeet']['64212'], 1)
+        self.assertEqual(result['tyontekijat']['tehtavanimikkeet_kelpoiset']['64212'], 0)
+        self.assertEqual(result['taydennyskoulutukset']['koulutuspaivat'], '3.0')
+        self.assertEqual(result['taydennyskoulutukset']['tehtavanimikkeet']['77826'], 2)
+        self.assertEqual(result['taydennyskoulutukset']['tehtavanimikkeet_koulutuspaivat']['77826'], '3.0')
+        self.assertEqual(result['taydennyskoulutukset']['tehtavanimikkeet']['39407'], 2)
+        self.assertEqual(result['taydennyskoulutukset']['tehtavanimikkeet_koulutuspaivat']['39407'], '3.0')
+        self.assertEqual(result['taydennyskoulutukset']['tehtavanimikkeet']['64212'], 1)
+        self.assertEqual(result['taydennyskoulutukset']['tehtavanimikkeet_koulutuspaivat']['64212'], '1.5')
+
+    @mock_date_decorator_factory('varda.viewsets_reporting.datetime', '2022-08-01')
+    def test_valssi_tyontekijat(self):
+        client = SetUpTestClient('karvi_luovutuspalvelu').client()
+        client_henkilosto = SetUpTestClient('tester11').client()
+
+        oid = '1.2.246.562.10.9625978384762'
+
+        # In response kelpoisuus_kytkin for this tehtavanimike should be True
+        tyoskentelypaikka = {
+            'palvelussuhde_tunniste': 'testing-palvelussuhde7',
+            'toimipaikka_oid': oid,
+            'alkamis_pvm': '2022-01-02',
+            'tehtavanimike_koodi': '43525',
+            'kelpoisuus_kytkin': False,
+            'kiertava_tyontekija_kytkin': False,
+            'lahdejarjestelma': '1'
+        }
+        assert_status_code(client_henkilosto.post('/api/henkilosto/v1/tyoskentelypaikat/', tyoskentelypaikka),
+                           status.HTTP_201_CREATED)
+
+        # Another active Tyoskentelypaikka with a different tehtavanimike_koodi
+        tyoskentelypaikka_active = {
+            **tyoskentelypaikka,
+            'tehtavanimike_koodi': '64212'
+        }
+        assert_status_code(client_henkilosto.post('/api/henkilosto/v1/tyoskentelypaikat/', tyoskentelypaikka_active),
+                           status.HTTP_201_CREATED)
+
+        # This inactive Tyoskentelypaikka should not be in the response
+        tyoskentelypaikka_inactive = {
+            **tyoskentelypaikka,
+            'tehtavanimike_koodi': '39407',
+            'alkamis_pvm': '2021-01-01',
+            'paattymis_pvm': '2021-05-01'
+        }
+        assert_status_code(client_henkilosto.post('/api/henkilosto/v1/tyoskentelypaikat/', tyoskentelypaikka_inactive),
+                           status.HTTP_201_CREATED)
+
+        for identifier in [oid, Toimipaikka.objects.get(organisaatio_oid=oid).id]:
+            resp = client.get(f'/api/reporting/v1/valssi/toimipaikat/{identifier}/tyontekijat/', **karvi_headers)
+            assert_status_code(resp, status.HTTP_200_OK)
+            resp_json = json.loads(resp.content)
+            self.assertEqual(resp_json['count'], 1)
+
+            result = resp_json['results'][0]
+            tyontekija = Tyontekija.objects.get(tunniste='testing-tyontekija7')
+            self.assertEqual(result['id'], tyontekija.id)
+            self.assertTrue('sahkopostiosoite' in result)
+            self.assertListEqual(result['tutkinnot'], ['321901'])
+            self.assertListEqual(result['tehtavanimikkeet'], [
+                {
+                    'tehtavanimike_koodi': '43525',
+                    'kelpoisuus_kytkin': True
+                },
+                {
+                    'tehtavanimike_koodi': '64212',
+                    'kelpoisuus_kytkin': False
+                }
+            ])
+
+    def test_valssi_no_permissions(self):
+        client = SetUpTestClient('kela_luovutuspalvelu').client()
+        for url in ['/api/reporting/v1/valssi/toimipaikat/1/tyontekijat/',
+                    '/api/reporting/v1/valssi/organisaatiot/1/taustatiedot/']:
+            resp = client.get(url, **kela_headers)
+            assert_status_code(resp, status.HTTP_403_FORBIDDEN)
+            assert_validation_error(resp, 'errors', 'PE006', 'User does not have permission to perform this action.')
 
 
 def _load_base_data_for_kela_success_testing():
@@ -2990,7 +3346,8 @@ def _test_tk_vakasuhde_action(self, resp, lapsi_id, vakapaatos_id, vakasuhde_id,
     self.assertEqual(vakasuhde_result['action'], action)
 
 
-def _validate_tk_basic_single_result(self, resp, instance_id, action):
+def _validate_historical_basic_single_result(self, resp, instance_id, action):
+    assert_status_code(resp, status.HTTP_200_OK)
     results = json.loads(resp.content)['results']
     self.assertEqual(len(results), 1)
     single_result = results[0]
@@ -3024,3 +3381,66 @@ def _test_tk_henkilostotieto_action(self, resp, tyontekija_id, palvelussuhde_id,
         instance_result = palvelussuhde_result[field_name][0]
         self.assertEqual(instance_result['id'], instance_id)
         self.assertEqual(instance_result['action'], action)
+
+
+def _test_simple_historical_api(self, username, headers, model, historical_api_path, api_path, create_dict, patch_dict):
+    client = SetUpTestClient(username).client()
+    mock_admin_user('tester2')
+    client_admin = SetUpTestClient('tester2').client()
+
+    object_count = model.objects.all().count()
+
+    base_url = f'/api/reporting/v1/{historical_api_path}/'
+    resp = client.get(base_url, **headers)
+    assert_status_code(resp, status.HTTP_200_OK)
+    self.assertEqual(len(json.loads(resp.content)['results']), object_count)
+
+    datetime_gt = _get_iso_datetime_now()
+    # Wait for 0.1 seconds so database action happens after datetime_gt
+    time.sleep(0.1)
+    object_instance = model.objects.create(**create_dict)
+    object_id = object_instance.id
+    datetime_lte = _get_iso_datetime_now()
+
+    resp = client.get(f'{base_url}?datetime_gt={datetime_gt}&datetime_lte={datetime_lte}', **headers)
+    _validate_historical_basic_single_result(self, resp, object_id, ChangeType.CREATED.value)
+
+    datetime_gt_2 = _get_iso_datetime_now()
+    # Wait for 0.1 seconds so database action happens after datetime_gt
+    time.sleep(0.1)
+    if api_path:
+        assert_status_code(client_admin.patch(f'{api_path}{object_id}/', patch_dict), status.HTTP_200_OK)
+    else:
+        for key, value in patch_dict.items():
+            setattr(object_instance, key, value)
+        object_instance.save()
+    datetime_lte_2 = _get_iso_datetime_now()
+
+    resp = client.get(f'{base_url}?datetime_gt={datetime_gt_2}&datetime_lte={datetime_lte_2}', **headers)
+    _validate_historical_basic_single_result(self, resp, object_id, ChangeType.MODIFIED.value)
+    for key, value in patch_dict.items():
+        self.assertEqual(json.loads(resp.content)['results'][0][key], value)
+
+    resp = client.get(f'{base_url}?datetime_gt={datetime_gt}&datetime_lte={datetime_lte_2}', **headers)
+    _validate_historical_basic_single_result(self, resp, object_id, ChangeType.CREATED.value)
+
+    datetime_gt_3 = _get_iso_datetime_now()
+    # Wait for 0.1 seconds so database action happens after datetime_gt
+    time.sleep(0.1)
+    object_instance.delete()
+    datetime_lte_3 = _get_iso_datetime_now()
+
+    resp = client.get(f'{base_url}?datetime_gt={datetime_gt_3}&datetime_lte={datetime_lte_3}', **headers)
+    _validate_historical_basic_single_result(self, resp, object_id, ChangeType.DELETED.value)
+
+    resp = client.get(f'{base_url}?datetime_gt={datetime_gt}&datetime_lte={datetime_lte_2}', **headers)
+    _validate_historical_basic_single_result(self, resp, object_id, ChangeType.CREATED.value)
+
+    resp = client.get(f'{base_url}?datetime_gt={datetime_gt}&datetime_lte={datetime_lte_3}', **headers)
+    assert_status_code(resp, status.HTTP_200_OK)
+    self.assertEqual(len(json.loads(resp.content)['results']), 0)
+
+    resp_no_permissions = SetUpTestClient('kela_luovutuspalvelu').client().get(base_url, **kela_headers)
+    assert_status_code(resp_no_permissions, status.HTTP_403_FORBIDDEN)
+    assert_validation_error(resp_no_permissions, 'errors', 'PE006',
+                            'User does not have permission to perform this action.')

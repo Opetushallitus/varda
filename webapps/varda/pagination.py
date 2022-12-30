@@ -115,5 +115,9 @@ class DateReverseCursorPagination(ChangeablePageSizeCursorPagination):
     ordering = 'date'
 
 
-class TkCursorPagination(ChangeablePageSizeCursorPaginationLarge):
+class HistoricalCursorPagination(ChangeablePageSizeCursorPaginationLarge):
     ordering = ('id', '-history_date')
+
+
+class HistoricalLargePagination(HistoricalCursorPagination):
+    max_page_size = 10000

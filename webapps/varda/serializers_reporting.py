@@ -6,19 +6,23 @@ from django.contrib.postgres.aggregates import StringAgg
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import connection
 from django.db.models import OuterRef, Q, Subquery, Sum
+from drf_yasg import openapi
 from drf_yasg.utils import swagger_serializer_method
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
+from rest_framework.fields import DecimalField
 from rest_framework.reverse import reverse
 
 from varda import validators
 from varda.clients.allas_s3_client import Client as S3Client
 from varda.constants import SUCCESSFUL_STATUS_CODE_LIST
+from varda.custom_swagger import CustomSchemaField
 from varda.enums.change_type import ChangeType
 from varda.enums.error_messages import ErrorMessages
+from varda.enums.organisaatiotyyppi import Organisaatiotyyppi
 from varda.excel_export import ExcelReportSubtype, ReportStatus, ExcelReportType, get_s3_object_name
 from varda.misc import CustomServerErrorException, decrypt_excel_report_password, decrypt_henkilotunnus
-from varda.misc_queries import get_history_value_subquery, get_related_object_changed_id_qs
+from varda.misc_queries import get_active_filter, get_history_value_subquery, get_related_object_changed_id_qs
 from varda.models import (Henkilo, Huoltajuussuhde, KieliPainotus, Lapsi, Maksutieto, MaksutietoHuoltajuussuhde,
                           Palvelussuhde, PidempiPoissaolo, Taydennyskoulutus, TaydennyskoulutusTyontekija, Tutkinto,
                           Tyoskentelypaikka, TilapainenHenkilosto, ToiminnallinenPainotus, Toimipaikka, Tyontekija,
@@ -468,7 +472,7 @@ class RequestSummaryGroupSerializer(serializers.Serializer):
         return RequestCountGroupSerializer(request_count_qs, many=True).data
 
 
-class TkBaseSerializer(serializers.Serializer):
+class HistoricalBaseSerializer(serializers.Serializer):
     action = serializers.SerializerMethodField()
 
     def __init__(self, *args, **kwargs):
@@ -508,21 +512,21 @@ class TkBaseListSerializer(serializers.ListSerializer):
         return super().to_representation(data)
 
 
-class TkToiminnallinenPainotusSerializer(TkBaseSerializer, serializers.ModelSerializer):
+class TkToiminnallinenPainotusSerializer(HistoricalBaseSerializer, serializers.ModelSerializer):
     class Meta:
         model = ToiminnallinenPainotus
         list_serializer_class = TkBaseListSerializer
         fields = ('id', 'action', 'toimintapainotus_koodi', 'alkamis_pvm', 'paattymis_pvm')
 
 
-class TkKielipainotusSerializer(TkBaseSerializer, serializers.ModelSerializer):
+class TkKielipainotusSerializer(HistoricalBaseSerializer, serializers.ModelSerializer):
     class Meta:
         model = KieliPainotus
         list_serializer_class = TkBaseListSerializer
         fields = ('id', 'action', 'kielipainotus_koodi', 'alkamis_pvm', 'paattymis_pvm')
 
 
-class TkToimipaikkaSerializer(TkBaseSerializer, serializers.ModelSerializer):
+class TkToimipaikkaSerializer(HistoricalBaseSerializer, serializers.ModelSerializer):
     toiminnalliset_painotukset = serializers.SerializerMethodField()
     kielipainotukset = serializers.SerializerMethodField()
 
@@ -550,14 +554,14 @@ class TkToimipaikkaSerializer(TkBaseSerializer, serializers.ModelSerializer):
         return TkKielipainotusSerializer(painotus_qs, many=True, context=self.context).data
 
 
-class TkTilapainenHenkilostoSerializer(TkBaseSerializer, serializers.ModelSerializer):
+class TkTilapainenHenkilostoSerializer(HistoricalBaseSerializer, serializers.ModelSerializer):
     class Meta:
         model = TilapainenHenkilosto
         list_serializer_class = TkBaseListSerializer
         fields = ('id', 'action', 'kuukausi', 'tuntimaara', 'tyontekijamaara')
 
 
-class TkOrganisaatiotSerializer(TkBaseSerializer, serializers.ModelSerializer):
+class TkOrganisaatiotSerializer(HistoricalBaseSerializer, serializers.ModelSerializer):
     toimipaikat = serializers.SerializerMethodField()
     tilapainen_henkilosto = serializers.SerializerMethodField()
 
@@ -571,7 +575,7 @@ class TkOrganisaatiotSerializer(TkBaseSerializer, serializers.ModelSerializer):
     @swagger_serializer_method(serializer_or_field=TkToimipaikkaSerializer)
     def get_toimipaikat(self, instance):
         id_qs = get_related_object_changed_id_qs(Toimipaikka.get_name(), self.datetime_gt, self.datetime_lte,
-                                                 additional_filters={'parent_instance_id': instance.id})
+                                                 additional_filters=Q(parent_instance_id=instance.id))
 
         last_parent_subquery = get_history_value_subquery(Toimipaikka, 'vakajarjestaja_id', self.datetime_lte)
         previous_parent_subquery = get_history_value_subquery(Toimipaikka, 'vakajarjestaja_id', self.datetime_gt)
@@ -596,14 +600,14 @@ class TkOrganisaatiotSerializer(TkBaseSerializer, serializers.ModelSerializer):
         return TkTilapainenHenkilostoSerializer(tilapainen_henkilosto_qs, many=True, context=self.context).data
 
 
-class TkVakasuhdeSerializer(TkBaseSerializer, serializers.ModelSerializer):
+class TkVakasuhdeSerializer(HistoricalBaseSerializer, serializers.ModelSerializer):
     class Meta:
         model = Varhaiskasvatussuhde
         list_serializer_class = TkBaseListSerializer
         fields = ('id', 'action', 'toimipaikka_id', 'alkamis_pvm', 'paattymis_pvm',)
 
 
-class TkVakapaatosSerializer(TkBaseSerializer, serializers.ModelSerializer):
+class TkVakapaatosSerializer(HistoricalBaseSerializer, serializers.ModelSerializer):
     varhaiskasvatussuhteet = serializers.SerializerMethodField()
 
     class Meta:
@@ -621,7 +625,7 @@ class TkVakapaatosSerializer(TkBaseSerializer, serializers.ModelSerializer):
         return TkVakasuhdeSerializer(vakasuhde_qs, many=True, context=self.context).data
 
 
-class TkHuoltajuussuhdeSerializer(TkBaseSerializer, serializers.ModelSerializer):
+class TkHuoltajuussuhdeSerializer(HistoricalBaseSerializer, serializers.ModelSerializer):
     etunimet = serializers.CharField(source='henkilo_instance.etunimet', allow_null=True)
     sukunimi = serializers.CharField(source='henkilo_instance.sukunimi', allow_null=True)
     henkilo_oid = serializers.CharField(source='henkilo_instance.henkilo_oid', allow_null=True)
@@ -638,8 +642,8 @@ class TkHuoltajuussuhdeSerializer(TkBaseSerializer, serializers.ModelSerializer)
 
     def to_representation(self, instance):
         # Get henkilo data from history table or actual table (history is incomplete in test environments)
-        henkilo = (Henkilo.history.filter(id=instance.henkilo_id, history_date__lte=self.datetime_lte).distinct('id')
-                   .order_by('id', '-history_date').first())
+        henkilo = (Henkilo.history.filter(id=instance.henkilo_id, history_date__lte=self.datetime_lte)
+                   .distinct('id').order_by('id', '-history_date').first())
         if not henkilo:
             henkilo = Henkilo.objects.filter(id=instance.henkilo_id).first()
         self.secondary_muutos_pvm = getattr(henkilo, 'muutos_pvm', None)
@@ -658,7 +662,7 @@ class TkMaksutietoHuoltajaSerializer(serializers.Serializer):
     henkilotunnus = serializers.CharField()
 
 
-class TkMaksutietoSerializer(TkBaseSerializer, serializers.ModelSerializer):
+class TkMaksutietoSerializer(HistoricalBaseSerializer, serializers.ModelSerializer):
     huoltajat = serializers.SerializerMethodField()
 
     class Meta:
@@ -691,7 +695,7 @@ class TkMaksutietoSerializer(TkBaseSerializer, serializers.ModelSerializer):
             return TkMaksutietoHuoltajaSerializer(huoltaja_list, many=True).data
 
 
-class TkVakatiedotSerializer(TkBaseSerializer, serializers.ModelSerializer):
+class TkVakatiedotSerializer(HistoricalBaseSerializer, serializers.ModelSerializer):
     etunimet = serializers.CharField(source='henkilo_instance.etunimet', allow_null=True)
     sukunimi = serializers.CharField(source='henkilo_instance.sukunimi', allow_null=True)
     henkilo_oid = serializers.CharField(source='henkilo_instance.henkilo_oid', allow_null=True)
@@ -740,7 +744,7 @@ class TkVakatiedotSerializer(TkBaseSerializer, serializers.ModelSerializer):
     @swagger_serializer_method(serializer_or_field=TkVakapaatosSerializer)
     def get_varhaiskasvatuspaatokset(self, instance):
         id_qs = get_related_object_changed_id_qs(Varhaiskasvatuspaatos.get_name(), self.datetime_gt,
-                                                 self.datetime_lte, additional_filters={'parent_instance_id': instance.id})
+                                                 self.datetime_lte, additional_filters=Q(parent_instance_id=instance.id))
 
         last_parent_subquery = get_history_value_subquery(Varhaiskasvatuspaatos, 'lapsi_id', self.datetime_lte)
         previous_parent_subquery = get_history_value_subquery(Varhaiskasvatuspaatos, 'lapsi_id', self.datetime_gt)
@@ -755,7 +759,7 @@ class TkVakatiedotSerializer(TkBaseSerializer, serializers.ModelSerializer):
     def get_huoltajat(self, instance):
         id_tuple = tuple(get_related_object_changed_id_qs(
             Lapsi.get_name(), self.datetime_gt, self.datetime_lte, return_value='trigger_instance_id',
-            additional_filters={'instance_id': instance.id, 'trigger_model_name': Huoltajuussuhde.get_name()}
+            additional_filters=Q(instance_id=instance.id) & Q(trigger_model_name=Huoltajuussuhde.get_name())
         )) or (-1,)
 
         # Get a list of Huoltajuussuhde objects that have been modified, or a related Henkilo object has been modified
@@ -774,8 +778,7 @@ class TkVakatiedotSerializer(TkBaseSerializer, serializers.ModelSerializer):
     def get_maksutiedot(self, instance):
         id_qs = get_related_object_changed_id_qs(
             Lapsi.get_name(), self.datetime_gt, self.datetime_lte, return_value='parent_instance_id',
-            additional_filters={'instance_id': instance.id,
-                                'trigger_model_name': MaksutietoHuoltajuussuhde.get_name()}
+            additional_filters=Q(instance_id=instance.id) & Q(trigger_model_name=MaksutietoHuoltajuussuhde.get_name())
         )
 
         last_parent_subquery = Subquery(
@@ -799,14 +802,14 @@ class TkVakatiedotSerializer(TkBaseSerializer, serializers.ModelSerializer):
         return TkMaksutietoSerializer(maksutieto_qs, many=True, context=self.context).data
 
 
-class TkPidempiPoissaoloSerializer(TkBaseSerializer, serializers.ModelSerializer):
+class TkPidempiPoissaoloSerializer(HistoricalBaseSerializer, serializers.ModelSerializer):
     class Meta:
         model = PidempiPoissaolo
         list_serializer_class = TkBaseListSerializer
         fields = ('id', 'action', 'alkamis_pvm', 'paattymis_pvm',)
 
 
-class TkTyoskentelypaikkaSerializer(TkBaseSerializer, serializers.ModelSerializer):
+class TkTyoskentelypaikkaSerializer(HistoricalBaseSerializer, serializers.ModelSerializer):
     class Meta:
         model = Tyoskentelypaikka
         list_serializer_class = TkBaseListSerializer
@@ -814,7 +817,7 @@ class TkTyoskentelypaikkaSerializer(TkBaseSerializer, serializers.ModelSerialize
                   'kiertava_tyontekija_kytkin', 'alkamis_pvm', 'paattymis_pvm',)
 
 
-class TkPalvelussuhdeSerializer(TkBaseSerializer, serializers.ModelSerializer):
+class TkPalvelussuhdeSerializer(HistoricalBaseSerializer, serializers.ModelSerializer):
     tyoskentelypaikat = serializers.SerializerMethodField()
     pidemmat_poissaolot = serializers.SerializerMethodField()
 
@@ -841,14 +844,14 @@ class TkPalvelussuhdeSerializer(TkBaseSerializer, serializers.ModelSerializer):
         return TkPidempiPoissaoloSerializer(pidempi_poissaolo_qs, many=True, context=self.context).data
 
 
-class TkTutkintoSerializer(TkBaseSerializer, serializers.ModelSerializer):
+class TkTutkintoSerializer(HistoricalBaseSerializer, serializers.ModelSerializer):
     class Meta:
         model = Tutkinto
         list_serializer_class = TkBaseListSerializer
         fields = ('id', 'action', 'tutkinto_koodi',)
 
 
-class TkTaydennyskoulutusSerializer(TkBaseSerializer, serializers.ModelSerializer):
+class TkTaydennyskoulutusSerializer(HistoricalBaseSerializer, serializers.ModelSerializer):
     tehtavanimikkeet = serializers.SerializerMethodField()
 
     class Meta:
@@ -868,7 +871,7 @@ class TkTaydennyskoulutusSerializer(TkBaseSerializer, serializers.ModelSerialize
                    .order_by('id').values_list('tehtavanimike_koodi', flat=True))
 
 
-class TkHenkilostotiedotSerializer(TkBaseSerializer, serializers.ModelSerializer):
+class TkHenkilostotiedotSerializer(HistoricalBaseSerializer, serializers.ModelSerializer):
     etunimet = serializers.CharField(source='henkilo_instance.etunimet', allow_null=True)
     sukunimi = serializers.CharField(source='henkilo_instance.sukunimi', allow_null=True)
     henkilo_oid = serializers.CharField(source='henkilo_instance.henkilo_oid', allow_null=True)
@@ -919,7 +922,7 @@ class TkHenkilostotiedotSerializer(TkBaseSerializer, serializers.ModelSerializer
     @swagger_serializer_method(serializer_or_field=TkPalvelussuhdeSerializer)
     def get_palvelussuhteet(self, instance):
         id_qs = get_related_object_changed_id_qs(Palvelussuhde.get_name(), self.datetime_gt,
-                                                 self.datetime_lte, additional_filters={'parent_instance_id': instance.id})
+                                                 self.datetime_lte, additional_filters=Q(parent_instance_id=instance.id))
 
         last_parent_subquery = get_history_value_subquery(Palvelussuhde, 'tyontekija_id', self.datetime_lte)
         previous_parent_subquery = get_history_value_subquery(Palvelussuhde, 'tyontekija_id', self.datetime_gt)
@@ -935,10 +938,131 @@ class TkHenkilostotiedotSerializer(TkBaseSerializer, serializers.ModelSerializer
     def get_taydennyskoulutukset(self, instance):
         id_qs = get_related_object_changed_id_qs(
             Tyontekija.get_name(), self.datetime_gt, self.datetime_lte, return_value='parent_instance_id',
-            additional_filters={'instance_id': instance.id,
-                                'trigger_model_name': TaydennyskoulutusTyontekija.get_name()}
+            additional_filters=Q(instance_id=instance.id) & Q(trigger_model_name=TaydennyskoulutusTyontekija.get_name())
         )
         taydennyskoulutus_qs = (Taydennyskoulutus.history
                                 .filter(id__in=Subquery(id_qs), history_date__lte=self.datetime_lte)
                                 .distinct('id').order_by('id', '-history_date'))
         return TkTaydennyskoulutusSerializer(taydennyskoulutus_qs, many=True, context=self.context).data
+
+
+class ValssiOrganisaatioSerializer(HistoricalBaseSerializer, serializers.ModelSerializer):
+    parent_oid = serializers.CharField(default=settings.OPETUSHALLITUS_ORGANISAATIO_OID)
+
+    class Meta:
+        model = Organisaatio
+        fields = ('id', 'action', 'nimi', 'y_tunnus', 'organisaatio_oid', 'parent_oid', 'organisaatiotyyppi',
+                  'kunta_koodi', 'sahkopostiosoite', 'kayntiosoite', 'kayntiosoite_postinumero',
+                  'kayntiosoite_postitoimipaikka', 'postiosoite', 'postinumero', 'postitoimipaikka', 'puhelinnumero',
+                  'alkamis_pvm', 'paattymis_pvm',)
+
+
+class ValssiToimipaikkaSerializer(HistoricalBaseSerializer, serializers.ModelSerializer):
+    parent_oid = serializers.SerializerMethodField()
+    organisaatiotyyppi = serializers.ListField(child=serializers.CharField(),
+                                               default=[Organisaatiotyyppi.TOIMIPAIKKA.value])
+
+    class Meta:
+        model = Toimipaikka
+        fields = ('id', 'action', 'nimi', 'organisaatio_oid', 'parent_oid', 'organisaatiotyyppi', 'postinumero',
+                  'jarjestamismuoto_koodi', 'toimintamuoto_koodi')
+
+    @swagger_serializer_method(serializer_or_field=serializers.CharField)
+    def get_parent_oid(self, instance):
+        organisaatio = (Organisaatio.history
+                        .filter(id=instance.vakajarjestaja_id, history_date__lte=self.datetime_lte)
+                        .distinct('id').order_by('id', '-history_date').first())
+        return getattr(organisaatio, 'organisaatio_oid', None)
+
+
+class ValssiTyoskentelypaikkaSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Tyoskentelypaikka
+        fields = ('tehtavanimike_koodi', 'kelpoisuus_kytkin',)
+
+
+class ValssiTyontekijaSerializer(serializers.ModelSerializer):
+    kutsumanimi = serializers.CharField(source='henkilo.kutsumanimi')
+    sukunimi = serializers.CharField(source='henkilo.sukunimi')
+    tutkinnot = serializers.SerializerMethodField()
+    tehtavanimikkeet = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Tyontekija
+        fields = ('id', 'kutsumanimi', 'sukunimi', 'sahkopostiosoite', 'tutkinnot', 'tehtavanimikkeet',)
+
+    @swagger_serializer_method(serializer_or_field=serializers.ListField(child=serializers.CharField()))
+    def get_tutkinnot(self, instance):
+        return (Tutkinto.objects
+                .filter(henkilo=instance.henkilo, vakajarjestaja=instance.vakajarjestaja)
+                .distinct('id').values_list('tutkinto_koodi', flat=True))
+
+    @swagger_serializer_method(serializer_or_field=ValssiTyoskentelypaikkaSerializer(many=True))
+    def get_tehtavanimikkeet(self, instance):
+        today = datetime.date.today()
+        tyoskentelypaikka_qs = (Tyoskentelypaikka.objects
+                                .filter(get_active_filter(today), palvelussuhde__tyontekija=instance,
+                                        toimipaikka=self.context['view'].toimipaikka)
+                                .distinct('tehtavanimike_koodi')
+                                .order_by('tehtavanimike_koodi', '-kelpoisuus_kytkin'))
+        return ValssiTyoskentelypaikkaSerializer(tyoskentelypaikka_qs, many=True, context=self.context).data
+
+
+class ValssiTaustatiedotToimipaikatSerializer(serializers.Serializer):
+    total = serializers.IntegerField()
+    toimintamuodot = CustomSchemaField({
+        'type': openapi.TYPE_OBJECT,
+        'additionalProperties': {
+            'type': openapi.TYPE_OBJECT,
+            'properties': {
+                'total': {
+                    'type': openapi.TYPE_INTEGER
+                }
+            },
+            'additionalProperties': {
+                'type': openapi.TYPE_INTEGER
+            }
+        }
+    })
+
+
+class ValssiTaustatiedotTyontekijatSerializer(serializers.Serializer):
+    total = serializers.IntegerField()
+    tehtavanimikkeet = CustomSchemaField({
+        'type': openapi.TYPE_OBJECT,
+        'additionalProperties': {
+            'type': openapi.TYPE_INTEGER
+        }
+    })
+    tehtavanimikkeet_kelpoiset = CustomSchemaField({
+        'type': openapi.TYPE_OBJECT,
+        'additionalProperties': {
+            'type': openapi.TYPE_INTEGER
+        }
+    })
+
+
+class ValssiTaustatiedotTaydennyskoulutuksetSerializer(serializers.Serializer):
+    tehtavanimikkeet = CustomSchemaField({
+        'type': openapi.TYPE_OBJECT,
+        'additionalProperties': {
+            'type': openapi.TYPE_INTEGER
+        }
+    })
+    koulutuspaivat = DecimalField(0, 0)
+    tehtavanimikkeet_koulutuspaivat = CustomSchemaField({
+        'type': openapi.TYPE_OBJECT,
+        'additionalProperties': {
+            'type': openapi.TYPE_STRING,
+            'format': openapi.FORMAT_DECIMAL
+        }
+    })
+
+
+class ValssiTaustatiedotSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    organisaatio_oid = serializers.CharField()
+    toimipaikat = ValssiTaustatiedotToimipaikatSerializer()
+    lapset_voimassa = serializers.IntegerField()
+    tyontekijat = ValssiTaustatiedotTyontekijatSerializer()
+    taydennyskoulutukset = ValssiTaustatiedotTaydennyskoulutuksetSerializer()

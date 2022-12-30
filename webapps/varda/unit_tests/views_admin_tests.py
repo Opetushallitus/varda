@@ -133,7 +133,7 @@ class VardaAdminViewSetTests(TestCase):
         self.assertEqual(Tyoskentelypaikka.objects.get(tunniste='testing-tyoskentelypaikka2').paattymis_pvm, datetime.date(year=2021, month=5, day=2))
         self.assertEqual(Tyoskentelypaikka.objects.get(tunniste='testing-tyoskentelypaikka2_1').paattymis_pvm, paattymis_pvm_date)
         self.assertEqual(Tyoskentelypaikka.objects.get(tunniste='testing-tyoskentelypaikka4').paattymis_pvm, datetime.date(year=2020, month=10, day=2))
-        self.assertEqual(Tyoskentelypaikka.objects.get(tunniste='testing-tyoskentylypaikka-kiertava').paattymis_pvm, datetime.date(year=2020, month=10, day=2))
+        self.assertEqual(Tyoskentelypaikka.objects.get(tunniste='testing-tyoskentelypaikka-kiertava').paattymis_pvm, datetime.date(year=2020, month=10, day=2))
         # PAOS not set
         self.assertEqual(Varhaiskasvatuspaatos.objects.get(tunniste='testing-varhaiskasvatuspaatos4').paattymis_pvm, None)
         self.assertEqual(Varhaiskasvatussuhde.objects.get(tunniste='testing-varhaiskasvatussuhde4').paattymis_pvm, None)

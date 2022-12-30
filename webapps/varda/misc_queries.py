@@ -40,13 +40,12 @@ def get_paos_toimipaikat(vakajarjestaja_obj, is_only_active_paostoiminta_include
     return PaosToiminta.objects.filter(paostoiminta_condition).values_list('paos_toimipaikka', flat=True)
 
 
-def get_related_object_changed_id_qs(model_name, datetime_gt, datetime_lte, additional_filters=None,
+def get_related_object_changed_id_qs(model_name, datetime_gt, datetime_lte, additional_filters=Q(),
                                      return_value='instance_id'):
-    additional_filters = additional_filters or {}
     return (Z9_RelatedObjectChanged.objects
             .values('model_name', 'instance_id', 'trigger_model_name', 'trigger_instance_id')
-            .filter(model_name=model_name, changed_timestamp__gt=datetime_gt, changed_timestamp__lte=datetime_lte,
-                    **additional_filters)
+            .filter(Q(model_name=model_name) & Q(changed_timestamp__gt=datetime_gt) &
+                    Q(changed_timestamp__lte=datetime_lte) & additional_filters)
             .annotate(history_type_array=ArrayAgg('history_type', distinct=True))
             .exclude(history_type_array__contains=['+', '-'])
             .values_list(return_value, flat=True).distinct())

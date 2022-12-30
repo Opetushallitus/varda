@@ -172,9 +172,9 @@ class PulssiViewSet(GenericViewSet, ListModelMixin):
         tm_annotations = {}
         for tm_code in tm_codes:
             tm_annotations[tm_code] = Sum(Case(When(toimintamuoto_koodi__iexact=tm_code, then=1), default=0))
-        # Avoid Django's default group by id with 'temp' field
         toimipaikka_by_tm = (Toimipaikka.objects
                              .filter(active_filter)
+                             # Avoid Django's default group by id with 'temp' field
                              .annotate(temp=Value(0)).values('temp')
                              .annotate(**tm_annotations).values(*tm_codes))[0]
 
@@ -188,6 +188,7 @@ class PulssiViewSet(GenericViewSet, ListModelMixin):
             jm_annotations[jm_code] = Sum(Case(When(jarjestamismuoto_koodi__icontains=jm_code, then=1), default=0))
         toimipaikka_by_jm = (Toimipaikka.objects
                              .filter(active_filter)
+                             # Avoid Django's default group by id with 'temp' field
                              .annotate(temp=Value(0)).values('temp')
                              .annotate(**jm_annotations).values(*jm_codes))[0]
 
@@ -202,6 +203,7 @@ class PulssiViewSet(GenericViewSet, ListModelMixin):
                                                default=0))
         toimipaikka_by_kj = (Toimipaikka.objects
                              .filter(active_filter)
+                             # Avoid Django's default group by id with 'temp' field
                              .annotate(temp=Value(0)).values('temp')
                              .annotate(**kj_annotations).values(*kj_codes))[0]
 
@@ -300,6 +302,7 @@ class PulssiViewSet(GenericViewSet, ListModelMixin):
                                 .values('id'))
         tyoskentelypaikka_by_tn = (Tyoskentelypaikka.objects
                                    .filter(id__in=distinct_tp_subquery)
+                                   # Avoid Django's default group by id with 'temp' field
                                    .annotate(temp=Value(0)).values('temp')
                                    .annotate(**tn_annotations).values(*tn_codes))[0]
 

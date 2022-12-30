@@ -195,7 +195,6 @@ class VardaHenkilostoViewSetTests(TestCase):
         self.assertEqual(len(resp_content['results']), 2)
 
     def test_api_ui_vakajarjestajat(self):
-        self.maxDiff = None
         client = SetUpTestClient('credadmin').client()
         resp = client.get('/api/ui/vakajarjestajat/')
         assert_status_code(resp, 200)
@@ -286,6 +285,39 @@ class VardaHenkilostoViewSetTests(TestCase):
                 'kunnallinen_kytkin': False,
                 'y_tunnus': '',
                 'alkamis_pvm': '1970-01-01',
+                'paattymis_pvm': None,
+                'active': True
+            },
+            {
+                'nimi': 'Etelä-Suomen aluehallintovirasto',
+                'id': 10,
+                'url': 'http://testserver/api/v1/vakajarjestajat/10/',
+                'organisaatio_oid': '1.2.246.562.10.11908146316',
+                'kunnallinen_kytkin': False,
+                'y_tunnus': '1094544-6',
+                'alkamis_pvm': '1997-08-13',
+                'paattymis_pvm': None,
+                'active': True
+            },
+            {
+                'nimi': 'Kansallinen koulutuksen arviointikeskus',
+                'id': 11,
+                'url': 'http://testserver/api/v1/vakajarjestajat/11/',
+                'organisaatio_oid': '1.2.246.562.10.12218193316',
+                'kunnallinen_kytkin': False,
+                'y_tunnus': '',
+                'alkamis_pvm': '2015-03-16',
+                'paattymis_pvm': None,
+                'active': True},
+            {
+                'nimi': 'Tilastokeskus',
+                'id': 9,
+                'url': 'http://testserver/api/v1/vakajarjestajat/9/',
+                'organisaatio_oid': '1.2.246.562.10.35939310928',
+                'kunnallinen_kytkin': False,
+                'y_tunnus':
+                '0245491-1',
+                'alkamis_pvm': '1979-01-02',
                 'paattymis_pvm': None,
                 'active': True
             }
