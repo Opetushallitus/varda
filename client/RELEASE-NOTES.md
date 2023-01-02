@@ -1,6 +1,9 @@
 # Release notes
 Varda-käyttöliittymä release notes
 
+1.6.12 (02.01.2023)
+- OPHVARDA-2368: Työntekijän sähköpostiosoite
+
 1.6.11 (15.12.2022)
 - OPHVARDA-2596: Päivitä frontend-kirjastot
 
