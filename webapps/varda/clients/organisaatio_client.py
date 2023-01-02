@@ -261,7 +261,7 @@ def get_changed_since(since):
     formatted_time = since.strftime('%Y-%m-%d %H:%M')
     url_path_query = ORGANISAATIOPALVELU_API + 'muutetut/oid?lastModifiedSince=' + formatted_time
     result = get_json_from_external_service(SERVICE_NAME, url_path_query, auth=True)
-    oids = result['json_msg']['oids']
+    oids = result['json_msg']
     return list(filter(lambda oid: oid != '', oids))
 
 

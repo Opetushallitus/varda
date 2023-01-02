@@ -18,7 +18,7 @@ class TestUpdateChangedOrganisaatio(TestCase):
         oid_with_changes = '1.2.246.562.10.9395737548810'
         responses.add(responses.GET,
                       'https://virkailija.testiopintopolku.fi/organisaatio-service/api/muutetut/oid',
-                      json={'oids': [oid_with_changes]},
+                      json=[oid_with_changes],
                       status=200)
         # Reuse data defined for another test.
         # The organization service will fetch data for all organizations using this,
