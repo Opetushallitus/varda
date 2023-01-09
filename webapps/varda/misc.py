@@ -144,7 +144,7 @@ def send_request_get_response(service_name, http_url_suffix, headers, request_ty
     Request timeout: https://requests.readthedocs.io/en/master/user/advanced/#timeouts
     """
     DEFAULT_CONNECT_TIMEOUT = 7  # seconds
-    DEFAULT_READ_TIMEOUT = 15    # seconds
+    DEFAULT_READ_TIMEOUT = 60    # seconds
     DEFAULT_READ_TIMEOUT_LARGE_QUERY = 3600  # seconds
     if large_query:
         DEFAULT_TIMEOUT_TUPLE = (DEFAULT_CONNECT_TIMEOUT, DEFAULT_READ_TIMEOUT_LARGE_QUERY)
