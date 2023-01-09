@@ -218,7 +218,7 @@ class TilapainenHenkilostoAdmin(AdminWithGuardianAndHistory):
 class BatchErrorAdmin(AdminWithGuardianAndHistory):
     list_display = ('id', 'henkilo',)
     search_fields = ('=id', '=henkilo__id',)
-    raw_id_fields = ('henkilo',)
+    raw_id_fields = ('henkilo', 'henkilo_duplicate',)
 
 
 class AuthUserAdmin(ModelAdmin):

@@ -138,8 +138,8 @@ TRANSLATIONS = {
             'Työntekijät', 'Työntekijät useammalla kuin yhdellä tehtävänimikkeellä', 'Työntekijät tehtävänimikkeittäin',
             'Kelpoiset työntekijät tehtävänimikkeittäin', 'Palvelussuhteet tyypeittäin', 'Palvelussuhteet työajoittain',
             'Kiertävät työntekijät', 'Täydennyskoulutukseen osallistuneet työntekijät tehtävänimikkeittäin',
-            'Täydennyskoulutuspäivien lukumäärä tehtävänimikkeittäin', 'Tilapäisen henkilöstön määrä',
-            'Tilapäisen henkilöstön työtunnit'
+            'Täydennyskoulutuspäivien lukumäärä tehtävänimikkeittäin', 'Vuokratun henkilöstön määrä',
+            'Vuokratun henkilöstön työtunnit'
         ),
         YES: 'Kyllä',
         NO: 'Ei',
@@ -225,8 +225,8 @@ TRANSLATIONS = {
             'Behöriga arbetstagare per yrkesbenämning', 'Anställningsförhållanden enligt karaktär',
             'Anställningsförhållanden enligt arbetstidens karaktär', 'Ambulerande arbetstagare',
             'Arbetstagare som deltagit i fortbildning enligt yrkesbenämning',
-            'Antalet fortbildningsdagar enligt yrkesbenämning', 'Antalet tillfällig personal',
-            'Arbetstimmar som tillfällig personal utfört'
+            'Antalet fortbildningsdagar enligt yrkesbenämning', 'Antalet hyrd personal',
+            'Arbetstimmar som hyrd personal utfört'
         ),
         YES: 'Ja',
         NO: 'Nej',
