@@ -34,6 +34,12 @@
             <th scope="row" class="mat-header-cell">{{i18n.oppijanumero | translate}}</th>
             <td class="mat-cell">{{tyontekijaKooste.henkilo.henkilo_oid}}</td>
           </tr>
+          <tr class="mat-row">
+            <th scope="row" class="mat-header-cell">{{i18n.tyontekija_sahkopostiosoite | translate}}</th>
+            <td class="mat-cell">
+              {{tyontekijaKooste.sahkopostiosoite || (i18n.tyontekija_missing_sahkopostiosoite | translate)}}
+            </td>
+          </tr>
         </table>
       </div>
     </div>
