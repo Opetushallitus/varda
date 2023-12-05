@@ -36,7 +36,7 @@
     "ngx-cookieconsent": "^4.0.1",
     "oph-virkailija-style-guide": "github:Opetushallitus/virkailija-styles#master",
     "tslib": "^2.4.1",
-    "zone.js": "^0.12.0"
+    "zone.js": "^0.14.2"
   },
   "devDependencies": {
     "@angular-devkit/build-angular": "^15.0.3",
