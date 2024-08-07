@@ -4,7 +4,7 @@ celery==5.2.*  # BSD-license
 coreapi==2.3.*  # BSD-license
 coreschema==0.0.*  # BSD-license
 cryptography==38.0.*  # BSD-license
-Django==4.1.*  # BSD-license
+Django==4.2.15  # BSD-license
 django-cas-ng==4.3.*  # BSD-license
 django-celery-beat==2.4.*  # BSD-license
 django-celery-results==2.4.*  # BSD-license
