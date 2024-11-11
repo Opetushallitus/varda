@@ -1,0 +1,21 @@
+#jump-link {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+}
+
+#jump-link:focus {
+  width: auto;
+  height: auto;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: calc(var(--virkailija-z-index) + 100);
+  overflow: visible;
+  text-align: center;
+  margin-top: 1em;
+  padding: 0.5em;
+  background-color: var(--white);
+  border-radius: 0.25em 0.25em;
+}

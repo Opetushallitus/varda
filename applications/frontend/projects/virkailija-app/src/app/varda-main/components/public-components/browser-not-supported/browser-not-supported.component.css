@@ -1,0 +1,20 @@
+mat-icon {
+  color:red;
+  position:relative;
+  top: -1px;
+}
+
+button mat-icon {
+  color: green;
+}
+
+a {
+  margin: 0.5em;
+}
+
+img {
+  width: 2em;
+  height: 2em;
+}
+
+
