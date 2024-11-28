@@ -1,0 +1,168 @@
+<ng-container *ngIf="formGroup">
+  <div [id]="'tyoskentelypaikka_'+ currentObject?.id"
+       class="tyoskentelypaikka">
+    <app-robo-id [tunniste]="currentObject?.id"
+                 nimi="tyoskentelypaikka"
+                 [alkamis_pvm]="currentObject?.alkamis_pvm"
+                 [paattymis_pvm]="currentObject?.paattymis_pvm"></app-robo-id>
+
+    <mat-expansion-panel (opened)="togglePanel(true)"
+                         (closed)="togglePanel(false)"
+                         #matPanel>
+      <mat-expansion-panel-header>
+        <mat-panel-title *ngIf="currentObject">
+          <h4>
+            <app-varda-form-error-icon [errors]="errorList"></app-varda-form-error-icon>
+            <span *ngIf="currentObject.toimipaikka_oid"
+                  appToimipaikkaNimi>
+              {{ currentObject.toimipaikka_oid }}
+            </span>
+            <span *ngIf="!currentObject.toimipaikka_oid">
+              {{ i18n.tyoskentelypaikka_kiertava_kytkin | translate }}
+            </span>
+            <span *ngIf="!currentObject.paattymis_pvm">
+              {{ i18n.tyoskentelypaikka_alkaen_PVM | translate: {pvm: currentObject.alkamis_pvm | vardaDate} }},
+            </span>
+            <span *ngIf="currentObject.paattymis_pvm">
+              {{currentObject.alkamis_pvm | vardaDate}} -
+              {{currentObject.paattymis_pvm | vardaDate}},
+            </span>
+            <i [libKoodistoValue]="koodistoEnum.tehtavanimike">{{ currentObject.tehtavanimike_koodi }}</i>
+            <ng-container *ngIf="currentObject">
+              <app-varda-timestamp [dateAdded]="currentObject.luonti_pvm" [dateChanged]="currentObject.muutos_pvm"></app-varda-timestamp>
+            </ng-container>
+          </h4>
+        </mat-panel-title>
+        <mat-panel-title *ngIf="!currentObject">
+          <h4>{{ i18n.palvelussuhde_lisaa_tyoskentelypaikka | translate }}</h4>
+        </mat-panel-title>
+      </mat-expansion-panel-header>
+
+      <form [formGroup]="formGroup"
+            autocomplete="off"
+            (submit)="saveTyoskentelypaikka(formGroup)">
+        <app-varda-form-error-list [errors]="errorList"></app-varda-form-error-list>
+        <app-varda-form-field name="kiertava_tyontekija_kytkin"
+                              [form]="formGroup"
+                              [label]="i18n.tyoskentelypaikka_kiertava_kytkin | translate"
+                              [errorText]="i18n.tyoskentelypaikka_error_kiertava_kytkin | translate"
+                              [instructionText]="i18n.tyoskentelypaikka_instruction_kiertava_kytkin | translate">
+          <mat-radio-group #fieldItem
+                           formControlName="kiertava_tyontekija_kytkin">
+            <mat-radio-button [value]="true">{{ i18n.yes | translate }}</mat-radio-button>
+            <mat-radio-button [value]="false">{{ i18n.no | translate }}</mat-radio-button>
+          </mat-radio-group>
+        </app-varda-form-field>
+
+        <app-varda-form-field *ngIf="!formGroup.controls.kiertava_tyontekija_kytkin.value"
+                              name="toimipaikka_oid"
+                              [form]="formGroup"
+                              [label]="i18n.tyoskentelypaikka_tyoskentelypaikka_valitsin | translate"
+                              [errorText]="i18n.tyoskentelypaikka_error_tyoskentelypaikka_valitsin | translate"
+                              [instructionText]="i18n.tyoskentelypaikka_instruction_tyoskentelypaikka_valitsin | translate">
+          <div class="oph-select-container" [attr.disabled]="formGroup.controls.toimipaikka_oid.disabled">
+            <select #fieldItem
+                    class="oph-input oph-select"
+                    formControlName="toimipaikka_oid">
+              <option value="null"
+                      disabled>-- {{ i18n.choose | translate }} --</option>
+              <ng-container *ngIf="tehtavanimikkeet">
+                <option *ngFor="let toimipaikka of toimipaikat"
+                        [value]="toimipaikka.organisaatio_oid">
+                  {{ toimipaikka.nimi }}
+                </option>
+              </ng-container>
+            </select>
+          </div>
+        </app-varda-form-field>
+
+        <app-varda-form-field name="alkamis_pvm"
+                              [form]="formGroup"
+                              [label]="i18n.tyoskentelypaikka_alkamis_pvm | translate"
+                              [errorText]="i18n.tyoskentelypaikka_error_alkamis_pvm | translate"
+                              [errorMap]="[
+                              { key: 'matDatepickerMin', value: i18n.tyoskentelypaikka_error_min_alkamis_pvm },
+                              { key: 'matDatepickerMax', value: i18n.tyoskentelypaikka_error_max_alkamis_pvm }
+                              ]"
+                              [instructionText]="i18n.tyoskentelypaikka_instruction_alkamis_pvm | translate">
+          <app-varda-datepicker #fieldItem
+                                [min]="startDateRange.min"
+                                [max]="startDateRange.max"
+                                (dateChange)="startDateChange($event.value)"
+                                formControlName='alkamis_pvm'></app-varda-datepicker>
+        </app-varda-form-field>
+
+        <app-varda-form-field name="paattymis_pvm"
+                              [form]="formGroup"
+                              [label]="i18n.tyoskentelypaikka_paattymis_pvm | translate"
+                              [errorText]="i18n.tyoskentelypaikka_error_paattymis_pvm | translate"
+                              [errorMap]="[
+                              { key: 'matDatepickerMin', value: i18n.tyoskentelypaikka_error_min_paattymis_pvm },
+                              { key: 'matDatepickerMax', value: i18n.tyoskentelypaikka_error_max_paattymis_pvm }
+                              ]"
+                              [instructionText]="i18n.tyoskentelypaikka_instruction_paattymis_pvm | translate">
+          <app-varda-datepicker #fieldItem
+                                [min]="endDateRange.min"
+                                [max]="endDateRange.max"
+                                formControlName='paattymis_pvm'></app-varda-datepicker>
+        </app-varda-form-field>
+
+        <app-varda-form-field name="tehtavanimike_koodi"
+                              [form]="formGroup"
+                              [label]="i18n.tyoskentelypaikka_tehtavanimike | translate"
+                              [errorText]="i18n.tyoskentelypaikka_error_tehtavanimike | translate"
+                              [instructionText]="i18n.tyoskentelypaikka_instruction_tehtavanimike | translate">
+          <div class="oph-select-container" [attr.disabled]="formGroup.controls.tehtavanimike_koodi.disabled">
+            <select #fieldItem
+                    class="oph-input oph-select"
+                    formControlName="tehtavanimike_koodi">
+              <option value="null"
+                      disabled>-- {{ i18n.choose | translate }} --</option>
+              <ng-container *ngIf="tehtavanimikkeet">
+                <option *ngFor="let nimike of tehtavanimikkeet.codes"
+                        [value]="nimike.code_value"
+                        [libKoodistoValue]="koodistoEnum.tehtavanimike"
+                        format="long">
+                  {{ nimike.code_value }}
+                </option>
+              </ng-container>
+            </select>
+          </div>
+        </app-varda-form-field>
+
+        <div class="oph-field">
+          <div class="oph-field-inputs">
+            <label id="tyoskentelypaikkaTutkinto"
+                   class="oph-label"><b>{{ i18n.tyoskentelypaikka_palvelussuhteeseen_lisatty_tutkinto | translate
+                }}</b></label>
+            <span for="tyoskentelypaikkaTutkinto"
+                  [libKoodistoValue]="koodistoEnum.tutkinto">{{ palvelussuhde.tutkinto_koodi }}</span>
+          </div>
+          <div class="oph-field-text"></div>
+        </div>
+
+        <app-varda-form-field name="kelpoisuus_kytkin"
+                              [form]="formGroup"
+                              [label]="i18n.tyoskentelypaikka_kelpoisuus_kytkin | translate"
+                              [errorText]="i18n.tyoskentelypaikka_error_kelpoisuus_kytkin | translate"
+                              [instructionText]="i18n.tyoskentelypaikka_instruction_kelpoisuus_kytkin | translate">
+          <mat-radio-group #fieldItem
+                           formControlName="kelpoisuus_kytkin">
+            <mat-radio-button [value]="true">{{ i18n.yes | translate }}</mat-radio-button>
+            <mat-radio-button [value]="false">{{ i18n.no | translate }}</mat-radio-button>
+          </mat-radio-group>
+        </app-varda-form-field>
+
+        <app-varda-error-field [errors]="palvelussuhdeFormErrors"></app-varda-error-field>
+
+        <app-varda-action-row [saveDisabled]="formGroup.pristine || isSubmitting"
+                              [saveAccess]="toimipaikkaAccess?.tyontekijatiedot.tallentaja"
+                              [formExists]="!!currentObject"
+                              [isEdit]="isEdit"
+                              (togglePanel)="togglePanel($event)"
+                              (deleteForm)="deleteTyoskentelypaikka()"
+                              (enableEdit)="enableForm()"></app-varda-action-row>
+      </form>
+    </mat-expansion-panel>
+  </div>
+</ng-container>
