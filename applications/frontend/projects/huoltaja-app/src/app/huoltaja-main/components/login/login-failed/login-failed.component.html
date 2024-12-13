@@ -1,0 +1,18 @@
+<div class="varda-login-page">
+  <main class="varda-page-content">
+    <h1 class="oph-bold"
+        aria-live="polite">
+        {{ i18n.login_failed_header | translate }}
+    </h1>
+
+    <div class="login-failed-message">
+      {{ i18n.login_failed_message | translate }}
+    </div>
+
+    <a class="oph-h3 origin-link"
+       [href]="originLink">
+      <mat-icon aria-ignore>keyboard_return</mat-icon>
+      {{ originLink }}
+    </a>
+  </main>
+</div>

@@ -1,0 +1,35 @@
+th {
+  overflow-x: hidden;
+}
+
+th.timestamp {
+  width: fit-content;
+  max-width: 200px;
+}
+
+th button .material-icons {
+  position: relative;
+  top: -1px;
+  margin-left: 0.25rem;
+}
+
+app-varda-datepicker {
+  display: block;
+  min-width: 150px;
+}
+
+.tiedonsiirrot-section .mat-mdc-paginator-range-label {
+  display: none;
+}
+
+.tiedonsiirrot-section .handy-scroll, .tiedonsiirrot-section .handy-scroll div {
+  font-size: 0.75rem;
+  line-height: 1.5;
+}
+.tiedonsiirrot-section .handy-scroll {
+  bottom: 4.5em;
+}
+
+.tiedonsiirrot-section .handy-scroll-hidden {
+  bottom: 9999px;
+}

@@ -1,0 +1,15 @@
+<div class="margin-top">
+  <label class="oph-bold"
+         *ngIf="resultCount === 0">
+    {{i18n.katsele_tietoja_no_results | translate}}
+  </label>
+  <label class="oph-bold"
+         *ngIf="resultCount > 0">
+    {{i18n.katsele_tietoja_results | translate}}: {{resultCount}}
+  </label>
+  <label class="varda-small-text varda-filter-summary"
+         *ngIf="filterString && filterString !== ''">
+    {{i18n.katsele_tietoja_selected_filters | translate}}:
+    {{filterString}}
+  </label>
+</div>

@@ -1,0 +1,32 @@
+<h2 mat-dialog-title>
+  {{ i18n.huoltajuussuhteet_dialog_otsikko | translate }}
+</h2>
+<mat-dialog-content class="mat-typography">
+  <div class="dialog-content"
+       role="dialog-content">
+    <ng-container *ngIf="data.toimija; else genericDialog">
+      <div class="jarjestaja">{{ i18n.huoltajuussuhteet_dialog_toimija | translate }}: {{ data.toimija }}</div>
+      <ng-container *ngIf="data.lakkautettu; else voimassa">
+        <div class="lakkautettu">
+          <mat-icon aria-ignore>warning</mat-icon>
+          {{ i18n.huoltajuussuhteet_dialog_toiminta_lakkautettu | translate }}
+        </div>
+        <div [innerHTML]="i18n.huoltajuussuhteet_dialog_ota_yhteytta_lakkautettu | translateMarkdown: {email: i18n.varda_email | translate}"></div>
+      </ng-container>
+      <ng-template #voimassa>
+        <ng-container *ngIf="data.email; else genericDialog">
+          <div [innerHTML]="i18n.huoltajuussuhteet_dialog_ota_yhteytta | translateMarkdown: {toimija: data.toimija, email: data.email}"></div>
+        </ng-container>
+      </ng-template>
+    </ng-container>
+
+    <ng-template #genericDialog>
+      {{ i18n.huoltajuussuhteet_dialog_ota_yhteytta_vakajarjestajaan | translate }}
+    </ng-template>
+
+  </div>
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <button class="dialog-button"
+          mat-dialog-close>{{ i18n.poistu | translate }}</button>
+</mat-dialog-actions>
