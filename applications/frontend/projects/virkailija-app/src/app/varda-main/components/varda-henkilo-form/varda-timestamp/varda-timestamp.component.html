@@ -1,0 +1,11 @@
+<ng-container *ngIf="areDatesWithinSameSecond(dateAdded, dateChanged); else elseBlock">
+  <small class="object-date">
+    {{ i18n.luonti_pvm | translate }}: {{dateAdded | vardaDateMinutes }}
+  </small>
+</ng-container>
+
+<ng-template #elseBlock>
+  <small class="object-date">
+    {{ i18n.muutos_pvm | translate }}: {{dateChanged | vardaDateMinutes }}
+  </small>
+</ng-template>
