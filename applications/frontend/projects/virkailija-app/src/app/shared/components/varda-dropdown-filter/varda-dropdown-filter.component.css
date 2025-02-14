@@ -1,0 +1,71 @@
+.varda-dropdown-filter {
+  padding: 0 0.25em;
+  user-select: none;
+  cursor: pointer;
+  overflow-x: hidden;
+  height: 100%;
+
+}
+
+.varda-dropdown-filter > span {
+  display: inline-block;
+  max-width: calc(100% - 30px);
+  overflow-x: hidden;
+  text-overflow: ellipsis;
+  vertical-align: top;
+}
+
+.varda-dropdown-filter > mat-icon {
+  line-height: 0.9em;
+}
+
+.varda-dropdown-filter:hover {
+  cursor: pointer;
+}
+
+.no-pointer,
+.no-pointer:hover {
+  cursor: default;
+}
+
+.varda-vakajarjestaja-menu ul {
+  list-style-type: none;
+  padding-left: 0px;
+  margin-bottom: 0;
+}
+
+.varda-vakajarjestaja-menu ul li {
+  margin: 0.25em 0;
+  padding: 0 1em;
+}
+
+.varda-vakajarjestaja-menu ul li.dropdownFilterEmpty {
+  color: var(--red);
+}
+
+.varda-vakajarjestaja-menu ul li.dropdownFilterSearch {
+  position: sticky;
+  background-color: var(--white);
+  top: 0;
+  padding: 0.25em;
+  z-index: 1;
+  display: block;
+}
+
+.varda-vakajarjestaja-menu ul li.item:hover {
+  background-color: var(--blue-lighten-1);
+  cursor: pointer;
+}
+
+.varda-vakajarjestaja-menu ul li.item:hover > span {
+  color: var(--white);
+}
+
+.varda-vakajarjestaja-menu .group-title {
+  font-weight: bold;
+  padding-top: 1em;
+}
+
+.varda-vakajarjestaja-menu ul.passive-vakajarjestaja-list {
+  background: var(--gray-lighten-6);
+}
