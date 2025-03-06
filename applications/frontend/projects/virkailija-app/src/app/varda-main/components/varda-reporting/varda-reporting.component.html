@@ -1,0 +1,47 @@
+<h1 class="varda-page-header">
+  {{i18n.katsele_tietoja | translate}}
+</h1>
+<main class="varda-reporting-wrapper">
+  <div class="varda-card-top">
+    <div class="row align-items-baseline">
+      <div class="col-auto">
+        <h2 class="varda-text-large">
+          {{selectedVakajarjestaja.nimi}}
+          <span *ngIf="!selectedVakajarjestaja.active" class="badge badge-secondary">{{ i18n.passive | translate }}</span>
+        </h2>
+      </div>
+      <div class="col">
+        <span class="varda-text-secondary">{{selectedVakajarjestaja.organisaatio_oid}}</span>
+      </div>
+    </div>
+    <nav mat-tab-nav-bar mat-stretch-tabs="false" mat-align-tabs="start" [tabPanel]="reportingTabPanel">
+      <a mat-tab-link
+         routerLink="toimipaikat"
+         [active]="activeRoute === 'toimipaikat'"
+         *ngIf="userAccess.paakayttaja || userAccess.lapsitiedot.katselija || userAccess.huoltajatiedot.katselija ||
+           userAccess.tyontekijatiedot.katselija || userAccess.taydennyskoulutustiedot.katselija ||
+           userAccess.toimijatiedot.katselija">
+        {{i18n.katsele_tietoja_toimipaikat | translate}}
+      </a>
+      <a mat-tab-link
+         routerLink="lapset"
+         [active]="activeRoute === 'lapset'"
+         *ngIf="userAccess.paakayttaja || userAccess.lapsitiedot.katselija || userAccess.huoltajatiedot.katselija">
+        {{i18n.katsele_tietoja_lapset | translate}}
+      </a>
+      <a mat-tab-link
+         routerLink="tyontekijat"
+         [active]="activeRoute === 'tyontekijat'"
+         *ngIf="userAccess.tyontekijatiedot.katselija || userAccess.taydennyskoulutustiedot.katselija">
+        {{i18n.katsele_tietoja_tyontekijat | translate}}
+      </a>
+      <a mat-tab-link
+         routerLink="yhteenveto"
+         [active]="activeRoute === 'yhteenveto'">
+        {{i18n.katsele_tietoja_yhteenveto | translate}}
+      </a>
+    </nav>
+    <mat-tab-nav-panel #reportingTabPanel></mat-tab-nav-panel>
+  </div>
+  <router-outlet></router-outlet>
+</main>

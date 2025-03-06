@@ -1,0 +1,82 @@
+<div class="toimipaikka-selector-wrapper"
+     aria-live="polite">
+  <div class="toimipaikka-selector-top">
+    <nav class="toimipaikka-selector-navi">
+      <a *ngIf="toimijaAccess.taydennyskoulutustiedot.katselija"
+         [routerLink]="['/taydennyskoulutus']">{{ i18n.taydennyskoulutukset | translate }}</a>
+      <a *ngIf="toimijaAccess.vuokrattuHenkilosto.katselija"
+         [routerLink]="['/vuokrattu-henkilosto']">{{ i18n.vuokrattu_henkilosto | translate }}</a>
+      <a *ngIf="toimijaAccess.lapsitiedot.katselija"
+         [routerLink]="['/paos-hallinta']">{{ i18n.paos | translate }}</a>
+    </nav>
+
+    <h2 class="oph-h3">
+      {{ selectedVakajarjestaja.nimi }}
+      <span *ngIf="!selectedVakajarjestaja.active" class="badge badge-secondary">{{ i18n.passive | translate }}</span>
+    </h2>
+  </div>
+  <section class="toimipaikka-selector-section">
+    <label for="toimipaikkaSelectorSelect"
+           class="oph-h4 oph-bold">
+      {{ i18n.toimipaikka | translate}}
+      <span *ngIf="toimipaikat.length > 1">({{ toimipaikat.length }})</span>
+    </label>
+    <div class="toimipaikka-selector">
+      <div class="toimipaikka-selector-left">
+        <div class="toimipaikka-selector-dropdown">
+          <ng-container *ngIf="toimipaikat.length > 0">
+            <select id="toimipaikkaSelectorSelect"
+                    class="varda-form-control form-control varda-select"
+                    (change)="setToimipaikka(activeToimipaikka)"
+                    [(ngModel)]="activeToimipaikka">
+              <option [ngValue]="null"
+                      [disabled]="!anyToimijaKatselija">
+                {{ i18n.kaikki_toimipaikat | translate }}</option>
+              <option *ngFor="let toimipaikka of toimipaikat"
+                      [attr.robot]="'toimipaikka_'+toimipaikka.id"
+                      [ngValue]="toimipaikka">{{toimipaikka.nimi}}</option>
+            </select>
+          </ng-container>
+
+          <ng-container *ngIf="toimipaikat?.length === 0">
+            <div class="oph-h3">{{ i18n.ei_toimipaikkoja | translate }}</div>
+          </ng-container>
+        </div>
+
+        <button *ngIf="activeToimipaikka"
+                (click)="openToimipaikka(activeToimipaikka)"
+                class="varda-button varda-button-small secondary responsive">
+          {{ i18n.nayta_tiedot | translate }}
+        </button>
+      </div>
+
+      <button id="addToimipaikkaBtn"
+              *ngIf="toimijaAccess.lapsitiedot.tallentaja"
+              class="varda-button varda-button-small responsive"
+              (click)="addToimipaikka()">+ {{ i18n.lisaa_toimipaikka | translate}}</button>
+    </div>
+    <div *ngIf="activeToimipaikka && activeToimipaikka?.hallinnointijarjestelma !== hallinnointijarjestelmaTypes.VARDA">
+      <small class="text-danger"
+             role="alert"
+             aria-live="polite">{{ i18n.toimipaikka_ei_varda | translate}}</small>
+    </div>
+  </section>
+</div>
+
+<app-varda-modal-form [identifier]="'toimipaikkaModal'"
+                      [isLg]="true"
+                      [openModal]="toimipaikkaFormOpen"
+                      [closeWithoutConfirm]="confirmedToimipaikkaFormLeave"
+                      (events)="handleFormClose($event)">
+  <app-varda-toimipaikka-form *ngIf="toimipaikkaFormOpen"
+                              [toimipaikka]="formToimipaikka"
+                              (saveToimipaikkaFormSuccess)="updateToimipaikat($event)"
+                              (valuesChanged)="toimipaikkaFormValuesChanged($event)"
+                              (closeEmitter)="closeToimipaikkaForm()"></app-varda-toimipaikka-form>
+</app-varda-modal-form>
+
+<app-varda-success-modal [identifier]="'toimipaikkaSuccessModal'"
+                         [successTitle]="'Tallennus onnistui'"></app-varda-success-modal>
+
+<app-varda-success-modal [identifier]="'toimipaikkaDeleteSuccessModal'"
+                         [successTitle]="'Toimipaikan poisto onnistui'"></app-varda-success-modal>

@@ -1,0 +1,41 @@
+<mat-form-field appearance="outline"
+                [class.mat-form-field-readonly]="readonly"
+                class="varda-datepicker">
+  <input matInput
+         #matPicker="ngModel"
+         [matDatepicker]="picker"
+         [disabled]="disabled"
+         [(ngModel)]="matDateModel"
+         (dateInput)="onDateInput($event)"
+         (dateChange)="onDateChange($event)"
+         [matDatepickerFilter]="dateFilter"
+         (focus)="onFocus()"
+         (blur)="onBlur()"
+         [required]="required"
+         [readonly]="readonly"
+         [min]="min"
+         [max]="max"
+         (input)="onInput($event)"
+         [placeholder]="placeholder"
+         [attr.aria-labelledby]="attrAriaLabelledBy"
+         [attr.name]="attrName"
+         [attr.robot]="attrName"
+         [attr.data-fieldname]="attrDataFieldname"
+         [attr.aria-required]="attrAriaRequired"
+         [attr.aria-describedby]="attrAriaDescribedBy"
+         [attr.data-parent-container]="attrDataParentContainer">
+  <mat-datepicker-toggle [disabled]="readonly"
+                         (keydown.enter)="$event.preventDefault()"
+                         matSuffix
+                         [for]="picker"></mat-datepicker-toggle>
+  <mat-datepicker #picker
+                  [startAt]="startAt"
+                  [calendarHeaderComponent]="VardaDatepickerHeaderComponent"
+                  (opened)="onCalendarOpened()"
+                  (closed)="onCalendarClosed()"></mat-datepicker>
+</mat-form-field>
+<div class="oph-field-text oph-error" *ngIf="errorMap.length > 0 && !matPicker.valid && (matPicker.touched) && matPicker.errors">
+  <ng-container *ngFor="let errorItem of errorMap">
+    <span *ngIf="matPicker.errors.hasOwnProperty(errorItem.key)">{{ errorItem.value | translate }}</span>
+  </ng-container>
+</div>

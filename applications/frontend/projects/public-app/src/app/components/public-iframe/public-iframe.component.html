@@ -1,0 +1,4 @@
+<iframe *ngIf="autoHeight; else fixedHeight" appIframeResizer [src]="trustedUrl"></iframe>
+<ng-template #fixedHeight>
+  <iframe [src]="trustedUrl" height="100%"></iframe>
+</ng-template>
