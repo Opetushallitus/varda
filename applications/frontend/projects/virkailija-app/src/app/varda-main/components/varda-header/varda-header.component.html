@@ -1,0 +1,122 @@
+<nav class="navbar navbar-expand-md navbar-light bg-light varda-navbar">
+  <div class="navbar-brand varda-navbar-toimija"
+       *ngIf="vakajarjestajat && vakajarjestajat.length">
+    <span id="siteTitle"
+          class="d-none d-lg-inline">{{ i18n.toimija | translate}}:</span>
+    <ng-container *ngIf="vakajarjestajat">
+      <app-varda-dropdown-filter [filterBy]="['nimi', 'organisaatio_oid', 'y_tunnus']"
+                                 [label]="selectedVakajarjestaja?.nimi"
+                                 [attr.aria-label]="i18n.navi_oma_organisaatio | translate"
+                                 [placeholder]="i18n.navi_haku_filter_placeholder | translate"
+                                 [noResults]="i18n.navi_haku_filter_no_results | translate"
+                                 (valueSelected)="changeVakajarjestaja($event)"
+                                 [list]="vakajarjestajaGroups">
+      </app-varda-dropdown-filter>
+    </ng-container>
+  </div>
+  <button class="navbar-toggler"
+          type="button"
+          data-toggle="collapse"
+          data-target="#navbarSupportedContent"
+          aria-controls="navbarSupportedContent"
+          aria-expanded="false"
+          [attr.aria-label]="i18n.navi_toggle_menu | translate">
+    <span class="navbar-toggler-text">{{ i18n.navi_menu | translate }}</span>
+    <mat-icon alt="">expand_more</mat-icon>
+  </button>
+
+  <div *ngIf="userAccess"
+       class="collapse navbar-collapse varda-navbar-links"
+       id="navbarSupportedContent">
+    <ul class="navbar-nav mr-auto"
+        *ngIf="vakajarjestajat">
+      <ng-container *ngIf="userAccess.lapsitiedot.tallentaja || userAccess.huoltajatiedot.tallentaja ||
+        userAccess.tyontekijatiedot.tallentaja || userAccess.taydennyskoulutustiedot.tallentaja ||
+        userAccess.oph.katselija">
+        <li class="varda-header-nav-item-container"
+            routerLinkActive="active-nav-item" [routerLinkActiveOptions]="{ exact: false }">
+          <a routerLink="/syota-tietoja">
+            {{ i18n.navi_syota_tietoja | translate}}</a>
+        </li>
+      </ng-container>
+      <li class="varda-header-nav-item-container"
+          routerLinkActive="active-nav-item" [routerLinkActiveOptions]="{ exact: false }">
+        <a routerLink="/tietojen-katselu">
+          {{ i18n.katsele_tietoja | translate}}</a>
+      </li>
+
+      <li class="varda-header-nav-item-container divider">
+        <span class="d-none d-md-block"> | </span>
+      </li>
+
+
+      <li class="varda-header-nav-item-container"
+          [matMenuTriggerFor]="menu"
+          #trigger="matMenuTrigger"
+          routerLinkActive="active-nav-item" [routerLinkActiveOptions]="{ exact: false }">
+        <button class="varda-text-button">
+          <mat-icon *ngIf="showRaportitBoolean && puutteellisetWarning"
+                    aria-ignore="true"
+                    class="warning">warning</mat-icon>
+          <span>{{ i18n.toimijan_tiedot | translate }}</span>
+          <mat-icon *ngIf="!trigger.menuOpen">arrow_drop_down</mat-icon>
+          <mat-icon *ngIf="trigger.menuOpen">arrow_drop_up</mat-icon>
+        </button>
+
+        <mat-menu #menu="matMenu">
+          <a routerLink="/vakatoimija"
+             (keydown.tab)="$event.stopPropagation()"
+             (keydown.shift.tab)="$event.stopPropagation()"
+             mat-menu-item>
+            {{ i18n.yhteystiedot | translate }}
+          </a>
+          <a routerLink="/paos-hallinta"
+             *ngIf="userAccess.lapsitiedot.katselija"
+             (keydown.tab)="$event.stopPropagation()"
+             (keydown.shift.tab)="$event.stopPropagation()"
+             mat-menu-item>
+            {{ i18n.paos | translate }}
+          </a>
+          <a *ngIf="userAccess.vuokrattuHenkilosto.katselija"
+             routerLink="/vuokrattu-henkilosto"
+             (keydown.tab)="$event.stopPropagation()"
+             (keydown.shift.tab)="$event.stopPropagation()"
+             mat-menu-item>
+            {{i18n.vuokrattu_henkilosto | translate }}
+          </a>
+          <a *ngIf="userAccess.tukipaatokset.katselija"
+             routerLink="/tukipaatos"
+             (keydown.tab)="$event.stopPropagation()"
+             (keydown.shift.tab)="$event.stopPropagation()"
+             mat-menu-item>
+            {{i18n.tuen_tiedot | translate }}
+          </a>
+          <a *ngIf="showRaportitBoolean"
+             routerLink="/raportit"
+             (keydown.tab)="$event.stopPropagation()"
+             (keydown.shift.tab)="$event.stopPropagation()"
+             mat-menu-item
+             appHighContrast>
+            <mat-icon [class.warning]="puutteellisetWarning"
+                      aria-ignore="true">warning</mat-icon>
+            <span>{{i18n.raportit | translate }}</span>
+          </a>
+          <a *ngIf="userAccess.oph.katselija"
+             routerLink="/paata-tiedot"
+             (keydown.tab)="$event.stopPropagation()"
+             (keydown.shift.tab)="$event.stopPropagation()"
+             mat-menu-item
+             appHighContrast>
+            <span>{{i18n.paata_tiedot | translate }}</span>
+          </a>
+        </mat-menu>
+      </li>
+      <li class="varda-header-nav-item-container">
+        <button class="varda-text-button" (click)="openVardaGuidesLink()">
+          {{ i18n.navi_ohjeet | translate }}
+          <mat-icon class="mat-icon-smaller">open_in_new</mat-icon>
+        </button>
+      </li>
+    </ul>
+  </div>
+</nav>
