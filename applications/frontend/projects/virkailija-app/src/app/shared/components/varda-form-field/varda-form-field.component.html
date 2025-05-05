@@ -1,0 +1,33 @@
+<div #formField
+     class="oph-field"
+     *ngIf="formControl">
+  <div class="oph-field-inputs">
+    <label [id]="labelId"
+           *ngIf="!hideLabel"
+           class="oph-label">
+      <b>{{ label | translate }}</b>
+    </label>
+
+    <ng-content></ng-content>
+
+    <div class="oph-error"
+         role="alert"
+         [attr.robot]="errorRef"
+         *ngIf="formControl.touched && (formControl.invalid || formControl.errors?.required)">
+      {{ errorText | translate}}
+      <ng-container *ngIf="errorMap">
+        <ng-container *ngFor="let error of errorMap">
+          <div *ngIf="formControl.hasError(error.key)">
+            {{ error.value | translate }}
+          </div>
+        </ng-container>
+      </ng-container>
+    </div>
+  </div>
+
+  <div class="oph-field-text" [attr.robot]="instructionRef">
+    <small [appSlideHide]="focusStatus$ | async">
+      {{ instructionText | translate}}
+    </small>
+  </div>
+</div>

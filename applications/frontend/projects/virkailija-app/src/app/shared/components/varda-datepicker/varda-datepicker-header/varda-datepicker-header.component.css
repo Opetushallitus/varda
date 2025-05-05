@@ -1,0 +1,4 @@
+.mat-mdc-button, .mat-mdc-icon-button {
+  outline: none !important;
+  font-weight: bold;
+}
