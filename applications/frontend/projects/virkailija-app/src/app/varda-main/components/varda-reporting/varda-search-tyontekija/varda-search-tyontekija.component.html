@@ -1,0 +1,344 @@
+<div class="varda-card-bottom">
+  <form class="margin-top">
+    <div class="varda-reporting-search-form-content varda-reporting-row-wrap">
+      <div class="col-md-5">
+        <label for="tyontekijaToimipaikkaInput"
+               class="oph-bold">{{i18n.toimipaikka_plural | translate}}</label>
+        <div [class.oph-invalid-container]="!isAllToimipaikatSelected && selectedToimipaikat.length === 0">
+          <div class="oph-select-container" [attr.disabled]="filterParams.kiertava">
+            <input class="oph-input"
+                   id="tyontekijaToimipaikkaInput"
+                   name="tyontekijaToimipaikkaInput"
+                   type="text"
+                   placeholder="{{i18n.katsele_tietoja_select_toimipaikat | translate}}"
+                   #toimipaikkaInput
+                   [matAutocomplete]="auto"
+                   (input)="toimipaikkaSelectInputChange($event)"
+                   [disabled]="filterParams.kiertava">
+          </div>
+          <mat-autocomplete #auto="matAutocomplete"
+                            (optionSelected)="toimipaikkaAutocompleteSelected($event)">
+            <mat-option *ngIf="!isAllToimipaikatSelected"
+                        [value]="null">{{i18n.kaikki_toimipaikat | translate}}</mat-option>
+            <mat-option *ngIf="isNoToimipaikkaResults"
+                        disabled>{{i18n.no_autofill_results | translate}}</mat-option>
+            <mat-option *ngFor="let toimipaikkaObj of filteredToimipaikkaOptions | async"
+                        [value]="toimipaikkaObj"
+                        [title]="toimipaikkaObj.nimi">
+              {{toimipaikkaObj.nimi}}
+            </mat-option>
+          </mat-autocomplete>
+          <div class="varda-error-message-block"
+               aria-live="assertive"
+               role="alert"
+               *ngIf="!isAllToimipaikatSelected && selectedToimipaikat.length === 0">
+            <p>{{i18n.katsele_tietoja_error_no_toimipaikka_selected | translate}}</p>
+          </div>
+        </div>
+      </div>
+      <div class="col-md col-lg-4 margin-top-md">
+        <label for="tyontekijaSearchInput"
+               class="oph-bold">{{i18n.katsele_tietoja_nimi_tunniste | translate}}</label>
+        <button mat-icon-button
+                class="varda-info-button"
+                [matTooltip]="i18n.katsele_tietoja_tyontekija_tooltip_search | translate"
+                matTooltipClass="varda-tooltip"
+                aria-label="katsele tietoja ohje">
+          <mat-icon alt="">info</mat-icon>
+        </button>
+        <app-varda-input #searchInput="ngModel"
+                         [name]="'tyontekijaSearchInput'"
+                         [id]="'tyontekijaSearchInput'"
+                         type="text"
+                         placeholder="{{i18n.katsele_tietoja_nimi_tunniste | translate}}"
+                         minlength="3"
+                         [(ngModel)]="searchValue"
+                         [errorMap]="[
+                           { key: 'minlength', value: i18n.katsele_tietoja_error_search_minlength }
+                         ]"
+                         (keydownEnter)="search()"></app-varda-input>
+      </div>
+      <div class="col-md-auto">
+        <button class="varda-button varda-icon-button search-button margin-top-md"
+                type="button"
+                (click)="search()">
+          <mat-icon alt="">search</mat-icon>
+          {{i18n.katsele_tietoja_search | translate}}
+        </button>
+      </div>
+      <div class="toimipaikka-chip-container col-12"
+           *ngIf="!filterParams.kiertava">
+        <mat-chip-listbox aria-label="valitut toimipaikat"
+                       #toimipaikkaChipList>
+          <mat-chip-option *ngIf="isAllToimipaikatSelected"
+                    [removable]="true"
+                    (removed)="removeSelectedToimipaikka(null)">
+            {{i18n.kaikki_toimipaikat | translate}}
+            <mat-icon matChipRemove>cancel</mat-icon>
+          </mat-chip-option>
+          <mat-chip-option *ngFor="let toimipaikkaObj of selectedToimipaikat"
+                    [removable]="true"
+                    (removed)="removeSelectedToimipaikka(toimipaikkaObj)">
+            {{toimipaikkaObj.nimi}}
+            <mat-icon matChipRemove>cancel</mat-icon>
+          </mat-chip-option>
+        </mat-chip-listbox>
+      </div>
+      <div class="col-md-auto margin-top"
+           *ngIf="isVakajarjestajaTyontekijaPermission">
+        <mat-checkbox name="tyontekijaKiertavaCheckbox"
+                      class="varda-checkbox"
+                      [(ngModel)]="filterParams.kiertava"
+                      labelPosition="after"
+                      (change)="search()">
+          <span class="oph-bold">{{i18n.katsele_tietoja_tyontekija_kiertava | translate}}</span>
+          <span class="varda-small-text"> ({{i18n.katsele_tietoja_tyontekija_kiertava_description | translate}})</span>
+        </mat-checkbox>
+      </div>
+
+      <div class="oph-bg-gray-lighten-5 filter-form"
+           *ngIf="isFiltersVisible">
+        <div class="col-12">
+          <label class="varda-link varda-filter-close"
+                 *ngIf="isSmall"
+                 (click)="isFiltersVisible = false; clearFilters()">
+            {{i18n.close | translate}}
+          </label>
+          <mat-checkbox name="aktiivisetCheckbox"
+                        class="varda-checkbox"
+                        [(ngModel)]="filterParams.aktiiviset"
+                        labelPosition="after"
+                        (change)="search()">
+            <span class="oph-bold">{{i18n.katsele_tietoja_tyontekija_active | translate}}</span>
+            <button mat-icon-button
+                    class="varda-info-button"
+                    [matTooltip]="i18n.katsele_tietoja_tyontekija_active_description | translate"
+                    matTooltipClass="varda-tooltip"
+                    aria-label="aktiiviset työntekijät ohje">
+              <mat-icon alt="">info</mat-icon>
+            </button>
+          </mat-checkbox>
+        </div>
+        <div class="col-12" *ngIf="filterParams.aktiiviset">
+          <div class="varda-date-range-container">
+            <div class="row-custom varda-date-range-row">
+              <div class="col-6">
+                <app-varda-datepicker [name]="'filterAlkamisPvm'"
+                                      [(ngModel)]="filterParams.alkamisPvm"
+                                      (dateInput)="search()"
+                                      [required]="true"
+                                      [errorMap]="[
+                                        { key: 'required', value: i18n.required_field },
+                                        { key: 'matDatepickerParse', value: i18n.katsele_tietoja_error_date_format }
+                                      ]">
+                </app-varda-datepicker>
+              </div>
+              <span class="varda-date-range-dash">–</span>
+              <div class="col-6">
+                <app-varda-datepicker [name]="'filterPaattymisPvm'"
+                                      [(ngModel)]="filterParams.paattymisPvm"
+                                      (dateInput)="search()"
+                                      [required]="true"
+                                      [errorMap]="[
+                                        { key: 'required', value: i18n.required_field },
+                                        { key: 'matDatepickerParse', value: i18n.katsele_tietoja_error_date_format }
+                                      ]">
+                </app-varda-datepicker>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-auto">
+          <label class="oph-bold">{{i18n.katsele_tietoja_filter_content | translate}}</label>
+          <app-varda-radio-button-group name="tyontekijaRajausButtonGroup"
+                                        responsive="lg"
+                                        wrap="lg"
+                                        (valueChanged)="search()"
+                                        [(ngModel)]="filterParams.rajaus">
+            <app-varda-radio-button [id]="'filterPalvelussuhteet'"
+                                    [value]="rajaus.PALVELUSSUHTEET"
+                                    [disabled]="!userAccess.tyontekijatiedot.katselija">
+              {{i18n.palvelussuhteet | translate}}
+            </app-varda-radio-button>
+            <app-varda-radio-button [id]="'filterTyoskentelypaikat'"
+                                    [value]="rajaus.TYOSKENTELYPAIKAT"
+                                    [disabled]="!userAccess.tyontekijatiedot.katselija">
+              {{i18n.tyoskentelypaikka_plural | translate}}
+            </app-varda-radio-button>
+            <app-varda-radio-button [id]="'filterPoissaolot'"
+                                    [value]="rajaus.POISSAOLOT"
+                                    [disabled]="!userAccess.tyontekijatiedot.katselija">
+              {{i18n.katsele_tietoja_tyontekija_poissaolot | translate}}
+            </app-varda-radio-button>
+            <app-varda-radio-button [id]="'filterTaydennyskoulutukset'"
+                                    [value]="rajaus.TAYDENNYSKOULUTUKSET"
+                                    [disabled]="!userAccess.taydennyskoulutustiedot.katselija">
+              {{i18n.taydennyskoulutukset | translate}}
+            </app-varda-radio-button>
+            <app-varda-radio-button [id]="'filterNone'"
+                                    [value]="rajaus.NONE">
+              {{i18n.katsele_tietoja_no_filter_content | translate}}
+            </app-varda-radio-button>
+          </app-varda-radio-button-group>
+        </div>
+        <div class="col-md-auto"
+             *ngIf="filterParams.rajaus !== rajaus.NONE">
+          <label class="oph-bold">{{i18n.katsele_tietoja_filter_time | translate}}</label>
+          <div class="row filter-time-container">
+            <div class="col-md-auto" *ngIf="filterParams.rajaus !== rajaus.TAYDENNYSKOULUTUKSET">
+              <app-varda-radio-button-group name="tyontekijaVoimassaoloButtonGroup"
+                                            responsive="md"
+                                            wrap="xs"
+                                            (valueChanged)="search()"
+                                            [(ngModel)]="filterParams.voimassaolo">
+                <app-varda-radio-button [id]="'filterVoimassa'"
+                                        [value]="voimassaolo.VOIMASSA">
+                  {{i18n.katsele_tietoja_voimassa | translate}}
+                </app-varda-radio-button>
+                <app-varda-radio-button [id]="'filterAlkanut'"
+                                        [value]="voimassaolo.ALKANUT">
+                  {{i18n.katsele_tietoja_alkanut | translate}}
+                </app-varda-radio-button>
+                <app-varda-radio-button [id]="'filterPaattynyt'"
+                                        [value]="voimassaolo.PAATTYNYT">
+                  {{i18n.katsele_tietoja_paattynyt | translate}}
+                </app-varda-radio-button>
+              </app-varda-radio-button-group>
+            </div>
+            <div class="col varda-date-range-container">
+              <div class="row-custom varda-date-range-row">
+                <div class="col-6">
+                  <app-varda-datepicker #alkamisPvm="ngModel"
+                                        [name]="'filterAlkamisPvm'"
+                                        [(ngModel)]="filterParams.alkamisPvm"
+                                        (dateInput)="search()"
+                                        [required]="true"
+                                        [errorMap]="[
+                                          { key: 'required', value: i18n.required_field },
+                                          { key: 'matDatepickerParse', value: i18n.katsele_tietoja_error_date_format }
+                                        ]">
+                  </app-varda-datepicker>
+                </div>
+                <span class="varda-date-range-dash">–</span>
+                <div class="col-6">
+                  <app-varda-datepicker #paattymisPvm="ngModel"
+                                        [name]="'filterPaattymisPvm'"
+                                        [(ngModel)]="filterParams.paattymisPvm"
+                                        (dateInput)="search()"
+                                        [required]="true"
+                                        [errorMap]="[
+                                          { key: 'required', value: i18n.required_field },
+                                          { key: 'matDatepickerParse', value: i18n.katsele_tietoja_error_date_format }
+                                        ]">
+                  </app-varda-datepicker>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="varda-reporting-row-wrap">
+          <div class="col-md-6 col-lg-4">
+            <ng-container *ngIf="filterParams.rajaus === rajaus.TAYDENNYSKOULUTUKSET; else tehtavanimikeContainer">
+              <label for="tyontekijaTehtavanimikeTaydennyskoulutusInput"
+                     class="oph-bold">{{i18n.katsele_tietoja_tyontekija_tehtavanimike_taydennyskoulutus | translate}}</label>
+              <app-varda-autocomplete-selector [options]="tehtavanimikkeet"
+                                               id="tyontekijaTehtavanimikeTaydennyskoulutusInput"
+                                               name="tyontekijaTehtavanimikeTaydennyskoulutusInput"
+                                               [optionFormat]="{format: '{0} ({1})', properties:['name', 'code_value']}"
+                                               [nullValue]="null"
+                                               [placeholder]="i18n.katsele_tietoja_tyontekija_tehtavanimike_all | translate"
+                                               [nullOptionLabel]="i18n.katsele_tietoja_tyontekija_tehtavanimike_all | translate"
+                                               [invalidInputLabel]="i18n.katsele_tietoja_error_no_tehtavanimike_selected | translate"
+                                               [(ngModel)]="filterParams.tehtavanimikeTaydennyskoulutus"
+                                               (ngModelChange)="autofillOnChange()">
+              </app-varda-autocomplete-selector>
+            </ng-container>
+            <ng-template #tehtavanimikeContainer>
+              <label for="tyontekijaTehtavanimikeInput"
+                     class="oph-bold">{{i18n.katsele_tietoja_tyontekija_tehtavanimike | translate}}</label>
+              <app-varda-autocomplete-selector [options]="tehtavanimikkeet"
+                                               id="tyontekijaTehtavanimikeInput"
+                                               name="tyontekijaTehtavanimikeInput"
+                                               [optionFormat]="{format: '{0} ({1})', properties:['name', 'code_value']}"
+                                               [nullValue]="null"
+                                               [placeholder]="i18n.katsele_tietoja_tyontekija_tehtavanimike_all | translate"
+                                               [nullOptionLabel]="i18n.katsele_tietoja_tyontekija_tehtavanimike_all | translate"
+                                               [invalidInputLabel]="i18n.katsele_tietoja_error_no_tehtavanimike_selected | translate"
+                                               [(ngModel)]="filterParams.tehtavanimike"
+                                               (ngModelChange)="autofillOnChange()"
+                                               [disabled]="!userAccess.tyontekijatiedot.katselija">
+              </app-varda-autocomplete-selector>
+            </ng-template>
+          </div>
+          <div class="col-md-6 col-lg-4 margin-top-md">
+            <label for="tyontekijaTutkintoInput"
+                   class="oph-bold">{{i18n.tutkinto | translate}}</label>
+            <app-varda-autocomplete-selector [options]="tutkinnot"
+                                             id="tyontekijaTutkintoInput"
+                                             name="tyontekijaTutkintoInput"
+                                             [optionFormat]="{format: '{0} ({1})', properties:['name', 'code_value']}"
+                                             [nullValue]="null"
+                                             [placeholder]="i18n.katsele_tietoja_tyontekija_tutkinto_all | translate"
+                                             [nullOptionLabel]="i18n.katsele_tietoja_tyontekija_tutkinto_all | translate"
+                                             [invalidInputLabel]="i18n.katsele_tietoja_error_no_tutkinto_selected | translate"
+                                             [(ngModel)]="filterParams.tutkinto"
+                                             (ngModelChange)="autofillOnChange()"
+                                             [disabled]="!userAccess.tyontekijatiedot.katselija">
+            </app-varda-autocomplete-selector>
+          </div>
+          <div class="col-md-6 col-lg-4 margin-top-lg">
+            <label for="tyontekijaTyosuhdeSelect"
+                   class="oph-bold">{{i18n.palvelussuhde_tyosuhde | translate}}</label>
+            <div class="oph-select-container" [attr.disabled]="!userAccess.tyontekijatiedot.katselija">
+              <select class="oph-input oph-select"
+                      name="tyontekijaTyosuhdeSelect"
+                      id="tyontekijaTyosuhdeSelect"
+                      (change)="search()"
+                      [(ngModel)]="filterParams.tyosuhde"
+                      [disabled]="!userAccess.tyontekijatiedot.katselija">
+                <option [ngValue]="null">{{i18n.katsele_tietoja_tyontekija_tyosuhde_all | translate}}</option>
+                <option *ngFor="let code of tyosuhteet"
+                        [ngValue]="code"
+                        [title]="code.name">
+                  {{code.name}}
+                </option>
+              </select>
+            </div>
+          </div>
+          <div class="col-md-6 col-lg-12 filter-clear-container">
+            <button class="varda-button varda-icon-button filter-clear"
+                    type="button"
+                    (click)="clearFilters()"
+                    [disabled]="!isFiltersActive()">
+              <mat-icon alt="">delete</mat-icon>
+              {{i18n.katsele_tietoja_clear_filters | translate}}
+            </button>
+          </div>
+        </div>
+      </div>
+      <div class="varda-link col-12 margin-top-md"
+           *ngIf="!isFiltersVisible"
+           (click)="isFiltersVisible = true">
+        {{i18n.katsele_tietoja_apply_filters | translate}}
+      </div>
+    </div>
+  </form>
+</div>
+<app-varda-result-info [filterString]="filterString"
+                       [resultCount]="resultCount"></app-varda-result-info>
+<div class="varda-reporting-card-container"
+     *ngIf="resultCount > 0">
+  <div class="col-12 col-lg-5 custom-col varda-reporting-card">
+    <app-varda-result-list #resultList
+                           [resultCount]="resultCount"
+                           [searchResults]="searchResults"
+                           [pageSize]="pageSize"
+                           (paginationChanged)="search($event)"
+                           (resultSelected)="setSelectedId($event)"></app-varda-result-list>
+  </div>
+  <div class="col-12 col-lg-7 varda-reporting-card"
+       *ngIf="selectedId">
+    <app-varda-result-tyontekija [tyontekijaId]="selectedId"
+                                 [userAccess]="userAccess"></app-varda-result-tyontekija>
+  </div>
+</div>
