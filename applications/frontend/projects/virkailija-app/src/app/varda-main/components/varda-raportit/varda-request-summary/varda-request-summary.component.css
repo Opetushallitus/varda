@@ -1,0 +1,46 @@
+.categories-container mat-checkbox {
+  margin-right: 1em;
+}
+
+tr.table-hidden-row-parent:not(.row-expanded):hover {
+  background-color: var(--gray-lighten-5);
+}
+
+tr.table-hidden-row-parent:not(.row-expanded):active {
+  background-color: var(--gray-lighten-3);
+}
+
+tr.table-hidden-row-parent.row-expanded {
+  background-color: var(--gray-lighten-5);
+}
+
+tr.table-hidden-row-parent.row-expanded td {
+  border-bottom-style: dashed;
+}
+
+.table-hidden-row {
+  height: 0;
+  background-color: var(--gray-lighten-5);
+}
+
+.table-hidden-row td {
+  border-bottom-width: 0;
+}
+
+.table-hidden-row-detail {
+  height: 0;
+  overflow: hidden;
+}
+
+.table-hidden-row-detail.detail-expanded {
+  height: auto;
+  padding: 1em 0;
+}
+
+/* Bootstrap 4 -> 5 upgrade: keep old style */
+.row-custom {
+  display:flex;
+  flex-wrap:wrap;
+  margin-right:-15px;
+  margin-left:-15px;
+}

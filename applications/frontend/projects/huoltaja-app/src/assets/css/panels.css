@@ -1,0 +1,125 @@
+:root {
+  --tree-border: 1px solid gray;
+}
+
+.section-intro {
+  margin-bottom: 3rem;
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 0.5rem;
+  padding: 0.5rem;
+}
+
+.section-header>*:first-child {
+  margin-bottom: 0;
+}
+
+.section-header .button-group {
+  margin-top: 0.5rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.section-header .button-group>* {
+  flex-grow: 1;
+}
+
+.section-header .button-group .button:focus {
+  outline: none;
+  border: 2px solid black;
+}
+
+.section-header .button-group .mat-icon:not(:last-child) {
+  margin-right: 0.25em;
+}
+
+.section-header .button-group>button>span {
+  color: var(--link-color);
+  line-height: 2.2em;
+  margin-right: 0.5em;
+  font-weight: bold;
+}
+
+.mat-accordion mat-expansion-panel.mat-expansion-panel {
+  border: 1px solid #b3b3b3;
+}
+
+mat-expansion-panel.mat-expansion-panel {
+  margin: 0.25rem 0.25rem 1rem 0.25rem;
+}
+
+
+mat-expansion-panel .mat-expansion-panel-body {
+  padding: 0.5rem;
+}
+
+.mat-expansion-panel.no-padding .mat-expansion-panel-body {
+  padding: 0;
+}
+
+.mat-expansion-panel-header:focus-within,
+.mat-expansion-panel-header:hover:not([aria-disabled=true]) {
+  font-weight: bold;
+  background: var(--oph-gray-lighten-1) !important;
+}
+
+.mat-expansion-panel-header:focus-within {
+  border: 1px solid black;
+}
+
+.mat-expansion-panel-header .mat-content {
+  flex-wrap: wrap;
+}
+
+.onko-tiedoissa-virhe {
+  color: var(--link-color);
+  font-weight: bold;
+  text-decoration: underline;
+  padding: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.subheader {
+  color: var(--oph-gray);
+  align-self: center;
+}
+
+.no-results {
+  margin-left: 0.5rem;
+}
+
+app-palvelussuhde {
+  display: block;
+  padding: 1rem 0.5rem;
+  padding-bottom: 1rem;
+  border-radius: 4px;
+}
+
+app-palvelussuhde:nth-child(odd) {
+  background-color: var(--oph-gray-lighten-1);
+}
+
+.palvelussuhde {
+  margin-bottom: 2rem;
+}
+
+.sub-sections {
+  margin-left: 2rem;
+  position: relative;
+}
+
+@media (max-width: 740px) {
+  .mat-expansion-panel .mat-expansion-panel-header {
+    padding: 0.75em;
+  }
+
+  .sub-sections {
+    margin-left: 1rem;
+  }
+}
