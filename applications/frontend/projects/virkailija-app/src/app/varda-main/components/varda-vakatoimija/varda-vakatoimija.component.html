@@ -1,0 +1,94 @@
+<h1 class="varda-page-header">
+  {{ i18n.yhteystiedot_label | translate }}
+</h1>
+<main class="varda-page-content">
+  <form *ngIf="vakatoimijaForm"
+        class="vakatoimija-form"
+        autocomplete="off"
+        [formGroup]="vakatoimijaForm"
+        (submit)="saveVakatoimijaForm(vakatoimijaForm)">
+    <h2 class="oph-h3 oph-bold">{{ vakajarjestajaDetails.nimi }} - {{ i18n.yhteystiedot | translate }}</h2>
+
+    <div class="modal-form-intro"
+         [innerHTML]="i18n.yhteystiedot_instruction | translateMarkdown">
+    </div>
+
+    <app-varda-form-field name="sahkopostiosoite"
+                          [form]="vakatoimijaForm"
+                          [label]="i18n.yhteystiedot_sahkopostiosoite | translate"
+                          [errorText]="i18n.yhteystiedot_error_sahkopostiosoite | translate"
+                          [placeholder]="i18n.yhteystiedot_placeholder_sahkopostiosoite | translate"
+                          [instructionText]="i18n.yhteystiedot_instruction_sahkopostiosoite | translate">
+      <input #fieldItem
+             *ngIf="saveAccess; else noEditEmail"
+             type="text"
+             class="oph-input"
+             formControlName="sahkopostiosoite" />
+      <ng-template #noEditEmail>
+        <span class="yhteystieto-field-missing"
+              *ngIf="!vakajarjestajaDetails.sahkopostiosoite; else showEmail">
+          {{ i18n.yhteystiedot_missing_sahkopostiosoite | translate }}
+        </span>
+        <ng-template #showEmail>
+          <span>{{ vakajarjestajaDetails.sahkopostiosoite }}</span>
+        </ng-template>
+      </ng-template>
+    </app-varda-form-field>
+
+    <app-varda-form-field name="puhelinnumero"
+                          [form]="vakatoimijaForm"
+                          [label]="i18n.yhteystiedot_puhelinnumero | translate"
+                          [errorText]="i18n.yhteystiedot_error_puhelinnumero | translate"
+                          [placeholder]="i18n.yhteystiedot_placeholder_puhelinnumero | translate"
+                          [instructionText]="i18n.yhteystiedot_instruction_puhelinnumero | translate">
+      <input #fieldItem
+             *ngIf="saveAccess; else noEditPhone"
+             type="text"
+             class="oph-input"
+             formControlName="puhelinnumero" />
+      <ng-template #noEditPhone>
+        <span class="yhteystieto-field-missing"
+              *ngIf="!vakajarjestajaDetails.puhelinnumero; else showPhone">
+          {{ i18n.yhteystiedot_missing_puhelinnumero | translate }}
+        </span>
+        <ng-template #showPhone>
+          <span>{{ vakajarjestajaDetails.puhelinnumero }}</span>
+        </ng-template>
+      </ng-template>
+    </app-varda-form-field>
+
+    <app-varda-error-field [errors]="vakatoimijaFormErrors"></app-varda-error-field>
+
+    <div *ngIf="saveSuccess"
+         role="alert"
+         aria-live="polite"
+         class="alert alert-success">{{ i18n.save_success | translate }}</div>
+
+    <div *ngIf="saveAccess"
+         class="vakatoimija-button-row">
+      <button *ngIf="isEdit"
+              [disabled]="(isLoading | async) || vakatoimijaForm.pristine"
+              type="submit"
+              id="submit-button"
+              class="varda-button varda-button-wide responsive-md">
+        {{ i18n.save | translate }}
+      </button>
+
+      <button *ngIf="!isEdit"
+              (click)="enableForm()"
+              type="button"
+              id="edit-button"
+              class="varda-button varda-button-wide secondary responsive-md">
+        {{ i18n.edit | translate }}
+      </button>
+
+      <button *ngIf="isEdit"
+              (click)="disableForm()"
+              type="button"
+              id="cancel-button"
+              class="varda-button varda-button-neutral varda-button-wide secondary responsive-md">
+        {{ i18n.cancel | translate }}
+      </button>
+    </div>
+  </form>
+</main>

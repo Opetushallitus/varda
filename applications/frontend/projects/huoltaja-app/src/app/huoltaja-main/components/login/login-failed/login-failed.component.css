@@ -1,0 +1,17 @@
+:root {
+  font-size: 1rem;
+}
+
+.origin-link {
+  text-decoration: none;
+  color: var(--link-color);
+  font-size: 1.25rem;
+}
+
+.origin-link .material-icons {
+  vertical-align: middle;
+}
+
+.login-failed-message {
+  margin: 1rem auto;
+}
