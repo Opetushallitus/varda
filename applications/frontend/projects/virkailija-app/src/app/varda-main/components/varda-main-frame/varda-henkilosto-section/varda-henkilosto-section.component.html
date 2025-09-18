@@ -1,0 +1,90 @@
+<section class="henkilo-section varda-page-content">
+  <div class="henkilo-section-header">
+    <div class="row align-items-center">
+      <h3 class="oph-h4 oph-bold col">
+        {{ i18n.henkilo_tyontekijat | translate }}
+        <span *ngIf="searchFilter.count"
+              class="henkilo-section-header-counter">
+          ({{ searchFilter.count }})
+        </span>
+      </h3>
+      <button mat-icon-button
+              class="varda-info-button col-auto"
+              [matTooltip]="i18n.katsele_tietoja_tyontekija_tooltip_search | translate"
+              matTooltipClass="varda-tooltip"
+              aria-label="katsele tietoja ohje">
+        <mat-icon alt="">info</mat-icon>
+      </button>
+    </div>
+    <button id="addTyontekijaBtn"
+            *ngIf="toimipaikkaAccess.tyontekijatiedot.tallentaja"
+            class="varda-button responsive"
+            (click)="addHenkilo()">
+      + {{ i18n.henkilo_lisaa_tyontekija | translate }}
+    </button>
+  </div>
+
+  <div class="henkilo-section-filter">
+    <mat-form-field floatLabel="always">
+      <mat-label>{{ i18n.henkilo_hae_nimella | translate }}</mat-label>
+      <input autocomplete="off"
+             matInput
+             type="text"
+             [disabled]="isLoading | async"
+             (change)="searchHenkilot()"
+             [(ngModel)]="searchFilter.search"
+             id="searchTyontekijaInput" />
+      <button mat-button
+              [title]="i18n.henkilo_hae_nimella | translate"
+              [disabled]="isLoading | async"
+              (click)="searchHenkilot()"
+              matSuffix
+              id="searchTyontekijaButton">
+        <mat-icon alt="">search</mat-icon>
+      </button>
+    </mat-form-field>
+
+
+    <div class="checkbox-filter">
+      <mat-checkbox [value]="!searchFilter.voimassa_pvm"
+                    (change)="toggleAktiiviset()"
+                    [disabled]="isLoading | async"
+                    id="allTyontekijaCheckbox">
+        {{ i18n.henkilo_tyontekijat_voimassa_kytkin | translate }}
+      </mat-checkbox>
+
+      <ng-container *ngIf="!selectedToimipaikka">
+        <mat-checkbox [(ngModel)]="searchFilter.kiertava_tyontekija_kytkin"
+                      [disabled]="isLoading | async"
+                      (change)="searchHenkilot()"
+                      id="kiertavaTyontekijaCheckbox">
+          {{ i18n.henkilo_vain_kiertavat_tyontekijat | translate }}
+        </mat-checkbox>
+      </ng-container>
+    </div>
+
+
+  </div>
+
+  <div *ngIf="henkilot?.length === 0"
+       class="varda-muted">
+    {{ i18n.henkilo_toimipaikasta_ei_loydy_tyontekijoita | translate }}
+  </div>
+
+  <mat-progress-bar *ngIf="!henkilot && isLoading | async"
+                    mode="indeterminate"></mat-progress-bar>
+
+  <ng-container *ngIf="henkilot?.length > 0">
+    <app-varda-henkilo-list (openHenkiloForm)="openHenkilo($event)"
+                            henkiloRooli="tyontekija"
+                            [henkiloList]="henkilot">
+    </app-varda-henkilo-list>
+    <mat-paginator *ngIf="searchFilter.count"
+                   [disabled]="isLoading | async"
+                   [length]="searchFilter.count"
+                   [pageSize]="searchFilter.page_size"
+                   [pageIndex]="searchFilter.page - 1"
+                   (page)="searchHenkilot($event)">
+    </mat-paginator>
+  </ng-container>
+</section>

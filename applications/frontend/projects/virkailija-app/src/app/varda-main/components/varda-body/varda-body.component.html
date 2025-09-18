@@ -1,0 +1,11 @@
+<ng-container *ngIf="!virkailijaRaamit">
+  <div id="virkailija-raamit-filleri"></div>
+</ng-container>
+<div class="varda-body-container" appHighContrast>
+  <router-outlet></router-outlet>
+
+  <app-varda-footer></app-varda-footer>
+  <div class="varda-main-frame-accessibility-settings-container">
+    <app-varda-accessibility-settings></app-varda-accessibility-settings>
+  </div>
+</div>
