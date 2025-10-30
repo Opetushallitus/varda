@@ -1,0 +1,20 @@
+<input #inputObject="ngModel"
+       class="oph-input"
+       [name]="name"
+       [id]="id"
+       [class.oph-input-has-error]="!inputObject.valid && inputObject.touched"
+       [type]="type"
+       [minlength]="minlength"
+       [required]="required"
+       [readOnly]="readonly"
+       [disabled]="disabled"
+       [placeholder]="placeholder"
+       [(ngModel)]="inputValue"
+       (keydown.enter)="onKeydownEnter($event)"
+       (blur)="onBlur()"
+       (input)="onInput($event)">
+<div class="oph-field-text oph-error" *ngIf="errorMap.length > 0 && !inputObject.valid && inputObject.touched && inputObject.errors">
+  <ng-container *ngFor="let errorItem of errorMap">
+    <span *ngIf="inputObject.errors.hasOwnProperty(errorItem.key)">{{ errorItem.value | translate }}</span>
+  </ng-container>
+</div>

@@ -1,0 +1,97 @@
+<div class="koodisto-detail-header">
+  <h2>{{selectedKoodistoName}}</h2>
+  <p *ngIf="isValidKoodistoName"
+        class="koodisto-version">
+    {{ translation.koodistot_version | translate}}: {{version}}
+  </p>
+  <p *ngIf="isValidKoodistoName"
+        class="koodisto-update-date">
+    {{ translation.koodistot_updated| translate}}: {{update_datetime.toFormat('dd.MM.yyyy')}}
+  </p>
+</div>
+<hr *ngIf="!isValidKoodistoName">
+<p *ngIf="!isValidKoodistoName">{{ translation.koodistot_invalid_koodisto_name | translate}}</p>
+<div *ngIf="isValidKoodistoName && !(isExtraSmall | async)" class="table-responsive koodisto-table">
+  <table class="table table-hover">
+    <thead>
+    <tr>
+      <th scope="col">{{ translation.koodistot_code | translate}}</th>
+      <th scope="col">{{ translation.koodistot_name | translate}}</th>
+      <th scope="col">{{ translation.koodistot_description | translate}}</th>
+    </tr>
+    </thead>
+    <tbody>
+    <ng-container *ngFor="let code of codes">
+      <tr *ngIf="showSubheader(code)">
+        <td colspan="3" class="koodisto-table-subheading">
+          {{getSubheaderTranslationKey(code) | translate}}
+        </td>
+      </tr>
+      <tr>
+        <td>{{code.code_value}}</td>
+        <td>{{code.name}}</td>
+        <td>{{code.description}}</td>
+      </tr>
+    </ng-container>
+    <ng-container *ngIf="codesPassive.length > 0">
+      <tr class="koodisto-passive-header">
+        <td colspan="3">{{ translation.koodistot_passive | translate }}</td>
+      </tr>
+      <tr *ngFor="let code of codesPassive" class="koodisto-passive">
+        <td>{{code.code_value}}</td>
+        <td>{{code.name}}</td>
+        <td>{{code.description}}</td>
+      </tr>
+    </ng-container>
+    </tbody>
+  </table>
+</div>
+<div *ngIf="isExtraSmall | async" class="koodisto-small-wrapper">
+  <ng-container *ngFor="let code of codes">
+    <div *ngIf="showSubheader(code)"
+         class="koodisto-table-small-subheading">
+      {{getSubheaderTranslationKey(code) | translate}}
+    </div>
+    <div class="table-responsive">
+      <table class="table table-borderless koodisto-table-small">
+        <tbody>
+        <tr>
+          <th scope="row">{{ translation.koodistot_code | translate}}</th>
+          <td>{{code.code_value}}</td>
+        </tr>
+        <tr>
+          <th scope="row">{{ translation.koodistot_name | translate}}</th>
+          <td>{{code.name}}</td>
+        </tr>
+        <tr>
+          <th scope="row">{{ translation.koodistot_description | translate}}</th>
+          <td>{{code.description}}</td>
+        </tr>
+        </tbody>
+      </table>
+      <hr>
+    </div>
+  </ng-container>
+  <ng-container *ngIf="codesPassive.length > 0">
+    <p class="koodisto-passive-header">{{ translation.koodistot_passive | translate }}</p>
+    <div *ngFor="let code of codesPassive" class="table-responsive">
+      <table class="table table-borderless koodisto-table-small koodisto-passive">
+        <tbody>
+        <tr>
+          <th scope="row">{{ translation.koodistot_code | translate}}</th>
+          <td>{{code.code_value}}</td>
+        </tr>
+        <tr>
+          <th scope="row">{{ translation.koodistot_name | translate}}</th>
+          <td>{{code.name}}</td>
+        </tr>
+        <tr>
+          <th scope="row">{{ translation.koodistot_description | translate}}</th>
+          <td>{{code.description}}</td>
+        </tr>
+        </tbody>
+      </table>
+      <hr>
+    </div>
+  </ng-container>
+</div>
