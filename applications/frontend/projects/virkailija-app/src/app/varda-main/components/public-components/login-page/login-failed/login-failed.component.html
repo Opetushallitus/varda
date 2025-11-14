@@ -1,0 +1,62 @@
+<div id="main-content" tabindex="-1" class="varda-login-page varda-login-failed varda-high-contrast">
+  <main class="varda-page-content"
+        role="alert">
+    <h1 class="oph-h2 oph-bold mb-2"
+        aria-live="polite">
+      Kirjautuminen epäonnistui / Inloggningen misslyckades
+    </h1>
+
+    <div *ngIf="fragment=== errorType.noAccess">
+      <h2 class="oph-h4 mb-2">Syy: <strong>Ei voimassa olevia käyttöoikeuksia</strong></h2>
+      <p>
+        Tarkista, että käyttöoikeutesi Vardaan ovat voimassa. Mikäli tunnus ja käyttöoikeudet ovat kunnossa, kokeile
+        kirjautumista hetken kuluttua uudelleen. Virheen jatkuessa ole yhteydessä Vardan asiakaspalveluun
+        (varda&#64;opintopolku.fi).
+      </p>
+
+      <h2 class="oph-h4 mb-2">Orsak: <strong>Inga giltiga användarrättigheter</strong></h2>
+      <p>
+        Kontrollera att dina användarrättigheter till Varda är i kraft. Om användarnamnet och -rättigheterna är i
+        ordning kan du försöka logga in på nytt om en stund. Om felet fortsätter ta kontakt med Vardas kundtjänst
+        (varda&#64;opintopolku.fi).
+      </p>
+    </div>
+
+    <div *ngIf="fragment=== errorType.palvelukayttaja">
+      <h2 class="oph-h4 mb-2">Syy: <strong>Kirjautuminen palvelukäyttäjätunnuksella</strong></h2>
+      <p>
+        Et voi kirjautua Vardaan tiedonsiirtoihin tarkoitetulla palvelukäyttäjätunnuksella. Mikäli tunnus ja
+        käyttöoikeudet ovat kunnossa, kokeile kirjautumista hetken kuluttua uudelleen. Virheen jatkuessa ole
+        yhteydessä Vardan asiakaspalveluun (varda&#64;opintopolku.fi).
+      </p>
+
+      <h2 class="oph-h4 mb-2">Orsak: <strong>Inloggning med tjänsteanvändarnamn</strong></h2>
+      <p>
+        Du kan inte logga in i Varda med ett tjänsteanvändarnamn som används vid dataöverföringar. Om användarnamnet
+        och -rättigheterna är i ordning kan du försöka logga in på nytt om en stund. Om felet fortsätter ta kontakt
+        med Vardas kundtjänst (varda&#64;opintopolku.fi).
+      </p>
+    </div>
+
+    <div *ngIf="fragment === errorType.unknown">
+      <p>
+        Tarkista, että käyttöoikeutesi Vardaan ovat voimassa ja että et yrittänyt kirjautua sisään tiedonsiirtoihin
+        tarkoitetulla palvelukäyttäjätunnuksella. Mikäli tunnus ja käyttöoikeudet ovat kunnossa, kokeile kirjautumista
+        hetken kuluttua uudelleen. Virheen jatkuessa ole yhteydessä Vardan asiakaspalveluun (varda&#64;opintopolku.fi).
+      </p>
+
+      <p>
+        Kontrollera att dina användarrättigheter till Varda är i kraft och att du inte försökte logga in med ett
+        tjänsteanvändarnamn som används vid dataöverföringar. Om användarnamnet och -rättigheterna är i ordning kan du
+        försöka logga in på nytt om en stund. Om felet fortsätter ta kontakt med Vardas kundtjänst
+        (varda&#64;opintopolku.fi).
+      </p>
+    </div>
+
+    <a class="oph-h3 varda-link text-decoration-none"
+       href="/">
+      <mat-icon alt="">keyboard_return</mat-icon>
+      {{ opintopolkuName }}
+    </a>
+  </main>
+</div>

@@ -1,0 +1,171 @@
+@import "./assets/css/variables.css";
+@import "./assets/css/tables.css";
+@import "./assets/css/panels.css";
+
+html {
+  font-size: 16px;
+  font-family: 'Roboto', sans-serif;
+  color: var(--text-color);
+}
+
+#header-login-button,
+#header-koski-link,
+#header-omatsivut-link,
+.header-language-en {
+  display: none !important;
+}
+
+#header-overflow-menu-container {
+  z-index: 2;
+}
+
+#header-profile-icon {
+  margin-left: 0.5em;
+}
+
+body {
+  font-size: clamp(0.8rem, 2.0vw, 1.0rem);
+}
+
+h1, .h1, h2, .h2, h3, .h3, h4, .h4, h5, .h5 {
+  color: var(--oph-neutral-darken-1);
+}
+
+h1,
+.h1 {
+  font-size: clamp(1.4rem, 5vw, 1.5rem);
+}
+
+h2,
+.h2 {
+  font-size: clamp(1.1rem, 4vw, 1.3rem);
+}
+
+h3,
+.h3 {
+  font-size: clamp(1.0rem, 4vw, 1.1rem);
+}
+
+h4,
+.h4 {
+  font-size: clamp(0.9rem, 3vw, 1rem);
+}
+
+h5,
+.h5 {
+  font-size: clamp(0.8rem, 3vw, 0.9rem);
+}
+
+a {
+  color: var(--link-color);
+}
+
+a:active {
+  color: var(--oph-green-darken-2);
+}
+
+td {
+  padding-left: 0.25em;
+  padding-right: 0.25em;
+}
+
+.bold {
+  font-weight: bold;
+}
+
+.m-b-05 {
+  margin-bottom: 0.5em;
+}
+
+.m-b-1 {
+  margin-bottom: 1em;
+}
+
+.m-b-2 {
+  margin-bottom: 2em;
+}
+
+.link-color {
+  color: var(--link-color);
+}
+
+.word-break {
+  word-break: break-all;
+}
+
+.error-field {
+  padding: 1em;
+  background-color: var(--oph-orange-darken-1);
+  color: var(--oph-white);
+}
+
+app-huoltaja-dashboard button {
+  background: none;
+  color: inherit;
+  border: none;
+  padding: 0;
+  font: inherit;
+  cursor: pointer;
+  outline: inherit;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.button {
+  border: 1px solid black;
+  border-radius: 0.25em;
+  padding: 0.1em 0.75em;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+app-huoltaja-dashboard button:focus,
+.button:hover,
+.button:focus {
+  background-color: var(--oph-gray-lighten-1);
+}
+
+app-huoltaja-dashboard button:focus,
+.button:focus {
+  outline: 2px solid black;
+}
+
+.material-icons,
+mat-icon {
+  position: relative;
+  user-select: none;
+}
+
+.extension-info {
+  margin-top: 1em;
+  margin-bottom: 1em;
+  padding: 0.5em;
+  font-size: 1em;
+  background-color: var(--oph-gray-lighten-1);
+}
+
+.green-info {
+  display: flex;
+  margin-bottom: 1em;
+  border-left: 12px solid var(--oph-green-darken-1);
+  padding: 0.25em 1em;
+}
+
+mat-expansion-panel mat-expansion-panel-header {
+  min-height: 48px;
+  height: auto !important;
+}
+
+.mat-mdc-tooltip .mdc-tooltip__surface {
+  font-size: clamp(0.9rem, 3vw, 1.0rem) !important;
+  word-break: break-word;
+  max-width: 300px;
+  padding: 0.5rem 0.7rem;
+}
+
+.mat-primary .mat-mdc-option.mdc-list-item--selected:not(.mdc-list-item--disabled) .mdc-list-item__primary-text,
+.mat-primary .mat-pseudo-checkbox-checked.mat-pseudo-checkbox-minimal::after {
+  color: var(--oph-green-darken-1);
+}

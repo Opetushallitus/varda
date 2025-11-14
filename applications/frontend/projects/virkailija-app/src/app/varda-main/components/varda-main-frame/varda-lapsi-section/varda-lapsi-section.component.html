@@ -1,0 +1,80 @@
+<section class="henkilo-section varda-page-content">
+  <div class="henkilo-section-header">
+    <div class="row align-items-center">
+      <h3 class="oph-h4 oph-bold col">
+        {{ i18n.henkilo_lapset | translate }}
+        <span *ngIf="resultCount"
+              class="henkilo-section-header-counter">
+          ({{ resultCount }})
+        </span>
+      </h3>
+      <button mat-icon-button
+              class="varda-info-button col-auto"
+              [matTooltip]="i18n.katsele_tietoja_lapsi_tooltip_search | translate"
+              matTooltipClass="varda-tooltip"
+              aria-label="katsele tietoja ohje">
+        <mat-icon alt="">info</mat-icon>
+      </button>
+    </div>
+    <button id="addLapsiBtn"
+            *ngIf="toimipaikkaAccess.lapsitiedot.tallentaja"
+            class="varda-button responsive"
+            (click)="addHenkilo()">
+      + {{ i18n.henkilo_lisaa_lapsi | translate }}
+    </button>
+  </div>
+
+  <div class="henkilo-section-filter">
+    <mat-form-field floatLabel="always">
+      <mat-label>{{ i18n.henkilo_hae_nimella | translate }}</mat-label>
+      <input autocomplete="off"
+             matInput
+             type="text"
+             [disabled]="isLoading | async"
+             (change)="searchHenkilot()"
+             [(ngModel)]="searchFilter.search"
+             id="searchLapsiInput" />
+      <button mat-button
+              [title]="i18n.henkilo_hae_nimella | translate"
+              [disabled]="isLoading | async"
+              (click)="searchHenkilot()"
+              matSuffix
+              id="searchLapsiButton">
+        <mat-icon alt="">search</mat-icon>
+      </button>
+    </mat-form-field>
+    <div class="checkbox-filter">
+      <mat-checkbox [value]="!searchFilter.voimassa_pvm"
+                    (change)="toggleAktiiviset()"
+                    [disabled]="isLoading | async"
+                    id="allLapsiCheckbox">
+        {{ i18n.henkilo_lapset_voimassa_kytkin | translate }}
+      </mat-checkbox>
+    </div>
+
+  </div>
+
+  <div *ngIf="henkilot?.length === 0"
+       class="varda-muted">
+    {{ i18n.henkilo_toimipaikasta_ei_loydy_lapsia | translate }}
+  </div>
+
+  <mat-progress-bar *ngIf="!henkilot && isLoading | async"
+                    mode="indeterminate"
+                    color="accent"></mat-progress-bar>
+
+  <ng-container *ngIf="henkilot?.length > 0">
+    <app-varda-henkilo-list (openHenkiloForm)="openHenkilo($event)"
+                            henkiloRooli="lapsi"
+                            [henkiloList]="henkilot">
+    </app-varda-henkilo-list>
+    <mat-paginator *ngIf="resultCount"
+                   [disabled]="isLoading | async"
+                   [length]="resultCount"
+                   [pageSize]="searchFilter.page_size"
+                   [pageIndex]="currentPageIndex"
+                   (page)="searchHenkilot($event)">
+    </mat-paginator>
+  </ng-container>
+
+</section>
