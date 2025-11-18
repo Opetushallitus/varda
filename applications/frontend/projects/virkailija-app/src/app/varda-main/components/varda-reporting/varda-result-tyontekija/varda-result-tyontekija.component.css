@@ -1,0 +1,20 @@
+.tyontekija-section {
+  margin-bottom: 2em;
+}
+
+.tyontekija-section-inner {
+  margin-top: 1.5em;
+  margin-left: 1.5em;
+}
+
+.tyoskentelypaikka-panel, .taydennyskoulutus-panel {
+  margin-bottom: 1em !important;
+}
+
+.palvelussuhde-panel:not(:nth-of-type(1)) {
+  margin-top: 2em;
+}
+
+.tehtavanimike-item {
+  display: block;
+}

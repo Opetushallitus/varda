@@ -1,0 +1,18 @@
+h4 {
+  margin-bottom: 0;
+}
+
+.tutkinnot .mat-mdc-list-item {
+  height: auto;
+  font-size: clamp(0.9rem, 3vw, 1rem);
+  margin-bottom: 0.25rem;
+}
+
+.tutkinnot .mat-mdc-list-base .mat-mdc-list-item .mat-line {
+  white-space: normal;
+}
+
+.tutkinnot .mat-icon {
+  margin-right: 0.5rem;
+  vertical-align: bottom;
+}
