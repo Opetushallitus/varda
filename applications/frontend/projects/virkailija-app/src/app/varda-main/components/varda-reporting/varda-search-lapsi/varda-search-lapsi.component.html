@@ -1,0 +1,370 @@
+<div class="varda-card-bottom">
+  <form class="margin-top">
+    <div class="varda-reporting-search-form-content varda-reporting-row-wrap">
+      <div class="col-md-5 order-1">
+        <label for="lapsiToimipaikkaInput"
+        class="oph-bold">{{i18n.toimipaikka_plural | translate}}</label>
+        <div [class.oph-invalid-container]="!isAllToimipaikatSelected && selectedToimipaikat.length === 0">
+          <div class="oph-select-container">
+            <input class="oph-input"
+              id="lapsiToimipaikkaInput"
+              name="lapsiToimipaikkaInput"
+              type="text"
+              placeholder="{{i18n.katsele_tietoja_select_toimipaikat | translate}}"
+              #toimipaikkaInput
+              [matAutocomplete]="auto"
+              (input)="toimipaikkaSelectInputChange($event)">
+          </div>
+          <mat-autocomplete #auto="matAutocomplete"
+            (optionSelected)="toimipaikkaAutocompleteSelected($event)">
+            @if (!isAllToimipaikatSelected) {
+              <mat-option
+              [value]="null">{{i18n.kaikki_toimipaikat | translate}}</mat-option>
+            }
+            @if (isNoToimipaikkaResults) {
+              <mat-option
+              disabled>{{i18n.no_autofill_results | translate}}</mat-option>
+            }
+            @for (toimipaikkaObj of filteredToimipaikkaOptions | async; track toimipaikkaObj) {
+              <mat-option
+                [value]="toimipaikkaObj"
+                [title]="toimipaikkaObj.nimi">
+                {{toimipaikkaObj.nimi}}
+              </mat-option>
+            }
+          </mat-autocomplete>
+          @if (!isAllToimipaikatSelected && selectedToimipaikat.length === 0) {
+            <div class="varda-error-message-block"
+              aria-live="assertive"
+              role="alert"
+              >
+              <p>{{i18n.katsele_tietoja_error_no_toimipaikka_selected | translate}}</p>
+            </div>
+          }
+        </div>
+      </div>
+      <div class="col-md col-lg-4 order-3 order-md-2 margin-top-md">
+        <label for="lapsiSearchInput"
+        class="oph-bold">{{i18n.katsele_tietoja_nimi_tunniste | translate}}</label>
+        <button mat-icon-button
+          class="varda-info-button"
+          [matTooltip]="i18n.katsele_tietoja_lapsi_tooltip_search | translate"
+          matTooltipClass="varda-tooltip"
+          aria-label="katsele tietoja ohje">
+          <mat-icon alt="">info</mat-icon>
+        </button>
+        <app-varda-input #searchInput="ngModel"
+          [name]="'lapsiSearchInput'"
+          [id]="'lapsiSearchInput'"
+          type="text"
+          placeholder="{{i18n.katsele_tietoja_nimi_tunniste | translate}}"
+          minlength="3"
+          [(ngModel)]="searchValue"
+                         [errorMap]="[
+                           { key: 'minlength', value: i18n.katsele_tietoja_error_search_minlength }
+                         ]"
+        (keydownEnter)="search()"></app-varda-input>
+      </div>
+      <div class="col-md-auto order-4 order-md-3">
+        <button class="varda-button varda-icon-button search-button margin-top-md"
+          type="button"
+          (click)="search()">
+          <mat-icon alt="">search</mat-icon>
+          {{i18n.katsele_tietoja_search | translate}}
+        </button>
+      </div>
+      <div class="toimipaikka-chip-container col-12 order-2 order-md-4">
+        <mat-chip-listbox aria-label="valitut toimipaikat"
+          #toimipaikkaChipList>
+          @if (isAllToimipaikatSelected) {
+            <mat-chip-option
+              [removable]="true"
+              (removed)="removeSelectedToimipaikka(null)">
+              {{i18n.kaikki_toimipaikat | translate}}
+              <mat-icon matChipRemove>cancel</mat-icon>
+            </mat-chip-option>
+          }
+          @for (toimipaikkaObj of selectedToimipaikat; track toimipaikkaObj) {
+            <mat-chip-option
+              [removable]="true"
+              (removed)="removeSelectedToimipaikka(toimipaikkaObj)">
+              {{toimipaikkaObj.nimi}}
+              <mat-icon matChipRemove>cancel</mat-icon>
+            </mat-chip-option>
+          }
+        </mat-chip-listbox>
+      </div>
+      @if (isFiltersVisible) {
+        <div class="oph-bg-gray-lighten-5 filter-form order-5"
+          >
+          <div class="col-12">
+            @if (isSmall) {
+              <label class="varda-link varda-filter-close"
+                (click)="isFiltersVisible = false; clearFilters()">
+                {{i18n.close | translate}}
+              </label>
+            }
+            <mat-checkbox name="aktiivisetCheckbox"
+              class="varda-checkbox"
+              [(ngModel)]="filterParams.aktiiviset"
+              labelPosition="after"
+              (change)="search()">
+              <span class="oph-bold">{{i18n.katsele_tietoja_lapsi_active | translate}}</span>
+              <button mat-icon-button
+                class="varda-info-button"
+                [matTooltip]="i18n.katsele_tietoja_lapsi_active_description | translate"
+                matTooltipClass="varda-tooltip"
+                aria-label="aktiiviset lapset ohje">
+                <mat-icon alt="">info</mat-icon>
+              </button>
+            </mat-checkbox>
+          </div>
+          @if (filterParams.aktiiviset) {
+            <div class="col-12">
+              <div class="varda-date-range-container">
+                <div class="row-custom varda-date-range-row">
+                  <div class="col-6">
+                    <app-varda-datepicker [name]="'filterAlkamisPvm'"
+                      [(ngModel)]="filterParams.alkamisPvm"
+                      (dateInput)="search()"
+                      [required]="true"
+                                      [errorMap]="[
+                                        { key: 'required', value: i18n.required_field },
+                                        { key: 'matDatepickerParse', value: i18n.katsele_tietoja_error_date_format }
+                                      ]">
+                    </app-varda-datepicker>
+                  </div>
+                  <span class="varda-date-range-dash">–</span>
+                  <div class="col-6">
+                    <app-varda-datepicker [name]="'filterPaattymisPvm'"
+                      [(ngModel)]="filterParams.paattymisPvm"
+                      (dateInput)="search()"
+                      [required]="true"
+                                      [errorMap]="[
+                                        { key: 'required', value: i18n.required_field },
+                                        { key: 'matDatepickerParse', value: i18n.katsele_tietoja_error_date_format }
+                                      ]">
+                    </app-varda-datepicker>
+                  </div>
+                </div>
+              </div>
+            </div>
+          }
+          <div class="col-md-auto">
+            <label class="oph-bold">{{i18n.katsele_tietoja_filter_content | translate}}</label>
+            <app-varda-radio-button-group name="lapsiRajausButtonGroup"
+              responsive="lg"
+              wrap="lg"
+              (valueChanged)="search()"
+              [(ngModel)]="filterParams.rajaus">
+              <app-varda-radio-button [id]="'filterVakapaatokset'"
+                [value]="rajaus.VAKAPAATOKSET"
+                [disabled]="!userAccess.lapsitiedot.katselija">
+                {{i18n.varhaiskasvatuspaatokset | translate}}
+              </app-varda-radio-button>
+              <app-varda-radio-button [id]="'filterVakasuhteet'"
+                [value]="rajaus.VAKASUHTEET"
+                [disabled]="!userAccess.lapsitiedot.katselija">
+                {{i18n.varhaiskasvatussuhde_plural | translate}}
+              </app-varda-radio-button>
+              <app-varda-radio-button [id]="'filterMaksutiedot'"
+                [value]="rajaus.MAKSUTIEDOT"
+                [disabled]="!userAccess.huoltajatiedot.katselija">
+                {{i18n.maksutiedot | translate}}
+              </app-varda-radio-button>
+              <app-varda-radio-button [id]="'filterNone'"
+                [value]="rajaus.NONE">
+                {{i18n.katsele_tietoja_no_filter_content | translate}}
+              </app-varda-radio-button>
+            </app-varda-radio-button-group>
+          </div>
+          @if (filterParams.rajaus !== rajaus.NONE) {
+            <div class="col-md-auto"
+              >
+              <label class="oph-bold">{{i18n.katsele_tietoja_filter_time | translate}}</label>
+              <div class="row filter-time-container">
+                <div class="col-md-auto">
+                  <app-varda-radio-button-group name="lapsiVoimassaoloButtonGroup"
+                    responsive="md"
+                    wrap="xs"
+                    (valueChanged)="search()"
+                    [(ngModel)]="filterParams.voimassaolo">
+                    <app-varda-radio-button [id]="'filterVoimassa'"
+                      [value]="voimassaolo.VOIMASSA">
+                      {{i18n.katsele_tietoja_voimassa | translate}}
+                    </app-varda-radio-button>
+                    <app-varda-radio-button [id]="'filterAlkanut'"
+                      [value]="voimassaolo.ALKANUT">
+                      {{i18n.katsele_tietoja_alkanut | translate}}
+                    </app-varda-radio-button>
+                    <app-varda-radio-button [id]="'filterPaattynyt'"
+                      [value]="voimassaolo.PAATTYNYT">
+                      {{i18n.katsele_tietoja_paattynyt | translate}}
+                    </app-varda-radio-button>
+                  </app-varda-radio-button-group>
+                </div>
+                <div class="col varda-date-range-container">
+                  <div class="row-custom varda-date-range-row">
+                    <div class="col-6">
+                      <app-varda-datepicker [name]="'filterAlkamisPvm'"
+                        [(ngModel)]="filterParams.alkamisPvm"
+                        (dateInput)="search()"
+                        [required]="true"
+                                        [errorMap]="[
+                                          { key: 'required', value: i18n.required_field },
+                                          { key: 'matDatepickerParse', value: i18n.katsele_tietoja_error_date_format }
+                                        ]">
+                      </app-varda-datepicker>
+                    </div>
+                    <span class="varda-date-range-dash">–</span>
+                    <div class="col-6">
+                      <app-varda-datepicker [name]="'filterPaattymisPvm'"
+                        [(ngModel)]="filterParams.paattymisPvm"
+                        (dateInput)="search()"
+                        [required]="true"
+                                        [errorMap]="[
+                                          { key: 'required', value: i18n.required_field },
+                                          { key: 'matDatepickerParse', value: i18n.katsele_tietoja_error_date_format }
+                                        ]">
+                      </app-varda-datepicker>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          }
+          <div class="varda-reporting-row-wrap">
+            <div class="col-md-8 col-lg-6">
+              <label for="lapsiJarjestamismuotoSelect"
+              class="oph-bold">{{i18n.varhaiskasvatuspaatos_jarjestamismuoto_koodi | translate}}</label>
+              <div class="oph-select-container">
+                <select class="oph-input oph-select"
+                  name="lapsiJarjestamismuotoSelect"
+                  id="lapsiJarjestamismuotoSelect"
+                  (change)="search()"
+                  [(ngModel)]="filterParams.jarjestamismuoto">
+                  <option [ngValue]="null">{{i18n.katsele_tietoja_lapsi_jarjestamismuoto_all | translate}}</option>
+                  @for (code of jarjestamismuotoCodes; track code) {
+                    <option
+                      [ngValue]="code"
+                      [title]="getCodeUiString(code)"
+                      [libKoodistoValue]="koodistoEnum.jarjestamismuoto" format="long">
+                      {{code.code_value}}
+                    </option>
+                  }
+                </select>
+              </div>
+            </div>
+            <div class="col-md-6 col-lg-4 margin-top-lg">
+              <label for="lapsiToimintamuotoSelect"
+              class="oph-bold">{{i18n.toimipaikka_toimintamuoto_koodi | translate}}</label>
+              <div class="oph-select-container">
+                <select class="oph-input oph-select"
+                  name="lapsiToimintamuotoSelect"
+                  id="lapsiToimintamuotoSelect"
+                  (change)="search()"
+                  [(ngModel)]="filterParams.toimintamuoto">
+                  <option [ngValue]="null">{{i18n.katsele_tietoja_lapsi_toimintamuoto_all | translate}}</option>
+                  @for (code of toimintamuotoCodes; track code) {
+                    <option
+                      [ngValue]="code"
+                      [title]="getCodeUiString(code)"
+                      [libKoodistoValue]="koodistoEnum.toimintamuoto" format="long">
+                      {{code.code_value}}
+                    </option>
+                  }
+                </select>
+              </div>
+            </div>
+          </div>
+          <div class="varda-reporting-row-wrap">
+            @if (filterParams.rajaus === rajaus.MAKSUTIEDOT) {
+              <div class="col-md-6 col-lg-4">
+                <label for="lapsiMaksunPerusteSelect"
+                class="oph-bold">{{i18n.maksutieto_maksunperuste_koodi | translate}}</label>
+                <div class="oph-select-container">
+                  <select class="oph-input oph-select"
+                    name="lapsiMaksunPerusteSelect"
+                    id="lapsiMaksunPerusteSelect"
+                    (change)="search()"
+                    [(ngModel)]="filterParams.maksunPeruste">
+                    <option [ngValue]="null">{{i18n.katsele_tietoja_lapsi_maksun_peruste_all | translate}}</option>
+                    @for (code of maksunPerusteCodes; track code) {
+                      <option
+                        [ngValue]="code"
+                        [title]="getCodeUiString(code)"
+                        [libKoodistoValue]="koodistoEnum.maksunperuste" format="long">
+                        {{code.code_value}}
+                      </option>
+                    }
+                  </select>
+                </div>
+              </div>
+            }
+            @if (filterParams.rajaus === rajaus.MAKSUTIEDOT) {
+              <div class="col-md-4 col-lg-3 margin-top-md">
+                <label for="lapsiPalveluseteliSelect"
+                class="oph-bold">{{i18n.katsele_tietoja_lapsi_palveluseteli | translate}}</label>
+                <div class="oph-select-container">
+                  <select class="oph-input oph-select"
+                    name="lapsiPalveluseteliSelect"
+                    id="lapsiPalveluseteliSelect"
+                    (change)="search()"
+                    [(ngModel)]="filterParams.palveluseteli">
+                    <option [ngValue]="null">{{i18n.all | translate}}</option>
+                    <option [ngValue]="true">{{i18n.yes | translate}}</option>
+                    <option [ngValue]="false">{{i18n.no | translate}}</option>
+                  </select>
+                </div>
+              </div>
+            }
+            <div class="col filter-clear-container">
+              <button class="varda-button varda-icon-button filter-clear"
+                type="button"
+                (click)="clearFilters()"
+                [disabled]="!isFiltersActive()">
+                <mat-icon alt="">delete</mat-icon>
+                {{i18n.katsele_tietoja_clear_filters | translate}}
+              </button>
+            </div>
+          </div>
+        </div>
+      }
+      @if (isFiltersVisible) {
+        <div class="modal-form-intro lapsi-filter-instruction order-6"
+          [innerHTML]="i18n.katsele_tietoja_lapsi_filter_help | translateMarkdown">
+        </div>
+      }
+      @if (!isFiltersVisible) {
+        <div class="varda-link col-12 order-7 margin-top-md"
+          (click)="isFiltersVisible = true">
+          {{i18n.katsele_tietoja_apply_filters | translate}}
+        </div>
+      }
+    </div>
+  </form>
+</div>
+<app-varda-result-info [filterString]="filterString"
+[resultCount]="resultCount"></app-varda-result-info>
+@if (resultCount > 0) {
+  <div class="varda-reporting-card-container"
+    >
+    <div class="col-12 col-lg-5 custom-col varda-reporting-card">
+      <app-varda-result-list #resultList
+        [resultCount]="resultCount"
+        [nextCursor]="nextCursor"
+        [prevCursor]="prevCursor"
+        [searchResults]="searchResults"
+        [pageSize]="pageSize"
+        (paginationChanged)="search($event)"
+      (resultSelected)="setSelectedId($event)"></app-varda-result-list>
+    </div>
+    @if (selectedId) {
+      <div class="col-12 col-lg-7 varda-reporting-card"
+        >
+        <app-varda-result-lapsi [lapsiId]="selectedId"
+        [userAccess]="userAccess"></app-varda-result-lapsi>
+      </div>
+    }
+  </div>
+}

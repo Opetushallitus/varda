@@ -1,0 +1,16 @@
+<main class="ei-tietoja">
+  <app-henkilotiedot></app-henkilotiedot>
+
+  <mat-expansion-panel class="ei-tietoja-warning"
+    [expanded]="true">
+    <p>
+      <mat-icon aria-ignore>warning</mat-icon>
+      {{ i18n.ei_tietoja_warning_1 | translate }}
+    </p>
+    @if (henkilot$ | async; as henkilot) {
+      @if (henkilot.length > 1) {
+        <p>{{ i18n.ei_tietoja_warning_2 | translate }}</p>
+      }
+    }
+  </mat-expansion-panel>
+</main>

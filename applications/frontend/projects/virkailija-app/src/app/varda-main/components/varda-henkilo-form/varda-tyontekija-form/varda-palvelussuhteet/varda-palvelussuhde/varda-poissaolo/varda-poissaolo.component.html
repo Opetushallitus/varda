@@ -1,0 +1,71 @@
+@if (formGroup) {
+  <div [id]="'poissaolo_'+ currentObject?.id"
+    class="tyoskentelypaikka poissaolo">
+    <app-robo-id [tunniste]="currentObject?.id"
+      nimi="poissaolo"
+      [alkamis_pvm]="currentObject?.alkamis_pvm"
+    [paattymis_pvm]="currentObject?.paattymis_pvm"></app-robo-id>
+    <mat-expansion-panel (opened)="togglePanel(true)"
+      (closed)="togglePanel(false)"
+      #matPanel>
+      <mat-expansion-panel-header>
+        <mat-panel-title>
+          @if (currentObject) {
+            <span>
+              <app-varda-form-error-icon [errors]="errorList"></app-varda-form-error-icon>
+              {{ i18n.poissaolo | translate }}
+              {{currentObject.alkamis_pvm | vardaDate }} - {{currentObject.paattymis_pvm | vardaDate }}
+            </span>
+          } @else {
+            <span>{{ i18n.palvelussuhde_lisaa_poissaolo | translate }}</span>
+          }
+          @if (currentObject) {
+            <app-varda-timestamp [dateAdded]="currentObject.luonti_pvm" [dateChanged]="currentObject.muutos_pvm"></app-varda-timestamp>
+            <span class="headerPalvelussuhdePoissaoloId">
+              ID: {{currentObject?.id}}
+            </span>
+          }
+        </mat-panel-title>
+      </mat-expansion-panel-header>
+      <form [formGroup]="formGroup"
+        autocomplete="off"
+        (submit)="savePoissaolo(formGroup)">
+        <app-varda-form-error-list [errors]="errorList"></app-varda-form-error-list>
+        <app-varda-form-field name="alkamis_pvm"
+          [form]="formGroup"
+          [label]="i18n.poissaolo_alkamis_pvm | translate"
+          [errorText]="i18n.poissaolo_error_alkamis_pvm | translate"
+                              [errorMap]="[
+                              { key: 'matDatepickerMin', value: i18n.poissaolo_error_min_alkamis_pvm },
+                              { key: 'matDatepickerMax', value: i18n.poissaolo_error_max_alkamis_pvm }
+                              ]"
+          [instructionText]="i18n.poissaolo_instruction_alkamis_pvm | translate">
+          <app-varda-datepicker #fieldItem
+            (dateChange)="startDateChange($event.value)"
+          formControlName='alkamis_pvm'></app-varda-datepicker>
+        </app-varda-form-field>
+        <app-varda-form-field name="paattymis_pvm"
+          [form]="formGroup"
+          [label]="i18n.poissaolo_paattymis_pvm | translate"
+          [errorText]="i18n.poissaolo_error_paattymis_pvm | translate"
+                              [errorMap]="[
+                              { key: 'matDatepickerMin', value: i18n.poissaolo_error_min_paattymis_pvm },
+                              { key: 'matDatepickerMax', value: i18n.poissaolo_error_max_paattymis_pvm }
+                              ]"
+          [instructionText]="i18n.poissaolo_instruction_paattymis_pvm | translate">
+          <app-varda-datepicker #fieldItem
+            [min]="endDateRange.min"
+          formControlName='paattymis_pvm'></app-varda-datepicker>
+        </app-varda-form-field>
+        <app-varda-error-field [errors]="poissaoloFormErrors"></app-varda-error-field>
+        <app-varda-action-row [saveDisabled]="formGroup.pristine || isSubmitting"
+          [saveAccess]="toimipaikkaAccess?.tyontekijatiedot.tallentaja"
+          [formExists]="!!currentObject"
+          [isEdit]="isEdit"
+          (togglePanel)="togglePanel($event)"
+          (deleteForm)="deletePoissaolo()"
+        (enableEdit)="enableForm()"></app-varda-action-row>
+      </form>
+    </mat-expansion-panel>
+  </div>
+}

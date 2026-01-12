@@ -1,0 +1,70 @@
+<h1 class="varda-page-header">{{ pageHeader | translate }}</h1>
+<div class="varda-page-content">
+  <nav class="raportit-nav"
+    mat-tab-nav-bar mat-stretch-tabs="false" mat-align-tabs="start" [tabPanel]="raportitTabPanel">
+    <a mat-tab-link
+      routerLink="puutteelliset-tiedot"
+      (click)="activeLink = 'puutteelliset-tiedot'"
+      [active]="activeLink === 'puutteelliset-tiedot'">
+      <mat-icon alt="">warning</mat-icon>
+      {{ i18n.puutteelliset_tiedot | translate }}
+    </a>
+    @if (toimijaAccess.raportit.katselija || toimijaAccess.oph.katselija) {
+      <a mat-tab-link
+        routerLink="tiedonsiirrot"
+        (click)="activeLink = 'tiedonsiirrot'"
+        [active]="activeLink === 'tiedonsiirrot'">
+        <mat-icon alt="">cloud_upload</mat-icon>
+        {{ i18n.tiedonsiirrot | translate }}
+      </a>
+    }
+    @if (toimijaAccess.raportit.katselija || toimijaAccess.oph.katselija) {
+      <a mat-tab-link
+        routerLink="excel"
+        (click)="activeLink = 'excel'"
+        [active]="activeLink === 'excel'">
+        <mat-icon alt="">table_view</mat-icon>
+        {{ i18n.excel | translate }}
+      </a>
+    }
+    @if (toimijaAccess.oph.katselija) {
+      <a mat-tab-link
+        routerLink="yksiloimattomat"
+        (click)="activeLink = 'yksiloimattomat'"
+        [active]="activeLink === 'yksiloimattomat'">
+        <mat-icon alt="">ac_unit</mat-icon>
+        {{ i18n.yksiloimattomat | translate }}
+      </a>
+    }
+    @if (toimijaAccess.oph.katselija) {
+      <a mat-tab-link
+        routerLink="transfer-outage"
+        (click)="activeLink = 'transfer-outage'"
+        [active]="activeLink === 'transfer-outage'">
+        <mat-icon alt="">sync_problem</mat-icon>
+        {{ i18n.transfer_outage | translate }}
+      </a>
+    }
+    @if (toimijaAccess.oph.katselija) {
+      <a mat-tab-link
+        routerLink="request-summary"
+        (click)="activeLink = 'request-summary'"
+        [active]="activeLink === 'request-summary'">
+        <mat-icon alt="">trending_up</mat-icon>
+        {{ i18n.request_summary | translate }}
+      </a>
+    }
+    @if (toimijaAccess.oph.katselija) {
+      <a mat-tab-link
+        routerLink="reminder-report"
+        (click)="activeLink = 'reminder-report'"
+        [active]="activeLink === 'reminder-report'">
+        <mat-icon alt="">sms_failed</mat-icon>
+        {{ i18n.reimnder_report | translate }}
+      </a>
+    }
+  </nav>
+  <mat-tab-nav-panel #raportitTabPanel></mat-tab-nav-panel>
+
+  <router-outlet></router-outlet>
+</div>

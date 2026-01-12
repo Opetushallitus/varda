@@ -1,0 +1,376 @@
+<div class="modal-header varda-modal-header">
+  <div class="modal-title varda-modal-title">
+    @if (toimipaikka) {
+      <span>{{ toimipaikka.nimi }}</span>
+    } @else {
+      {{ i18n.lisaa_toimipaikka | translate }}
+    }
+    @if (currentObject) {
+      <app-varda-timestamp [dateAdded]="currentObject.luonti_pvm" [dateChanged]="currentObject.muutos_pvm"></app-varda-timestamp>
+    }
+  </div>
+  <button type="button"
+    class="btn-close float-end"
+    [attr.data-bs-dismiss]="'modal'"
+    [attr.aria-label]="i18n.close | translate">
+  </button>
+</div>
+
+@if (showFormContinuesWarning) {
+  <div class="form-continues-text-wrapper"
+    >
+    <div class="form-continues-text">{{ i18n.form_continues | translate}}</div>
+    <i class="material-icons" alt="">arrow_downward</i>
+  </div>
+}
+
+@if (!formGroup) {
+  <app-varda-error-field [errors]="toimipaikkaFormErrors"></app-varda-error-field>
+  <mat-progress-spinner diameter="40"
+    mode="indeterminate"
+  color="accent"></mat-progress-spinner>
+}
+@if (formGroup) {
+  <div #formContent
+    class="modal-body toimipaikka-form-content"
+    cdkScrollable>
+    <div class="modal-form-intro"
+      role="alert">
+      @if (objectExists()) {
+        <div
+        [innerHTML]="i18n.toimipaikka_instruction_edit | translateMarkdown"></div>
+      } @else {
+        <div [innerHTML]="i18n.toimipaikka_instruction_create | translateMarkdown"></div>
+      }
+    </div>
+    <form [formGroup]="formGroup"
+      (submit)="saveToimipaikka(formGroup)"
+      autocomplete="off">
+      <fieldset>
+        <div class="row">
+          <legend>{{ i18n.toimipaikka_legend_nimi | translate }}</legend>
+          <app-varda-form-field name="nimi"
+            [form]="formGroup"
+            [label]="i18n.toimipaikka_nimi | translate"
+            [errorText]="i18n.toimipaikka_error_nimi | translate"
+            [placeholder]="i18n.toimipaikka_placeholder_nimi | translate"
+            [instructionText]="i18n.toimipaikka_instruction_nimi | translate">
+            <input #fieldItem
+              type="text"
+              class="oph-input"
+              formControlName="nimi" />
+          </app-varda-form-field>
+          @if (toimipaikka?.organisaatio_oid) {
+            <app-varda-form-field name="organisaatio_oid"
+              [form]="formGroup"
+              [label]="i18n.toimipaikka_oid | translate">
+              <span>{{ toimipaikka.organisaatio_oid }}</span>
+            </app-varda-form-field>
+          }
+        </div>
+      </fieldset>
+      <fieldset>
+        <mat-expansion-panel [expanded]="true">
+          <mat-expansion-panel-header>
+            <legend>{{ i18n.toimipaikka_legend_yhteystiedot | translate }}</legend>
+          </mat-expansion-panel-header>
+          <app-varda-form-field name="kayntiosoite"
+            [form]="formGroup"
+            [label]="i18n.toimipaikka_kayntiosoite | translate"
+            [errorText]="i18n.toimipaikka_error_kayntiosoite | translate"
+            [placeholder]="i18n.toimipaikka_placeholder_kayntiosoite | translate"
+            [instructionText]="i18n.toimipaikka_instruction_kayntiosoite | translate">
+            <input #fieldItem
+              type="text"
+              class="oph-input"
+              (change)="checkPostiosoiteToggle()"
+              formControlName="kayntiosoite" />
+          </app-varda-form-field>
+          <app-varda-form-field name="kayntiosoite_postinumero"
+            [form]="formGroup"
+            [label]="i18n.toimipaikka_kayntiosoite_postinumero | translate"
+            [errorText]="i18n.toimipaikka_error_kayntiosoite_postinumero | translate"
+            [placeholder]="i18n.toimipaikka_placeholder_kayntiosoite_postinumero | translate"
+            [instructionText]="i18n.toimipaikka_instruction_kayntiosoite_postinumero | translate">
+            <app-varda-autocomplete-selector #fieldItem
+              [options]="postitoimipaikkaCodes"
+              [isNullOption]="false"
+              [nullValue]="''"
+              [koodisto]="koodistoEnum.posti"
+              [returnCodeValue]="true"
+              [displayCodeValue]="true"
+              formControlName="kayntiosoite_postinumero"
+              (ngModelChange)="checkPostiosoiteToggle()">
+            </app-varda-autocomplete-selector>
+          </app-varda-form-field>
+          <app-varda-form-field name="kayntiosoite_postitoimipaikka"
+            [form]="formGroup"
+            [label]="i18n.toimipaikka_kayntiosoite_postitoimipaikka | translate"
+            [placeholder]="i18n.toimipaikka_placeholder_kayntiosoite_postitoimipaikka | translate"
+            [instructionText]="i18n.toimipaikka_instruction_kayntiosoite_postitoimipaikka | translate">
+            <input #fieldItem
+              type="text"
+              class="oph-input"
+              readonly="true"
+              formControlName="kayntiosoite_postitoimipaikka" />
+          </app-varda-form-field>
+          <app-varda-form-field name="postiosoite"
+            [form]="formGroup"
+            [label]="i18n.toimipaikka_postiosoite | translate"
+            [errorText]="i18n.toimipaikka_error_postiosoite | translate"
+            [placeholder]="i18n.toimipaikka_placeholder_postiosoite | translate"
+            [instructionText]="i18n.toimipaikka_instruction_postiosoite | translate">
+            @if (isEdit) {
+              <mat-checkbox [disabled]="!formGroup.value.kayntiosoite_postitoimipaikka"
+                [checked]="postiosoiteToggleBoolean"
+                (change)="togglePostinumero($event)">{{ i18n.toimipaikka_postiosoite_checkbox | translate }}
+              </mat-checkbox>
+            }
+            <input #fieldItem
+              type="text"
+              class="oph-input"
+              formControlName="postiosoite" />
+          </app-varda-form-field>
+          <app-varda-form-field name="postinumero"
+            [form]="formGroup"
+            [label]="i18n.toimipaikka_postinumero | translate"
+            [errorText]="i18n.toimipaikka_error_postinumero | translate"
+            [placeholder]="i18n.toimipaikka_placeholder_postinumero | translate"
+            [instructionText]="i18n.toimipaikka_instruction_postinumero | translate">
+            <app-varda-autocomplete-selector #fieldItem
+              [options]="postitoimipaikkaCodes"
+              [isNullOption]="false"
+              [nullValue]="''"
+              [koodisto]="koodistoEnum.posti"
+              [returnCodeValue]="true"
+              [displayCodeValue]="true"
+              formControlName="postinumero">
+            </app-varda-autocomplete-selector>
+          </app-varda-form-field>
+          <app-varda-form-field name="postitoimipaikka"
+            [form]="formGroup"
+            [label]="i18n.toimipaikka_postitoimipaikka | translate"
+            [placeholder]="i18n.toimipaikka_placeholder_postitoimipaikka | translate"
+            [instructionText]="i18n.toimipaikka_instruction_postitoimipaikka | translate">
+            <input #fieldItem
+              type="text"
+              class="oph-input"
+              readonly="true"
+              formControlName="postitoimipaikka" />
+          </app-varda-form-field>
+          <app-varda-form-field name="kunta_koodi"
+            [form]="formGroup"
+            [label]="i18n.toimipaikka_kunta_koodi | translate"
+            [errorText]="i18n.toimipaikka_error_kunta_koodi | translate"
+            [instructionText]="i18n.toimipaikka_instruction_kunta_koodi | translate">
+            <app-varda-autocomplete-selector #fieldItem
+              [options]="kuntaCodes"
+              [isNullOption]="false"
+              [nullValue]="''"
+              [koodisto]="koodistoEnum.kunta"
+              [returnCodeValue]="true"
+              formControlName="kunta_koodi">
+            </app-varda-autocomplete-selector>
+          </app-varda-form-field>
+          <app-varda-form-field name="puhelinnumero"
+            [form]="formGroup"
+            [label]="i18n.toimipaikka_puhelinnumero | translate"
+            [errorText]="i18n.toimipaikka_error_puhelinnumero | translate"
+            [placeholder]="i18n.toimipaikka_placeholder_puhelinnumero | translate"
+            [instructionText]="i18n.toimipaikka_instruction_puhelinnumero | translate">
+            <input #fieldItem
+              type="text"
+              class="oph-input"
+              formControlName="puhelinnumero" />
+          </app-varda-form-field>
+          <app-varda-form-field name="sahkopostiosoite"
+            [form]="formGroup"
+            [label]="i18n.toimipaikka_sahkopostiosoite | translate"
+            [errorText]="i18n.toimipaikka_error_sahkopostiosoite | translate"
+            [placeholder]="i18n.toimipaikka_placeholder_sahkopostiosoite | translate"
+            [instructionText]="i18n.toimipaikka_instruction_sahkopostiosoite | translate">
+            <input #fieldItem
+              type="text"
+              class="oph-input"
+              formControlName="sahkopostiosoite" />
+          </app-varda-form-field>
+        </mat-expansion-panel>
+      </fieldset>
+      <fieldset>
+        <mat-expansion-panel [expanded]="true">
+          <mat-expansion-panel-header>
+            <mat-panel-title>
+              <app-varda-form-error-icon [errors]="errorList"></app-varda-form-error-icon>
+              <legend>{{ i18n.toimipaikka_legend_lisatiedot | translate }}</legend>
+            </mat-panel-title>
+          </mat-expansion-panel-header>
+          <div class="panel-content"
+            mat-expansion-panel-content>
+            <app-varda-form-error-list [errors]="errorList"></app-varda-form-error-list>
+            <app-varda-form-field name="toimintamuoto_koodi"
+              [form]="formGroup"
+              [label]="i18n.toimipaikka_toimintamuoto_koodi | translate"
+              [errorText]="i18n.toimipaikka_error_toimintamuoto_koodi | translate"
+              [instructionText]="i18n.toimipaikka_instruction_toimintamuoto_koodi | translate">
+              <div class="oph-select-container" [attr.disabled]="!!formGroup.controls.toimintamuoto_koodi.disabled">
+                <select #fieldItem
+                  class="oph-input oph-select"
+                  formControlName="toimintamuoto_koodi">
+                  <option [ngValue]="null" disabled selected>-- {{ i18n.choose | translate }} --</option>
+                  @for (code of toimintamuotoCodes; track code) {
+                    <option
+                      [value]="code.code_value"
+                      [title]="code.name">
+                      <span [libKoodistoValue]="koodistoEnum.toimintamuoto" format="long">{{ code.code_value }}</span>
+                    </option>
+                  }
+                </select>
+              </div>
+            </app-varda-form-field>
+            <app-varda-form-field name="jarjestamismuoto_koodi"
+              [form]="formGroup"
+              [label]="i18n.toimipaikka_jarjestamismuoto_koodi | translate"
+              [errorText]="i18n.toimipaikka_error_jarjestamismuoto_koodi | translate"
+              [instructionText]="i18n.toimipaikka_instruction_jarjestamismuoto_koodi | translate">
+              @if (!isEdit) {
+                @for (koodi of formGroup.controls.jarjestamismuoto_koodi.value; track koodi) {
+                  <div
+                    [libKoodistoValue]="koodistoEnum.jarjestamismuoto"
+                    format="long"
+                  class="ml-2">{{ koodi }}</div>
+                }
+              } @else {
+                <app-varda-select>
+                  <mat-select #fieldItem
+                    placeholder="-- {{ i18n.choose | translate }} --"
+                    multiple
+                    class="oph-input oph-select"
+                    formControlName="jarjestamismuoto_koodi">
+                    <mat-select-trigger>
+                      @if (formGroup.controls.jarjestamismuoto_koodi?.value?.length === 1) {
+                        <span libKoodistoValue="vardajarjestamismuoto"
+                          format="long"
+                          >
+                          {{ formGroup.controls.jarjestamismuoto_koodi?.value }}
+                        </span>
+                      } @else {
+                        {{ formGroup.controls.jarjestamismuoto_koodi?.value?.join(', ') }}
+                      }
+                    </mat-select-trigger>
+                    @for (option of jarjestamismuotoCodes; track option) {
+                      <mat-option
+                        [value]="option.code_value"
+                        [title]="option.name + ' (' + option.code_value + ')'">
+                        <span [libKoodistoValue]="koodistoEnum.jarjestamismuoto" format="long">{{ option.code_value }}</span>
+                      </mat-option>
+                    }
+                  </mat-select>
+                </app-varda-select>
+              }
+            </app-varda-form-field>
+            <app-varda-form-field name="toimintakieli_koodi"
+              [form]="formGroup"
+              [label]="i18n.toimipaikka_toimintakieli_koodi | translate"
+              [errorText]="i18n.toimipaikka_error_toimintakieli_koodi | translate"
+              [instructionText]="i18n.toimipaikka_instruction_toimintakieli_koodi | translate">
+              <app-varda-select>
+                <mat-select #fieldItem
+                  placeholder="-- {{ i18n.choose | translate }} --"
+                  multiple
+                  class="oph-input oph-select"
+                  formControlName="toimintakieli_koodi">
+                  <mat-optgroup [label]="i18n.painotukset_kielipainotus_yleiset | translate">
+                    @for (option of kielikoodisto | slice:0:10; track option) {
+                      <mat-option [value]="option.code_value">
+                        <span [libKoodistoValue]="koodistoEnum.kieli" format="long">{{ option.code_value }}</span>
+                      </mat-option>
+                    }
+                  </mat-optgroup>
+                  <mat-optgroup [label]="i18n.painotukset_kielipainotus_muut | translate">
+                    @for (option of kielikoodisto | slice:10; track option) {
+                      <mat-option [value]="option.code_value">
+                        <span [libKoodistoValue]="koodistoEnum.kieli" format="long">{{ option.code_value }}</span>
+                      </mat-option>
+                    }
+                  </mat-optgroup>
+                </mat-select>
+              </app-varda-select>
+            </app-varda-form-field>
+            <app-varda-form-field name="kasvatusopillinen_jarjestelma_koodi"
+              [form]="formGroup"
+              [label]="i18n.toimipaikka_kasvatusopillinen_jarjestelma_koodi | translate"
+              [errorText]="i18n.toimipaikka_error_kasvatusopillinen_jarjestelma_koodi | translate"
+              [instructionText]="i18n.toimipaikka_instruction_kasvatusopillinen_jarjestelma_koodi | translate">
+              <div class="oph-select-container" [attr.disabled]="!!formGroup.controls.kasvatusopillinen_jarjestelma_koodi.disabled">
+                <select #fieldItem
+                  class="oph-input oph-select"
+                  formControlName="kasvatusopillinen_jarjestelma_koodi">
+                  <option [ngValue]="null" disabled selected>-- {{ i18n.choose | translate }} --</option>
+                  @for (code of kasvatusopillinenCodes; track code) {
+                    <option
+                      [value]="code.code_value"
+                      [title]="code.name">
+                      <span [libKoodistoValue]="koodistoEnum.kasvatusopillinenjarjestelma" format="long">{{ code.code_value }}</span>
+                    </option>
+                  }
+                </select>
+              </div>
+            </app-varda-form-field>
+            <app-varda-form-field name="varhaiskasvatuspaikat"
+              [form]="formGroup"
+              [label]="i18n.toimipaikka_varhaiskasvatuspaikat | translate"
+              [errorText]="i18n.toimipaikka_error_varhaiskasvatuspaikat | translate"
+              [instructionText]="i18n.toimipaikka_instruction_varhaiskasvatuspaikat | translate">
+              <input #fieldItem
+                type="number"
+                class="oph-input"
+                min="0"
+                step="1"
+                max="9999"
+                formControlName="varhaiskasvatuspaikat" />
+            </app-varda-form-field>
+            <app-varda-form-field name="alkamis_pvm"
+              [form]="formGroup"
+              [label]="i18n.toimipaikka_alkamis_pvm | translate"
+              [errorText]="i18n.toimipaikka_error_alkamis_pvm | translate"
+              [instructionText]="i18n.toimipaikka_instruction_alkamis_pvm | translate">
+              <app-varda-datepicker #fieldItem
+                (dateChange)="startDateChange($event.value)"
+              formControlName='alkamis_pvm'></app-varda-datepicker>
+            </app-varda-form-field>
+            <app-varda-form-field name="paattymis_pvm"
+              [form]="formGroup"
+              [label]="i18n.toimipaikka_paattymis_pvm | translate"
+              [errorText]="i18n.toimipaikka_error_paattymis_pvm | translate"
+              [instructionText]="i18n.toimipaikka_instruction_paattymis_pvm | translate">
+              <app-varda-datepicker #fieldItem
+                [min]="minEndDate"
+                (dateChange)="endDateChange($event.value)"
+              formControlName='paattymis_pvm'></app-varda-datepicker>
+            </app-varda-form-field>
+          </div>
+        </mat-expansion-panel>
+      </fieldset>
+      <fieldset>
+        <app-toimipaikka-painotukset [kielikoodisto]="kielikoodisto"
+          [kielipainotustyyppikoodisto]="kielipainotustyyppikoodisto"
+          [toimipaikka]="currentObject"
+          [saveAccess]="tallentajaAccess"
+          [isEdit]="isEdit"
+          [minStartDate]="minEndDate"
+          [maxEndDate]="maxEndDate">
+        </app-toimipaikka-painotukset>
+      </fieldset>
+      <app-varda-error-field [errors]="toimipaikkaFormErrors"></app-varda-error-field>
+      <app-varda-action-row [saveDisabled]="formGroup.pristine || isSubmitting"
+        [saveAccess]="tallentajaAccess"
+        [formExists]="!!toimipaikka"
+        [isEdit]="isEdit"
+        [noDelete]="true"
+        [noToggle]="!!toimipaikka?.id"
+        (enableEdit)="enableForm()"
+        (disableEdit)="disableForm()"
+      (togglePanel)="togglePanel($event)"></app-varda-action-row>
+    </form>
+  </div>
+}
