@@ -1,0 +1,44 @@
+<div class="varda-login-page">
+  <main class="varda-page-content">
+    <h1 class="oph-h2 oph-bold"
+      aria-live="polite">
+      {{ i18n.login_header | translate }}
+    </h1>
+
+    <div class="login-links">
+      <a class="button"
+        [href]="loginURL+'&valtuudet=true'">
+
+        <mat-icon aria-ignore>escalator_warning</mat-icon>
+        <span>{{ i18n.login_valtuudet | translate }}</span>
+
+      </a>
+      <a class="button"
+        [href]="loginURL+'&valtuudet=false'">
+
+        <mat-icon aria-ignore>person</mat-icon>
+        <span>{{ i18n.login_omat_tiedot | translate }}</span>
+      </a>
+    </div>
+  </main>
+</div>
+
+@if (tokenInput?.show) {
+  <div class="varda-login-page localhost">
+    <main class="varda-page-content">
+      <h1 class="oph-h2 oph-bold">Tämä kenttä näkyy vain testiympäristössä</h1>
+      <form (ngSubmit)="addLoginToken(tokenInput.value)">
+        <div><a target="_blank"
+        [attr.href]="tokenInput.backend">{{ tokenInput.backend }}</a></div>
+        <label class="oph-label">Tallenna login token tästä</label>
+        <input class="oph-input"
+          [(ngModel)]='tokenInput.value'
+          autocomplete="off"
+          name='value'
+          placeholder="login-token" />
+        <button type="submit"
+        class="varda-button varda-button-success secondary">Tallenna</button>
+      </form>
+    </main>
+  </div>
+}

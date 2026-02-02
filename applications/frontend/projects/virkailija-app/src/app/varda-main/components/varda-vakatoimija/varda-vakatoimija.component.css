@@ -1,0 +1,38 @@
+.vakatoimija-form > * {
+  display: block;
+  margin-bottom: 1.5rem;
+}
+
+.vakatoimija-button-row {
+  display: flex;
+}
+
+.vakatoimija-button-row > button {
+  margin: 0.5rem;
+  max-width: calc(100% - 1rem);
+}
+
+.yhteystieto-field-missing {
+  color: var(--gray-lighten-1);
+}
+
+.varda-text-secondary {
+  /* font-size: var(--h5); */
+  color: rgba(0,0,0,.54);
+}
+
+.vakatoimija-static-info {
+  margin-bottom: 1.5rem;
+}
+
+.vakatoimija-static-info div {
+  margin-top: 1.5rem;
+}
+
+.vakatoimija-static-info strong {
+  margin-right: 0.5rem;
+}
+
+.vakatoimija-static-id {
+  margin-top: 1rem;
+}

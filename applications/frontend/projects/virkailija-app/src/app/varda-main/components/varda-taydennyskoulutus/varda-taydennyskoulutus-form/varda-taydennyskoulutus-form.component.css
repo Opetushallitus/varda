@@ -1,0 +1,62 @@
+.taydennyskoulutus-header {
+  width: calc(100% - 2rem);
+}
+
+.taydennyskoulutus-flex-header {
+  display: flex;
+  flex-wrap: wrap;
+  /*  justify-content: space-between; */
+}
+
+.taydennyskoulutus-flex-header>* {
+  flex: 1 1;
+}
+
+.taydennyskoulutus-flex-header>*:first-child {
+  min-width: 400px;
+}
+
+.taydennyskoulutus-osallistuja-sections {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+}
+
+.taydennyskoulutus-osallistuja-sections>* {
+  display: block;
+  flex: 1 1 400px;
+  padding: 1em;
+}
+
+.taydennyskoulutus-osallistuja-table {
+  width: 100%;
+}
+
+h2 {
+  margin-bottom: 1rem;
+}
+
+
+.mat-mdc-checkbox {
+  position: relative;
+  top: 0.2rem;
+  margin-right: 0.5rem;
+}
+
+
+.open-tyontekijat-button-row {
+  display: flex;
+  justify-content: flex-end;
+  margin: 0 1rem;
+}
+
+.taydennyskoulutus-rajoitettu {
+  margin-top: 1rem;
+  margin-bottom: 1rem;
+  padding: 1rem;
+  background-color: var(--blue-lighten-4);
+}
+
+.taydennyskoulutus-rajoitettu>mat-icon {
+  margin-right: 1rem;
+}

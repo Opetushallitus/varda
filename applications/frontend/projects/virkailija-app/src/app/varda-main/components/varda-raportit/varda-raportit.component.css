@@ -1,0 +1,64 @@
+.raportit-nav {
+  margin-bottom: 2rem;
+}
+
+.raportit-nav a:hover {
+  text-decoration: none;
+}
+
+.raportit-nav .mat-icon {
+  margin-right: 0.5rem;
+  user-select: none;
+}
+
+.mat-mdc-form-field {
+  display: block;
+}
+
+.mat-mdc-table th.mat-mdc-header-cell:not(:first-of-type),
+.mat-mdc-table td.mat-mdc-cell:not(:first-of-type) {
+  padding-left: 0.5em;
+  padding-right: 0.5em;
+}
+
+.mat-mdc-progress-bar {
+  margin: 1em auto;
+}
+
+.varda-table-column-selector {
+  margin: 1rem 0rem;
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.varda-table-column-selector .mat-mdc-checkbox {
+  margin: 0.5rem;
+}
+
+.mat-button-toggle-group {
+  margin: 1rem 1rem;
+  flex-wrap: wrap;
+}
+
+.mat-button-toggle-group .mat-button-toggle-checked {
+  --mat-button-toggle-selected-state-background-color: var(--blue);
+  --mat-button-toggle-selected-state-text-color: var(--white);
+}
+
+.mat-button-toggle .material-icons {
+  position: relative;
+  top: -1px;
+}
+
+.mat-button-toggle-checked .material-icons {
+  color: var(--white);
+}
+
+app-tiedonsiirto-filter-header .oph-input {
+  min-width: 150px;
+  max-width: calc(100% - 80px);
+}
+
+.error-code-chip-list {
+  width: 100%;
+}

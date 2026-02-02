@@ -1,0 +1,135 @@
+<form class="tutkinto-section">
+  <h2 class="varda-fieldset-legend">
+    {{ i18n.tutkinnot | translate }} @if (tutkintoList.length > 1) {
+    <span
+    >({{tutkintoList.length}})</span>
+  }
+</h2>
+@if (!toimipaikkaAccess.tyontekijatiedot.katselija) {
+  <div role="alert">
+    <p>{{ i18n.tutkinnot_ei_oikeuksia | translate }}</p>
+  </div>
+}
+@if (toimipaikkaAccess.tyontekijatiedot.katselija) {
+  @if (!tutkintoOptions) {
+    <mat-progress-spinner
+      color="accent"
+      diameter="40"
+    mode="indeterminate"></mat-progress-spinner>
+  } @else {
+    <ul>
+      @for (tutkinto of tutkintoList; track tutkinto; let i = $index) {
+        @if (i < tutkintoViewLimit || henkilonTutkinnotExpand) {
+          <li>
+            <span tabindex="0" [libKoodistoValue]="KoodistoEnum.tutkinto" format="long">{{ tutkinto.tutkinto_koodi }}</span>
+            @if (toimipaikkaAccess.tyontekijatiedot.tallentaja) {
+              <span class="tutkintoEdit"
+                (click)="tutkinto.edit = !tutkinto.edit">
+                @if (!tutkinto.edit) {
+                  <button class="varda-text-button"
+                    >
+                    <mat-icon alt="">edit</mat-icon>
+                    {{ i18n.edit | translate }}
+                  </button>
+                }
+                @if (tutkinto.edit) {
+                  <button class="varda-text-button"
+                    >
+                    <mat-icon alt="">close</mat-icon>
+                    {{ i18n.cancel | translate }}
+                  </button>
+                }
+              </span>
+              @if (tutkinto.edit) {
+                <span
+                  class="tutkintoDelete">
+                  <button class="varda-button responsive varda-button-danger varda-button-small"
+                    type="button"
+                    [disabled]="false"
+                    (click)="deleteTutkinto(tutkinto.id)">
+                    <mat-icon alt="">restore_from_trash</mat-icon>
+                    {{ i18n.delete | translate }}
+                  </button>
+                </span>
+              }
+            }
+          </li>
+        }
+      }
+      @if (tutkintoList.length > tutkintoViewLimit) {
+        @if (!henkilonTutkinnotExpand) {
+          <li>
+            <button class="varda-text-button"
+              (click)="henkilonTutkinnotExpand = true">
+              {{ i18n.show_more | translate }}
+              <mat-icon alt="">expand_more</mat-icon>
+            </button>
+          </li>
+        }
+        @if (henkilonTutkinnotExpand) {
+          <li>
+            <button class="varda-text-button"
+              (click)="henkilonTutkinnotExpand = false">
+              {{ i18n.show_less | translate }}
+              <mat-icon alt="">expand_less</mat-icon>
+            </button>
+          </li>
+        }
+      }
+    </ul>
+    @if (!toimipaikkaAccess.tyontekijatiedot.tallentaja) {
+      @if (tutkintoList.length === 0) {
+        <div>
+          {{ i18n.tutkinnot_ei_tutkintoja | translate }}
+        </div>
+      }
+    }
+    @if (toimipaikkaAccess.tyontekijatiedot.tallentaja) {
+      @if (tutkintoList.length === 0) {
+        <div class="modal-form-intro"
+          [innerHTML]="i18n.tutkinnot_lisaa_ylin_tutkinto | translateMarkdown">
+        </div>
+      }
+      @if (!addTutkinto) {
+        <div class="mt-4"
+          >
+          <button class="varda-text-button" id="add-tutkinto"
+            (click)="addTutkinto = true">
+            <mat-icon alt="">add</mat-icon> {{ i18n.tutkinnot_lisaa_tutkinto | translate }}
+          </button>
+        </div>
+      }
+      @if (addTutkinto) {
+        <form
+          [formGroup]="tutkintoForm"
+          (submit)="createTutkinto(tutkintoForm)"
+          class="mt-4">
+          <label class="oph-label" for="tutkinto-input">{{ i18n.tutkinnot_lisaa_tutkinto | translate }}</label>
+          <app-varda-autocomplete-selector #fieldItem
+            id="tutkinto-input"
+            [placeholder]="'-- ' + (i18n.choose | translate) + ' --'"
+            [invalidInputLabel]="i18n.katsele_tietoja_error_no_tutkinto_selected | translate"
+            [options]="tutkintoOptions"
+            [isNullOption]="false"
+            [nullValue]="''"
+            [koodisto]="KoodistoEnum.tutkinto"
+            [returnCodeValue]="true"
+            formControlName="tutkinto_koodi">
+          </app-varda-autocomplete-selector>
+          <div class="action-button-wrapper">
+            <button class="varda-button varda-button-wide responsive-md"
+              [disabled]="!tutkintoForm.valid || isSubmitting"
+              type="submit">
+              {{ i18n.save | translate}}
+            </button>
+            <button class="varda-button varda-button-wide varda-button-neutral responsive-md secondary"
+              (click)="addTutkinto = false">{{ i18n.cancel | translate }}
+            </button>
+          </div>
+        </form>
+      }
+      <app-varda-error-field [errors]="tutkintoFormErrors"></app-varda-error-field>
+    }
+  }
+}
+</form>

@@ -1,0 +1,13 @@
+.henkilo-delete-action-row {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 4rem;
+}
+
+.modal-form-intro>.henkilo-delete-action-row {
+  margin-top: 1rem;
+}
+
+.henkilo-delete-action-row button:nth-child(2) {
+  margin-left: 1em;
+}

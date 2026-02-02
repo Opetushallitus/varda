@@ -1,0 +1,7 @@
+pre {
+  background-color: var(--red-lighten-2);
+}
+
+pre:first-of-type {
+  background-color: var(--blue-lighten-4);
+}

@@ -1,0 +1,17 @@
+<div class="timeout">
+  <span>
+    @if (reasonText) {
+      <div>{{ reasonText }}</div>
+    }
+    @if (visibleCounterText) {
+      <div>{{ visibleCounterText }}</div>
+    }
+  </span>
+  @if (actionText) {
+    <div
+      class="mat-simple-snackbar-action">
+      <button mat-button
+      (click)="dismiss()">{{ actionText }}</button>
+    </div>
+  }
+</div>

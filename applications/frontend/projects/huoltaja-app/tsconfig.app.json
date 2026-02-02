@@ -1,0 +1,15 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "outDir": "../../out-tsc/app",
+    "types": []
+  },
+  "files": [
+    "src/main.ts"
+  ],
+  "include": [
+    "projects/huoltaja-app/src/**/*.ts",
+    "projects/huoltaja-app/src/**/*.d.ts",
+    "projects/varda-shared/src/**/*.ts"
+  ]
+}

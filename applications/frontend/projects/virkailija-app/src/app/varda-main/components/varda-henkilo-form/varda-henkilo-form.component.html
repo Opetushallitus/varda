@@ -1,0 +1,184 @@
+<div class="modal-header">
+  <h1 class="modal-title varda-modal-title"
+      [id]="'vardaModalTitleLabelhenkiloModal'">
+    <span *ngIf="currentHenkilo">
+      {{ currentHenkilo.sukunimi }}, {{ currentHenkilo.etunimet }}
+      <span *ngIf="henkilonToimipaikka"> - {{ henkilonToimipaikka?.nimi }}</span>
+      <app-varda-timestamp [dateAdded]="currentHenkilo.luonti_pvm" [dateChanged]="currentHenkilo.muutos_pvm"></app-varda-timestamp>
+    </span>
+
+    <ng-container *ngIf="!currentHenkilo">
+      <span *ngIf="henkilonSuhde.henkilo_id; else showRooli">
+        {{ i18n.henkilo_haetaan_tietoja | translate }}
+      </span>
+      <ng-template #showRooli>
+        <span *ngIf="henkilonSuhde.rooli===HenkiloRooliEnum.lapsi">
+          <span *ngIf="henkilonToimipaikka; else lapsiToimipaikaton">{{ i18n.henkilo_lisaa_lapsi_TOIMIPAIKKA |
+            translate: { toimipaikka: henkilonToimipaikka?.nimi} }}</span>
+          <ng-template #lapsiToimipaikaton>{{ i18n.henkilo_lisaa_lapsi | translate }}</ng-template>
+        </span>
+
+        <span *ngIf="henkilonSuhde.rooli === HenkiloRooliEnum.tyontekija">
+          <span *ngIf="henkilonToimipaikka; else lapsiToimipaikaton">{{ i18n.henkilo_lisaa_tyontekija_TOIMIPAIKKA |
+            translate: { toimipaikka: henkilonToimipaikka?.nimi} }}</span>
+          <ng-template #lapsiToimipaikaton>{{ i18n.henkilo_lisaa_tyontekija | translate }}</ng-template>
+        </span>
+      </ng-template>
+    </ng-container>
+  </h1>
+  <button type="button"
+          class="btn-close float-end"
+          [attr.data-bs-dismiss]="'modal'"
+          [attr.aria-label]="i18n.close | translate">
+  </button>
+</div>
+
+<div class="form-continues-text-wrapper"
+     *ngIf="formContinuesBoolean">
+  <div class="form-continues-text">{{ i18n.form_continues | translate}}</div>
+  <i class="material-icons" alt="">arrow_downward</i>
+</div>
+
+<div #formContent
+     class="modal-body varda-modal-body"
+     cdkScrollable>
+  <div class="varda-modal-form-wrapper">
+    <div class="varda-modal-form-content">
+      <form *ngIf="!currentHenkilo && !henkilonSuhde.henkilo_oid; else singleError"
+            class="henkilo-form"
+            autocomplete="off"
+            [formGroup]="henkiloForm"
+            (submit)="saveHenkilo(henkiloForm)">
+        <div class="modal-form-intro"
+             role="alert">
+          <div *ngIf="henkilonSuhde.rooli === HenkiloRooliEnum.lapsi; else tyontekijaInfo"
+               [innerHTML]="i18n.lapsi_instruction_creation | translateMarkdown">
+          </div>
+          <ng-template #tyontekijaInfo>
+            <div [innerHTML]="i18n.tyontekija_instruction_creation | translateMarkdown"></div>
+          </ng-template>
+        </div>
+        <app-varda-form-field name="addWithSsnOrOid"
+                              [form]="henkiloForm"
+                              [instructionText]="i18n.henkilo_instruction_ssn_or_oid | translate">
+          <mat-radio-group #fieldItem
+                           (change)="addWithSsnOrOidChanged($event)"
+                           formControlName="addWithSsnOrOid">
+            <mat-radio-button [value]="true">{{ i18n.henkilo_lisaa_henkilotunnuksella | translate }}</mat-radio-button>
+            <mat-radio-button [value]="false">{{ i18n.henkilo_lisaa_oppijanumerolla | translate }}</mat-radio-button>
+          </mat-radio-group>
+        </app-varda-form-field>
+
+        <app-varda-form-field name="henkilotunnus"
+                              *ngIf="!henkiloForm.controls.henkilotunnus.disabled"
+                              [form]="henkiloForm"
+                              [label]="i18n.henkilo_henkilotunnus | translate"
+                              [errorText]="i18n.henkilo_error_henkilotunnus | translate"
+                              [placeholder]="i18n.henkilo_placeholder_henkilotunnus | translate"
+                              [instructionText]="i18n.henkilo_instruction_henkilotunnus | translate">
+          <input #fieldItem
+                 type="text"
+                 class="oph-input"
+                 formControlName="henkilotunnus" />
+        </app-varda-form-field>
+
+        <app-varda-form-field name="henkilo_oid"
+                              *ngIf="!henkiloForm.controls.henkilo_oid.disabled"
+                              [form]="henkiloForm"
+                              [label]="i18n.henkilo_henkilo_oid | translate"
+                              [errorText]="i18n.henkilo_error_henkilo_oid | translate"
+                              [placeholder]="i18n.henkilo_placeholder_henkilo_oid | translate"
+                              [instructionText]="i18n.henkilo_instruction_henkilo_oid | translate">
+          <input #fieldItem
+                 type="text"
+                 class="oph-input"
+                 formControlName="henkilo_oid" />
+        </app-varda-form-field>
+
+        <app-varda-form-field name="etunimet"
+                              [form]="henkiloForm"
+                              [label]="i18n.henkilo_etunimet | translate"
+                              [errorText]="i18n.henkilo_error_etunimet | translate"
+                              [errorMap]="[{ key: 'nameHasDisallowedCharacters', value: i18n.henkilo_error_nimi_disallowed_characters }]"
+                              [placeholder]="i18n.henkilo_placeholder_etunimet | translate"
+                              [instructionText]="i18n.henkilo_instruction_etunimet | translate">
+          <input #fieldItem
+                 type="text"
+                 class="oph-input"
+                 formControlName="etunimet" />
+        </app-varda-form-field>
+
+        <app-varda-form-field name="kutsumanimi"
+                              [form]="henkiloForm"
+                              [label]="i18n.henkilo_kutsumanimi | translate"
+                              [errorText]="i18n.henkilo_error_kutsumanimi | translate"
+                              [errorMap]="[
+                              { key: 'nameHasDisallowedCharacters', value: i18n.henkilo_error_nimi_disallowed_characters },
+                              { key: 'nicknameNotPartOfFirstname', value: i18n.henkilo_error_kutsumanimi_not_part_of_firstname },
+                              { key: 'nicknameMustBeOneName', value: i18n.henkilo_error_kutsumanimi_must_be_one_name }
+                              ]"
+                              [placeholder]="i18n.henkilo_placeholder_kutsumanimi | translate"
+                              [instructionText]="i18n.henkilo_instruction_kutsumanimi | translate">
+          <input #fieldItem
+                 type="text"
+                 class="oph-input"
+                 formControlName="kutsumanimi" />
+        </app-varda-form-field>
+
+        <app-varda-form-field name="sukunimi"
+                              [form]="henkiloForm"
+                              [label]="i18n.henkilo_sukunimi | translate"
+                              [errorText]="i18n.henkilo_error_sukunimi | translate"
+                              [errorMap]="[{ key: 'nameHasDisallowedCharacters', value: i18n.henkilo_error_nimi_disallowed_characters }]"
+                              [placeholder]="i18n.henkilo_placeholder_sukunimi | translate"
+                              [instructionText]="i18n.henkilo_instruction_sukunimi | translate">
+          <input #fieldItem
+                 type="text"
+                 class="oph-input"
+                 formControlName="sukunimi" />
+        </app-varda-form-field>
+
+        <app-varda-error-field [errors]="henkiloFormErrors"></app-varda-error-field>
+
+        <app-varda-action-row [saveDisabled]="henkiloForm.pristine || (isLoading | async)"
+                              [saveAccess]="true"
+                              [formExists]="false"
+                              [isEdit]="true"
+                              (togglePanel)="closeForm()">
+        </app-varda-action-row>
+
+      </form>
+      <ng-template #singleError>
+        <app-varda-error-field tag="test" [errors]="henkiloFormErrors"></app-varda-error-field>
+      </ng-template>
+
+      <div *ngIf="currentHenkilo">
+        <ng-container *ngIf="!currentHenkilo.mock && henkilonSuhde.rooli === HenkiloRooliEnum.lapsi">
+          <app-varda-lapsi-form [henkilo]="currentHenkilo"
+                                [lapsi]="henkilonSuhde"
+                                [henkilonToimipaikka]="henkilonToimipaikka"
+                                [isEdit]="!!henkilonSuhde.henkilo_id"
+                                (valuesChanged)="formValuesChanged($event)"></app-varda-lapsi-form>
+        </ng-container>
+        <ng-container *ngIf="henkilonSuhde.rooli === HenkiloRooliEnum.tyontekija">
+          <app-varda-tyontekija-form [henkilo]="currentHenkilo"
+                                     [tyontekija]="henkilonSuhde"
+                                     [henkilonToimipaikka]="henkilonToimipaikka"
+                                     [isEdit]="!!henkilonSuhde.henkilo_id"
+                                     (valuesChanged)="formValuesChanged($event)"></app-varda-tyontekija-form>
+        </ng-container>
+        <div class="henkilo-form-cancel-btn-wrapper"
+             *ngIf="!currentHenkilo">
+          <div>
+            <button class="varda-button secondary"
+                type="button"
+                [attr.data-bs-dismiss]="'modal'"
+          >
+                {{ i18n.cancel | translate}}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

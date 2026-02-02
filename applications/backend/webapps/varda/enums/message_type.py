@@ -1,0 +1,7 @@
+from enum import Enum
+
+
+class MessageType(Enum):
+    NO_PAAKAYTTAJA = "NO_PAAKAYTTAJA"
+    PUUTTEELLISET_TIEDOT = "PUUTTEELLISET_TIEDOT"
+    NO_TRANSFERS = "NO_TRANSFERS"

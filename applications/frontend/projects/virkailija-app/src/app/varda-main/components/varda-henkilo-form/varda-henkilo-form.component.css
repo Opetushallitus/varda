@@ -1,0 +1,228 @@
+:host {
+  --tree-width: 2rem;
+  --tree-border: 0.25rem solid var(--gray-lighten-2);
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-weight: bold;
+  text-transform: uppercase;
+  margin-top: 0.5em;
+  margin-bottom: 0.5em;
+}
+
+h1 {
+  font-size: var(--h3);
+}
+
+h2 {
+  font-size: var(--h4);
+}
+
+h3 {
+  font-size: var(--h5)
+}
+
+h4 {
+  font-size: var(--h5);
+  font-weight: normal;
+  text-transform: none;
+  margin-top: 0;
+  margin-bottom: 0;
+}
+
+h5 {
+  font-size: var(--h6)
+}
+
+.mat-expansion-panel {
+  margin: 1em auto;
+}
+
+.accordion-large-margin>* {
+  display: block;
+  margin-bottom: 3em;
+}
+
+.accordion-medium-margin>* {
+  display: block;
+  margin-bottom: 2em;
+}
+
+.tyontekija-panel-content {
+  margin-left: 2em;
+  margin-bottom: 2em;
+  margin-right: 0.5em;
+}
+
+.tyontekija-panel-content.tyontekija-panel-content-first {
+  margin-left: 0;
+  padding-left: 0;
+}
+
+.ei-palvelussuhteita {
+  margin-left: 1.5em;
+}
+
+.mat-expansion-panel {
+  background-color: var(--blue-lighten-4);
+}
+
+.mat-expansion-panel.main-section {
+  background-color: var(--gray-lighten-5);
+}
+
+.mat-expansion-panel form {
+  margin: 1em 1.5em;
+}
+
+mat-expansion-panel mat-expansion-panel-header {
+  min-height: 48px;
+  height: auto !important;
+}
+
+.tyontekija-panel-content {
+  padding-left: 70px;
+}
+
+.missing-info {
+  display: flex;
+  align-items: center;
+  margin-top: 1.5em;
+  margin-bottom: 1.5em;
+  font-weight: var(--font-weight-bold);
+  color: var(--red);
+}
+
+.missing-info .mat-icon {
+  margin-right: 0.5em;
+}
+
+mat-panel-description>.varda-text-button .mat-icon:first-child {
+  color: black;
+  margin-right: 1em;
+}
+
+.palvelussuhde {
+  position: relative;
+  display: flex;
+  z-index: 2;
+}
+
+.palvelussuhde>.mat-icon {
+  margin: 0.5rem;
+  vertical-align: middle;
+  line-height: 3.0rem;
+  font-size: 2rem;
+  width: auto;
+  height: auto;
+}
+
+.palvelussuhde>.mat-expansion-panel {
+  margin: 0.5rem;
+  width: 100%;
+}
+
+.tyoskentelypaikka .mat-expansion-panel {
+  position: relative;
+}
+
+.tyoskentelypaikka {
+  position: relative;
+}
+
+.tyoskentelypaikka::before {
+  content: "";
+  position: absolute;
+  bottom: 1.6rem;
+  left: -25px;
+  border-bottom: var(--tree-border);
+  border-left: var(--tree-border);
+  width: 2.2rem;
+  height: calc(100% + 1.2rem);
+}
+
+.tree-border {
+  position: relative;
+}
+
+.tree-border::before {
+  content: "";
+  position: absolute;
+  top: -0.95rem;
+  left: 45px;
+  border-left: var(--tree-border);
+  width: 2rem;
+  height: 4rem;
+}
+
+.poissaolot.tree-border::before {
+  height: calc(100% - 5rem);
+  bottom: 5rem;
+}
+
+.has-poissaolo::before {
+  height: calc(100% + 5rem);
+}
+
+.copy-button {
+  margin-right: 1em;
+  width: auto;
+}
+
+@media (max-width: 767px) {
+  .action-button-wrapper>* {
+    width: 100%;
+  }
+
+  .action-button-wrapper button {
+    width: 100%;
+    margin: 0.5em auto;
+  }
+
+  .tree-border::before {
+    left: 0px;
+  }
+
+  .tyoskentelypaikka::before {
+    left: -14px;
+  }
+
+  .tyontekija-panel-content {
+    padding-left: 14px;
+  }
+}
+
+@media (max-width: 576px) {
+  .tyontekija-panel-content {
+    padding-left: 1em;
+  }
+
+  .tree-border::before {
+    left: 0rem;
+  }
+
+  .tyoskentelypaikka::before {
+    left: -16px;
+  }
+
+  .mat-expansion-panel form {
+    margin: 1em 0.5em;
+  }
+
+  h1 {
+    font-size: var(--h4);
+  }
+
+  h2 {
+    font-size: var(--h5);
+  }
+
+  h3 {
+    font-size: var(--h6)
+  }
+}

@@ -1,0 +1,99 @@
+<section class="henkilo-section varda-page-content">
+  <div class="henkilo-section-header">
+    <div class="row align-items-center">
+      <h3 class="oph-h4 oph-bold col">
+        {{ i18n.henkilo_tyontekijat | translate }}
+        @if (resultCount) {
+          <span
+            class="henkilo-section-header-counter">
+            ({{ resultCount }})
+          </span>
+        }
+      </h3>
+      <button mat-icon-button
+        class="varda-info-button col-auto"
+        [matTooltip]="i18n.katsele_tietoja_tyontekija_tooltip_search | translate"
+        matTooltipClass="varda-tooltip"
+        aria-label="katsele tietoja ohje">
+        <mat-icon alt="">info</mat-icon>
+      </button>
+    </div>
+    @if (toimipaikkaAccess.tyontekijatiedot.tallentaja) {
+      <button id="addTyontekijaBtn"
+        class="varda-button responsive"
+        (click)="addHenkilo()">
+        + {{ i18n.henkilo_lisaa_tyontekija | translate }}
+      </button>
+    }
+  </div>
+
+  <div class="henkilo-section-filter">
+    <mat-form-field floatLabel="always">
+      <mat-label>{{ i18n.henkilo_hae_nimella | translate }}</mat-label>
+      <input autocomplete="off"
+        matInput
+        type="text"
+        [disabled]="isLoading | async"
+        (change)="searchHenkilot()"
+        [(ngModel)]="searchFilter.search"
+        id="searchTyontekijaInput" />
+      <button mat-button
+        [title]="i18n.henkilo_hae_nimella | translate"
+        [disabled]="isLoading | async"
+        (click)="searchHenkilot()"
+        matSuffix
+        id="searchTyontekijaButton">
+        <mat-icon alt="">search</mat-icon>
+      </button>
+    </mat-form-field>
+
+
+    <div class="checkbox-filter">
+      <mat-checkbox [value]="!searchFilter.voimassa_pvm"
+        (change)="toggleAktiiviset()"
+        [disabled]="isLoading | async"
+        id="allTyontekijaCheckbox">
+        {{ i18n.henkilo_tyontekijat_voimassa_kytkin | translate }}
+      </mat-checkbox>
+
+      @if (!selectedToimipaikka) {
+        <mat-checkbox [(ngModel)]="searchFilter.kiertava_tyontekija_kytkin"
+          [disabled]="isLoading | async"
+          (change)="searchHenkilot()"
+          id="kiertavaTyontekijaCheckbox">
+          {{ i18n.henkilo_vain_kiertavat_tyontekijat | translate }}
+        </mat-checkbox>
+      }
+    </div>
+
+
+  </div>
+
+  @if (henkilot?.length === 0) {
+    <div
+      class="varda-muted">
+      {{ i18n.henkilo_toimipaikasta_ei_loydy_tyontekijoita | translate }}
+    </div>
+  }
+
+  @if (!henkilot && isLoading | async) {
+    <mat-progress-bar
+    mode="indeterminate"></mat-progress-bar>
+  }
+
+  @if (henkilot?.length > 0) {
+    <app-varda-henkilo-list (openHenkiloForm)="openHenkilo($event)"
+      henkiloRooli="tyontekija"
+      [henkiloList]="henkilot">
+    </app-varda-henkilo-list>
+    @if (resultCount) {
+      <mat-paginator
+        [disabled]="isLoading | async"
+        [length]="resultCount"
+        [pageSize]="searchFilter.page_size"
+        [pageIndex]="currentPageIndex"
+        (page)="searchHenkilot($event)">
+      </mat-paginator>
+    }
+  }
+</section>

@@ -1,0 +1,11 @@
+.input-null-option::placeholder {
+  color: inherit;
+}
+
+.varda-autocomplete-selector .oph-input {
+  padding-right: 2em;
+}
+
+.virtual-viewport .cdk-virtual-scroll-content-wrapper {
+  position: unset;
+}

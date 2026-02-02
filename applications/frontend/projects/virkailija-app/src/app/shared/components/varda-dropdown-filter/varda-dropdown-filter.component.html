@@ -1,0 +1,56 @@
+<div role="button"
+  class="varda-dropdown-filter"
+  (keydown.enter)="totalCount > 1 ? trigger.openMenu(): trigger.closeMenu()"
+  (click)="totalCount > 1 ? trigger.openMenu(): trigger.closeMenu()"
+  [class.no-pointer]="totalCount === 1"
+  tabindex="0"
+  aria.has-popup="menu"
+  [matMenuTriggerFor]="dropdown">
+  <span>{{ label }}</span>
+  @if (totalCount > 1 && !trigger.menuOpen) {
+    <mat-icon>arrow_drop_down</mat-icon>
+  }
+  @if (trigger.menuOpen) {
+    <mat-icon>arrow_drop_up</mat-icon>
+  }
+</div>
+<mat-menu #dropdown class="varda-vakajarjestaja-menu">
+  <ul role="menu"
+    (keydown)="$event.stopPropagation()"
+    (click)="$event.stopPropagation()"
+    (keydown.tab)="$event.stopPropagation()">
+    @if (totalCount > 10) {
+      <li class="dropdownFilterSearch"
+        >
+        <input type="text"
+          #dropdownFilterInput
+          class="oph-input"
+          [attr.aria-label]="ariaLabel"
+          [placeholder]="placeholder"
+          [(ngModel)]="filterText"
+          (keyup)="debounceList(filterText)"
+          (keyup.enter)="debounceList(filterText, true)"
+          (change)="debounceList(filterText)" />
+      </li>
+    }
+    @if (filteredList?.length === 0) {
+      <li mat-menu-item
+        disabled
+        class="dropdownFilterEmpty">
+        {{ noResults }}
+      </li>
+    }
+  </ul>
+  @for (group of filteredList; track group) {
+    <ul role="menu" [ngClass]="group.className">
+      @if (group.name) {
+        <li class="group-title">{{group.name | translate}}</li>
+      }
+      @for (item of group.items; track item) {
+        <li mat-menu-item
+          class="item"
+        (click)="selectItem(item)">{{ item[filterBy[0]] }}</li>
+      }
+    </ul>
+  }
+</mat-menu>

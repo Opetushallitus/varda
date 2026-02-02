@@ -1,0 +1,612 @@
+@import "oph-virkailija-style-guide/src/index.css";
+@import "./assets/css/variables.css";
+@import "./assets/css/buttons.css";
+@import "./assets/css/forms.css";
+@import "./assets/css/modals.css";
+@import "./assets/css/lists.css";
+@import "./assets/css/tables.css";
+@import "./assets/css/snackbars.css";
+
+/* virkailija-raamifixit */
+:root {
+  --virkailija-raami-height: 100px;
+  --virkailija-z-index: 50;
+  --varda-navi-height: 50px;
+}
+
+app-varda-dashboard {
+  border: none;
+}
+
+app-varda-header {
+  position: relative;
+  top: -5px;
+  border: none;
+}
+
+
+#raamit_app_root {
+  position: sticky !important;
+  top: 0px;
+  z-index: var(--virkailija-z-index);
+  background-color: cadetblue;
+}
+
+#virkailija-raamit-filleri {
+  position: sticky;
+  top: 0px;
+  height: var(--virkailija-raami-height);
+  width: 100%;
+  background-color: var(--blue-lighten-1);
+  z-index: calc(var(--virkailija-z-index) - 2);
+}
+
+@media (max-width: 1223px) {
+  :root {
+    --virkailija-raami-height: 55px;
+  }
+}
+
+/* </virkailijaraamit> */
+
+html {
+  font-size: 16px;
+}
+
+body {
+  background-color: #eeeeee;
+}
+
+/*Override Bootstrap .nav-link to get it work with Virkailijaraamit*/
+.nav-link {
+  display: initial;
+  padding: 0;
+}
+
+a {
+  text-decoration: none;
+  color: #4A4A4A;
+}
+
+mat-icon,
+.material-icons {
+  vertical-align: middle;
+  user-select: none;
+}
+
+.mat-icon.warning {
+  --mat-icon-color: var(--orange);
+}
+
+.mat-icon-no-color.warning {
+  --mat-menu-item-icon-color: var(--orange);
+}
+
+a.mat-mdc-menu-item:focus{
+  background-color: var(--white) !important;
+}
+
+a.mat-mdc-menu-item:hover {
+  text-decoration: none;
+  color: black !important;
+  background-color: #949494 !important;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+legend {
+  font-size: 1rem;
+  color: #4A4A4A;
+  margin: 0;
+  font-weight: normal;
+  line-height: normal;
+}
+
+/* id for robot tests to pick is hidden here */
+var[robot] {
+  display: none;
+}
+
+.varda-router-outlet-container {
+  width: 90%;
+  max-width: 1450px;
+  margin-bottom: 4rem;
+  margin-right: auto;
+  margin-left: auto;
+  padding: 1rem 0;
+  line-height: 1.2rem;
+}
+
+.varda-page-header {
+  display: block;
+  font-size: var(--h3);
+  width: 100%;
+  margin: 1em 0;
+}
+
+.varda-page-content {
+  background-color: var(--white);
+  border-radius: 0.25em;
+  padding: 1em;
+  border: 2px solid transparent;
+}
+
+.varda-high-contrast .varda-page-content {
+  border-color: var(--black) !important;
+}
+
+.varda-page-content:not(:last-child) {
+  margin-bottom: 1em;
+}
+
+.varda-prompt-modal {
+  position: fixed;
+  z-index: 10000;
+  padding-top: 100px;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+  background-color: rgb(0, 0, 0);
+  background-color: rgba(0, 0, 0, 0.4);
+}
+
+.varda-prompt-modal h2 {
+  font-size: 1rem;
+  margin-bottom: 1rem;
+}
+
+.varda-prompt-modal-content {
+  background-color: #fefefe;
+  margin: auto;
+  padding: 20px;
+  border: 1px solid #888;
+  border-radius: 8px;
+  max-width: 400px;
+  min-height: 180px;
+  position: relative;
+  text-align: center;
+}
+
+.varda-prompt-modal-btn-wrapper {
+  display: flex;
+  justify-content: center;
+  margin-top: 40px;
+}
+
+.varda-prompt-modal-btn-wrapper>div:first-child {
+  margin-right: 20px;
+}
+
+.mat-nav-list .mat-mdc-list-item:hover,
+.mat-nav-list .mat-mdc-list-item:focus,
+.mat-mdc-selection-list .mat-list-item:hover,
+.mat-selection-list .mat-list-item:focus {
+  border: 1px solid var(--black);
+}
+
+mat-expansion-panel mat-expansion-panel-header {
+  min-height: 48px;
+  height: auto !important;
+}
+
+.mat-expansion-panel-header,
+.mat-expansion-panel-content {
+  font-size: 1rem;
+  line-height: 1rem;
+}
+
+.mat-mdc-cell, .mat-mdc-menu-item {
+  font-size: 0.9rem;
+}
+
+
+.varda-accessibility-settings-container {
+  box-shadow: 0px 7px 8px -2px var(--gray-lighten-1);
+  background-color: var(--white);
+  border-radius: 10px;
+  padding: 20px;
+  border: 2px solid transparent;
+}
+
+.varda-text-with-icon {
+  display: flex;
+  align-items: center;
+}
+
+.varda-text-with-icon mat-icon {
+  margin-right: .5em;
+}
+
+.full-width-row {
+  display: flex;
+  flex-wrap: wrap;
+  width: 100%;
+}
+
+.margin-top {
+  margin-top: 1em;
+}
+
+.margin-top-large {
+  margin-top: 2em;
+}
+
+.margin-bottom {
+  margin-bottom: 1em;
+}
+
+.margin-bottom-large {
+  margin-bottom: 2em;
+}
+
+.varda-date-range-dash {
+  font-weight: bold;
+  margin: .5em -10px 0 -10px;
+}
+
+.varda-date-range-container {
+  min-width: 320px;
+}
+
+.varda-date-range-container p {
+  margin-bottom: 0;
+}
+
+.mat-expansion-panel .mat-accordion .show-more-container {
+  padding: 0 calc(24px - 0.5em);
+}
+
+.varda-small-text {
+  font-size: .8em;
+}
+
+@media (max-width: 991px) {
+  .margin-top-lg {
+    margin-top: 1em;
+  }
+}
+
+@media (min-width: 768px) {
+  .varda-date-range-container {
+    max-width: 400px;
+  }
+}
+
+@media (max-width: 767px) {
+  .margin-top-md {
+    margin-top: 1em;
+  }
+}
+
+@media (max-width: 576px) {
+  .margin-top-sm {
+    margin-top: 1em;
+  }
+
+  .varda-date-range-container {
+    min-width: initial;
+  }
+
+  .varda-date-range-container .varda-date-range-row {
+    justify-content: center;
+  }
+
+  .varda-date-range-container .varda-date-range-row > div {
+    width: 100%;
+    flex-basis: initial;
+    padding: 0 15px;
+  }
+
+  .varda-date-range-dash {
+    margin: 0;
+    position: absolute;
+  }
+}
+
+.varda-checkbox {
+  font-family: inherit;
+}
+
+.alert-container {
+  display: flex;
+  align-items: center;
+  margin-top: 0.5em;
+  margin-bottom: 0.5em;
+  font-weight: var(--font-weight-bold);
+  color: var(--red);
+}
+
+.alert-container .mat-icon {
+  margin-right: 0.5em;
+}
+
+/*HIGH CONTRAST DEFAULT STYLES*/
+.varda-high-contrast,
+.varda-high-contrast a,
+.varda-high-contrast .alert-success,
+.varda-high-contrast .mat-expansion-panel,
+.varda-high-contrast .oph-alert-info,
+.varda-high-contrast .modal-form-intro,
+.varda-high-contrast .varda-info,
+.varda-high-contrast div.oph-field-text>small,
+.varda-high-contrast .varda-mat-table tr:hover,
+.varda-high-contrast .varda-paos-hallinta-colored-background,
+.varda-high-contrast .blue-panel .mat-mdc-table {
+  background-color: var(--white) !important;
+  color: var(--black) !important;
+}
+
+.varda-high-contrast .modal-form-intro,
+.varda-high-contrast .varda-info,
+.varda-high-contrast .mat-expansion-panel,
+.varda-high-contrast .oph-alert-info,
+.varda-high-contrast .alert-success,
+.varda-high-contrast .varda-main-frame-henkilo-section-container>div:first-child,
+.varda-high-contrast .varda-main-frame-toimipaikka-section-container>div:first-child,
+.varda-high-contrast .varda-mat-table tr:hover {
+  border: 2px solid var(--black);
+}
+
+
+.varda-high-contrast .oph-radio-button-group,
+.varda-high-contrast .varda-navbar-links .active-nav-item {
+  border-color: var(--black) !important;
+}
+
+.varda-high-contrast .oph-red,
+.varda-high-contrast .oph-green,
+.varda-high-contrast .varda-error-message-block,
+.varda-high-contrast .site-version,
+.varda-high-contrast .mat-icon.warning,
+.varda-high-contrast .white-panel .mat-expansion-panel-header-title,
+.varda-high-contrast .site-caption,
+.varda-high-contrast .varda-info-button,
+.varda-high-contrast .varda-henkilo-form-instructions-section small,
+.varda-high-contrast .varda-modal-title {
+  color: var(--black) !important;
+}
+
+.varda-high-contrast tr.selected-row,
+.varda-high-contrast tr.selected-row:hover,
+.varda-high-contrast .mat-button-toggle-group .mat-button-toggle-checked,
+.varda-high-contrast .mat-expansion-panel-header.toimipaikan-lapset-header:focus,
+.varda-high-contrast .mat-expansion-panel-header:focus-within,
+.varda-high-contrast .mat-expansion-panel-header:focus-within .material-icons,
+.varda-high-contrast .mat-expansion-panel-header:focus-within .mat-content > *,
+.varda-high-contrast .mat-expansion-panel-header:focus-within .mat-expansion-panel-header-description,
+.varda-high-contrast .mat-expansion-panel-header:focus-within .mat-expansion-panel-header-description > * {
+  background-color: var(--black) !important;
+  color: var(--white) !important;
+}
+
+.varda-high-contrast .mat-expansion-panel-header.toimipaikan-lapset-header:focus-within .mat-expansion-panel-header-title,
+.varda-high-contrast .mat-expansion-panel-header:focus-within .mat-expansion-panel-header-title,
+.varda-high-contrast .mat-expansion-panel-header:focus-within .mat-expansion-panel-header-title > * {
+  color: var(--white) !important;
+}
+
+.varda-high-contrast .mat-expansion-panel-header.toimipaikan-lapset-header:focus .varda-high-contrast ::placeholder {
+  color: #A2A2A2;
+}
+
+.varda-high-contrast ::-ms-input-placeholder {
+  color: #A2A2A2;
+}
+
+
+.cdk-overlay-container,
+.cdk-overlay-pane {
+  z-index: 9999 !important;
+}
+
+.mat-mdc-select-disabled .mat-mdc-select-arrow {
+  visibility: hidden;
+}
+
+.varda-high-contrast .oph-radio-button-text {
+  background-color: var(--white);
+  color: var(--black);
+}
+
+.varda-high-contrast .oph-radio-button-input:checked+.oph-radio-button-text,
+.varda-high-contrast .oph-radio-button-input:checked+.oph-radio-button-text:hover,
+.varda-high-contrast .oph-radio-button-input:checked:focus+.oph-radio-button-text {
+  background-color: var(--black);
+  color: var(--white);
+}
+
+
+/*HIGH CONTRAST LINK STYLES*/
+.varda-high-contrast .header-nav-link-wrapper .varda-header-link-item:hover {
+  border-color: var(--black);
+}
+
+.varda-high-contrast .header-nav-link-wrapper .varda-header-link-item:active {
+  background-color: var(--white) !important;
+  color: var(--black) !important;
+  border-color: var(--black);
+}
+
+.varda-high-contrast .varda-footer-nav-link-wrapper .varda-footer-link-item:active {
+  background-color: var(--white) !important;
+  color: var(--black) !important;
+  border-color: var(--black);
+}
+
+
+
+
+
+/*OUTLINE STYLES FOR ACCESSIBILITY ADJUSTMENTS*/
+body:not(.user-is-tabbing) button:focus,
+body:not(.user-is-tabbing) input:focus,
+body:not(.user-is-tabbing) a:focus,
+body:not(.user-is-tabbing) select:focus,
+body:not(.user-is-tabbing) textarea:focus,
+body:not(.user-is-tabbing) h5:focus {
+  outline: none;
+}
+
+.user-is-tabbing .varda-language-selector-flag-wrapper>div>a:focus,
+.user-is-tabbing #siteMenuWrapper:focus,
+.user-is-tabbing .varda-main-frame-toimipaikka-selector-panel mat-expansion-panel-header:focus,
+.user-is-tabbing.overlay .menu-nav-link-wrapper .varda-menu-link-item:focus,
+.user-is-tabbing.overlay .menu-nav-link-wrapper.last-menu-item .varda-menu-link-item:focus,
+.user-is-tabbing .varda-button:focus,
+.user-is-tabbing a#siteTitle:focus,
+.user-is-tabbing .varda-henkilo-item-name:focus,
+.user-is-tabbing .varda-footer-link-item:focus,
+.user-is-tabbing #increaseFontSizeBtn:focus,
+.user-is-tabbing #decreaseFontSizeBtn:focus,
+.user-is-tabbing #closeAccessibilitySettingsIcon:focus,
+.user-is-tabbing .varda-recurring-field-add-new-wrapper a:focus,
+.user-is-tabbing #kielipainotuksetYes:focus,
+.user-is-tabbing #toimintapainotuksetYes:focus,
+.user-is-tabbing #henkiloPromptModalLeave:focus,
+.user-is-tabbing #henkiloPromptModalStay:focus,
+.user-is-tabbing .recurring-varhaiskasvatuspaatos-entity-header:focus,
+.user-is-tabbing .recurring-varhaiskasvatussuhde-entity-header:focus,
+.user-is-tabbing .recurring-maksutieto-entity-header:focus,
+.user-is-tabbing .recurring-esiopetuspaatos-entity-header:focus,
+.user-is-tabbing .recurring-esiopetussuhde-entity-header:focus,
+.user-is-tabbing .recurring-esiopetussuoritus-entity-header:focus,
+.user-is-tabbing #myUsername:focus,
+.user-is-tabbing #logoutLink:focus,
+.user-is-tabbing .lapsi-form-esiopetus-link:focus {
+  outline: 3px solid var(--black) !important;
+}
+
+.user-is-tabbing #addContrastBtn:focus,
+.user-is-tabbing #decreaseContrastBtn:focus {
+  outline: 3px solid #FFFF00 !important;
+}
+
+
+.user-is-tabbing.overlay .menu-nav-link-wrapper .varda-menu-link-item:focus,
+.user-is-tabbing.overlay .menu-nav-link-wrapper.last-menu-item .varda-menu-link-item:focus {
+  border-bottom-color: var(--black);
+  background-color: var(--black);
+  font-weight: bold;
+  color: var(--white);
+}
+
+.user-is-tabbing .varda-button:focus {
+  border-radius: 0;
+  background-color: var(--btn-hover);
+  border-color: var(--btn-hover);
+  color: var(--btn-secondary);
+}
+
+.user-is-tabbing .selected-language:focus {
+  border-bottom: none;
+}
+
+.user-is-tabbing a.mat-mdc-menu-item:focus{
+  text-decoration: none;
+  color: black !important;
+  background-color: #949494 !important;
+}
+
+.mat-mdc-tooltip .mdc-tooltip__surface {
+  font-size: clamp(0.9rem, 3vw, 1.0rem) !important;
+  word-break: break-word;
+  max-width: 300px;
+  padding: 0.5rem 0.7rem;
+}
+
+@media (max-width: 576px) {
+  .varda-router-outlet-container {
+    width: calc(98% - 0.5rem);
+  }
+}
+
+
+/* handy-scroll styles, as of 1.1.1 cannot be imported anymore since handy-scroll.css is not exported in package.json */
+.handy-scroll {
+  bottom: 0;
+  min-height: 17px;
+  overflow: auto;
+  position: fixed
+}
+
+.handy-scroll div {
+  height: 1px;
+  overflow: hidden;
+  pointer-events: none
+}
+
+.handy-scroll div:before {
+  content: "\A0"
+}
+
+.handy-scroll,
+.handy-scroll div {
+  font-size: 1px;
+  line-height: 0;
+  margin: 0;
+  padding: 0
+}
+
+.handy-scroll-hidden {
+  bottom: 9999px
+}
+
+.handy-scroll-hidden div:before {
+  content: "\A0\A0"
+}
+
+.handy-scroll-viewport {
+  position: relative
+}
+
+.handy-scroll-body {
+  overflow: auto
+}
+
+.handy-scroll-viewport .handy-scroll {
+  left: 0;
+  position: absolute
+}
+
+.handy-scroll-hoverable .handy-scroll {
+  opacity: 0;
+  transition: opacity .5s .3s
+}
+
+.handy-scroll-hoverable:hover .handy-scroll {
+  opacity: 1
+}
+
+/* Keep the old table style of a border for last row at a table */
+.mdc-data-table__row:last-child .mdc-data-table__cell {
+  border-bottom: 1px solid rgba(0, 0, 0, 0.12) !important;
+}
+
+.mdc-label {
+  margin-bottom: 0;
+}
+
+.varda-info-button {
+  --mat-icon-button-icon-color: var(--blue-lighten-1)
+}
+
+.mdc-checkbox svg {
+  --mat-checkbox-selected-checkmark-color: var(--white);
+}
+
+/* Bootstrap 4 -> 5 upgrade: keep old style */
+
+[class^="col-"] {
+  padding-right: 15px;
+  padding-left: 15px;
+}
+
+label {
+  margin-bottom: 0.5rem;
+}

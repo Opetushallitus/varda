@@ -1,0 +1,97 @@
+<div class="palvelussuhde">
+  <mat-expansion-panel class="no-padding"
+    (opened)="togglePanel(true)"
+    (closed)="togglePanel(false)">
+    <mat-expansion-panel-header>
+      <mat-panel-title>
+        <app-expansion-panel-title [title]="i18n.palvelussuhde"
+          [startDate]="palvelussuhde.alkamis_pvm"
+          [endDate]="palvelussuhde.paattymis_pvm"
+          [secondaryTitle]="tyoskentelypaikatList"
+          [expanded]="expanded">
+        </app-expansion-panel-title>
+      </mat-panel-title>
+    </mat-expansion-panel-header>
+
+    <table class="mat-table">
+      <app-table-row [header]="i18n.palvelussuhde_tyosuhde_kytkin"
+        [content]="palvelussuhde.tyosuhde_koodi"
+        [tooltip]="i18n.tooltip_palvelussuhde_tyosuhde_kytkin"
+      [koodisto]="koodistoEnum.tyosuhde"></app-table-row>
+
+      <app-table-row [header]="i18n.palvelussuhde_tyoaika_kytkin"
+        [content]="palvelussuhde.tyoaika_koodi"
+        [tooltip]="i18n.tooltip_palvelussuhde_tyoaika_kytkin"
+      [koodisto]="koodistoEnum.tyoaika"></app-table-row>
+
+      <app-table-row [header]="i18n.palvelussuhde_tutkinto_koodi"
+        [content]="palvelussuhde.tutkinto_koodi"
+        [tooltip]="i18n.tooltip_palvelussuhde_tutkinto_koodi"
+        [koodisto]="koodistoEnum.tutkinto"
+      format="long"></app-table-row>
+
+      <app-table-row [header]="i18n.palvelussuhde_tyoaika_viikossa"
+        [content]="palvelussuhde.tyoaika_viikossa"
+      [tooltip]="i18n.tooltip_palvelussuhde_tyoaika_viikossa"></app-table-row>
+    </table>
+
+    <div class="extension-info"
+      [innerHTML]="i18n.info_palvelussuhde | translateMarkdown">
+    </div>
+  </mat-expansion-panel>
+
+  <div class="sub-sections">
+    <div class="tyoskentelypaikat"
+      [class.left-border]="palvelussuhde.pidemmat_poissaolot">
+      <h4 class="h5">{{ i18n.tyoskentelypaikat | translate }} ({{ palvelussuhde.tyoskentelypaikat.length }})</h4>
+      @if (!palvelussuhde.tyoskentelypaikat.length) {
+        <div class="no-results"
+          >
+          {{ i18n.palvelussuhde_ei_tyoskentelypaikkoja | translate }}
+        </div>
+      }
+      <mat-accordion>
+        @for (tyoskentelypaikka of palvelussuhde.tyoskentelypaikat; track tyoskentelypaikka) {
+          <app-tyoskentelypaikka
+          [tyoskentelypaikka]="tyoskentelypaikka"></app-tyoskentelypaikka>
+        }
+      </mat-accordion>
+    </div>
+
+    <div class="poissaolot">
+      <div class="section-header">
+        <h4 class="h5">{{ i18n.poissaolot | translate }} ({{ palvelussuhde.pidemmat_poissaolot.length }})</h4>
+
+        <span class="button-group">
+          <button [matTooltip]="i18n.tooltip_poissaolot | translate"
+            matTooltipClass="tooltip"
+            #tutkintoTooltipButton="matTooltip"
+            (click)="tutkintoTooltipButton.toggle()"
+            (mouseenter)="$event.stopImmediatePropagation()"
+            (mouseleave)="$event.stopImmediatePropagation()">
+            <mat-icon alt="">help_outline</mat-icon>
+          </button>
+        </span>
+
+      </div>
+      @if (!palvelussuhde.pidemmat_poissaolot.length) {
+        <div class="no-results"
+          >
+          {{ i18n.palvelussuhde_ei_poissaoloja | translate }}
+        </div>
+      }
+
+      <mat-list>
+        @for (poissaolo of palvelussuhde.pidemmat_poissaolot; track poissaolo) {
+          <mat-list-item>
+            <mat-icon aria-ignore
+            mat-list-icon>timelapse</mat-icon>
+            <div mat-line>
+              {{ poissaolo.alkamis_pvm | huoltajaDate }} - {{ poissaolo.paattymis_pvm | huoltajaDate }}
+            </div>
+          </mat-list-item>
+        }
+      </mat-list>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,53 @@
+@use '@angular/material' as mat;
+
+@include mat.all-component-typographies();
+
+@include mat.elevation-classes();
+@include mat.app-background();
+
+// Varda theme
+$varda-primary-palette: (
+  50 : #f4fff4,
+  100 : #ccffcc,
+  200 : #beff92,
+  300 : #9cff5a,
+  400 : #7fde45,
+  500 : #61a736,
+  600 : #4a8724,
+  700 : #3a7a10,
+  800 : #255d09,
+  900 : #254905,
+  A100 : #99ff7f,
+  A200 : #71ff4c,
+  A400 : #49ff19,
+  A700 : #35fe00,
+  contrast: (
+    50 : #000000,
+    100 : #000000,
+    200 : #000000,
+    300 : #000000,
+    400 : #000000,
+    500 : #ffffff,
+    600 : #ffffff,
+    700 : #ffffff,
+    800 : #ffffff,
+    900 : #ffffff,
+    A100 : #000000,
+    A200 : #000000,
+    A400 : #000000,
+    A700 : #000000,
+  )
+);
+
+$varda-primary: mat.m2-define-palette($varda-primary-palette);
+$varda-accent:  mat.m2-define-palette($varda-primary-palette);
+$varda-warn:    mat.m2-define-palette(mat.$m2-red-palette);
+$varda-theme:   mat.m2-define-light-theme((
+  color: (
+    primary: $varda-primary,
+    accent: $varda-accent,
+    warn: $varda-warn,
+  )
+));
+
+@include mat.all-component-themes($varda-theme);

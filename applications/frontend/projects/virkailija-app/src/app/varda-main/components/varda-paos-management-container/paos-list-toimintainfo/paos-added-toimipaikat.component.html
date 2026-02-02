@@ -1,0 +1,143 @@
+<h3>{{i18n.paos_toimipaikat | translate}} ({{paosToiminnat.length}})</h3>
+<div>
+  <p [innerHTML]="i18n.paos_toimipaikat_instruction | translateMarkdown"></p>
+  @if (!paosToiminnat.length) {
+    <p
+      class="paos-list-toimijat-search-empty">
+    {{i18n.paos_toimipaikat_empty | translate}}</p>
+  }
+</div>
+@if (showSuccess) {
+  <div
+    class="oph-alert oph-alert-success"
+    [@fadeOut]>
+    {{i18n.paos_toimipaikat_already_added | translate}}
+  </div>
+}
+@if (paosToiminnat.length) {
+  <div>
+    <mat-form-field>
+      <input type="text"
+        matInput
+        id="paos-list-toimipaikat-search"
+        class="varda-input"
+        [placeholder]="i18n.search | translate"
+        (keyup)="filterToimintaInfo($event.target.value)" />
+    </mat-form-field>
+    <div [class.scrollable]="paosToiminnat.length > 3">
+      @for (paosToiminta of filteredToiminnat; track paosToiminta) {
+        <div
+          class="paos-yksikot oph-alert oph-alert-info small-text"
+          [class.varda-paos-list-toimintainfo-highlight]="isToimijaHighlighted(highlighted, paosToiminta)">
+          <h4>{{paosToiminta.toimijaNimi}} ({{paosToiminta.toimipaikat.length}})
+            @if (paosToiminta.paosOikeus.voimassa_kytkin) {
+              <mat-icon
+              title="{{i18n.paos_toimijat_both_added | translate }}">sync_alt</mat-icon>
+            }
+          </h4>
+          <div class="paos-list-flexbox">
+            <div>
+              <div>{{i18n.organisaatio_oid | translate}}:
+                <span class='text-nowrap'>{{paosToiminta.toimijaOID}}</span>
+              </div>
+              <div>{{i18n.organisaatio_y_tunnus | translate}}:
+                <span class='text-nowrap'>{{paosToiminta.toimijaYTunnus}}</span>
+              </div>
+              <div>{{i18n.id | translate}}: {{paosToiminta.toimijaId}}</div>
+            </div>
+            <app-varda-toggle-button [isUp]="openToimija !== paosToiminta.toimijaId"
+              [showTextKey]="i18n.paos_toimipaikat_show"
+              [hideTextKey]="i18n.paos_toimipaikat_hide"
+            (click)="toggleToimija(paosToiminta.toimijaId)"></app-varda-toggle-button>
+          </div>
+          @if (openToimija === paosToiminta.toimijaId) {
+            <div>
+              <div class="paos-toimijat-list-tallennusvastuu-wrapper paos-list-flexbox">
+                <div class="paos-list-flexbox">
+                  <div class="paos-toimipaikat-list-tallennusvastuu-column">
+                    {{i18n.paos_saved_by | translate}}:
+                  </div>
+                  @if (openTallennusvastuu !== paosToiminta.toimijaId) {
+                    <div class="paos-toimipaikat-list-tallennusvastuu-column"
+                      >
+                      {{getCurrentTallentajaName(paosToiminta.paosOikeus, paosToiminta.toimijaNimi)}}
+                    </div>
+                  }
+                </div>
+                @if (isAdminUser || isVardaPaakayttaja) {
+                  @if (openTallennusvastuu !== paosToiminta.toimijaId) {
+                    <div class="paos-toimipaikat-list-tallennusvastuu-column"
+                      >
+                      <button type="text"
+                        class="varda-button"
+                        mat-button
+                        (click)="openTallennusvastuu = paosToiminta.toimijaId">
+                        {{i18n.paos_switch | translate}}
+                      </button>
+                    </div>
+                  }
+                  @if (openTallennusvastuu === paosToiminta.toimijaId) {
+                    <div class="paos-toimipaikat-list-tallennusvastuu-column"
+                      >
+                      <select [(ngModel)]="paosToiminta.paosOikeus.tallentaja_organisaatio_id"
+                        (change)="changeTallennusvastuu($event.target.value, paosToiminta)"
+                        class="varda-select">
+                        <option [value]="this.selectedVakajarjestaja.id">{{ this.selectedVakajarjestaja.nimi }}
+                        </option>
+                        <option [value]="paosToiminta.toimijaId">{{ paosToiminta.toimijaNimi }}</option>
+                      </select>
+                    </div>
+                  }
+                  @if (openTallennusvastuu === paosToiminta.toimijaId) {
+                    <div class="paos-toimipaikat-list-tallennusvastuu-column"
+                      >
+                      <button class="varda-button"
+                        (click)="saveTallennusvastuu(paosToiminta)"
+                        [class.varda-disabled-button]="isTallentajaChanged(paosToiminta)"
+                        [disabled]="isTallentajaChanged(paosToiminta)">
+                        {{i18n.save | translate}}
+                      </button>
+                    </div>
+                  }
+                }
+              </div>
+              <h4 class="paos-toimijat-list-toimipaikat-text">{{i18n.toimipaikka_plural | translate}}</h4>
+              @for (toimipaikka of paosToiminta.toimipaikat; track toimipaikka) {
+                <div
+                  class="paos-toimijat-list-toimipaikka paos-list-flexbox">
+                  <div>
+                    <div class="paos-toimijat-list-toimipaikka-header">
+                      {{toimipaikka.toimipaikka_nimi}}
+                    </div>
+                    <div>
+                      {{i18n.organisaatio_oid | translate}}:
+                      <span class="text-nowrap">{{toimipaikka.toimipaikka_organisaatio_oid}}</span>
+                    </div>
+                    <div>
+                      {{i18n.id | translate}}: {{toimipaikka.toimipaikka_id}}
+                    </div>
+                  </div>
+                  @if (isAdminUser || isVardaPaakayttaja) {
+                    <app-varda-delete-button
+                      (click)="showDeleteConfirm(toimipaikka)">
+                      {{i18n.delete | translate}}
+                    </app-varda-delete-button>
+                  }
+                </div>
+              }
+            </div>
+          }
+        </div>
+      }
+    </div>
+  </div>
+}
+<app-varda-prompt-modal [show$]="showConfirmModal$"
+  (saveEvent)="deletePaosToiminta()">
+  @if (paosToimintaToDelete) {
+    <div class="paos-prompt-modal-header"
+      >{{paosToimintaToDelete.toimipaikka_nimi }}, {{paosToimintaToDelete.toimija_nimi }}
+    </div>
+  }
+  {{i18n.paos_toimipaikat_delete_confirm | translate}}
+</app-varda-prompt-modal>

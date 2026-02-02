@@ -1,0 +1,283 @@
+<div #scrollTo></div>
+@if (lapsiKooste) {
+  <mat-card appearance="outlined" tabindex="0">
+    <mat-card-header>
+      <mat-card-title>
+        {{lapsiKooste.henkilo.sukunimi}}, {{lapsiKooste.henkilo.etunimet}}
+        <app-varda-timestamp [dateAdded]="lapsiKooste.luonti_pvm" [dateChanged]="lapsiKooste.muutos_pvm"></app-varda-timestamp>
+      </mat-card-title>
+    </mat-card-header>
+    <mat-card-content>
+      @if (lapsiKooste.henkilo.turvakielto) {
+        <div class="alert-container"
+          >
+          <mat-icon>visibility</mat-icon> {{i18n.turvakielto | translate}}
+        </div>
+      }
+      <div class="toimipaikan-lapset-container-margin-bottom">
+        <h3 class="oph-bold">{{i18n.katsele_tietoja_perustiedot | translate}}</h3>
+        <div class="table-responsive">
+          <table class="mat-mdc-table">
+            <tr class="mat-mdc-row mdc-data-table__row">
+              <th scope="row" class="mat-mdc-header-cell mdc-data-table__header-cell">{{i18n.henkilo_etunimet | translate}}</th>
+              <td class="mat-mdc-cell mdc-data-table__cell">{{lapsiKooste.henkilo.etunimet}}</td>
+            </tr>
+            <tr class="mat-mdc-row mdc-data-table__row">
+              <th scope="row" class="mat-mdc-header-cell mdc-data-table__header-cell">{{i18n.henkilo_sukunimi | translate}}</th>
+              <td class="mat-mdc-cell mdc-data-table__cell">{{lapsiKooste.henkilo.sukunimi}}</td>
+            </tr>
+            <tr class="mat-mdc-row mdc-data-table__row">
+              <th scope="row" class="mat-mdc-header-cell mdc-data-table__header-cell">{{i18n.henkilo_id | translate}}</th>
+              <td class="mat-mdc-cell mdc-data-table__cell">{{lapsiKooste.henkilo.id}}</td>
+            </tr>
+            <tr class="mat-mdc-row mdc-data-table__row">
+              <th scope="row" class="mat-mdc-header-cell mdc-data-table__header-cell">{{i18n.lapsi_id | translate}}</th>
+              <td class="mat-mdc-cell mdc-data-table__cell">{{lapsiKooste.id}}</td>
+            </tr>
+            <tr class="mat-mdc-row mdc-data-table__row">
+              <th scope="row" class="mat-mdc-header-cell mdc-data-table__header-cell">{{i18n.oppijanumero | translate}}</th>
+              <td class="mat-mdc-cell mdc-data-table__cell">{{lapsiKooste.henkilo.henkilo_oid}}</td>
+            </tr>
+            <tr class="mat-mdc-row mdc-data-table__row">
+              <th scope="row" class="mat-mdc-header-cell mdc-data-table__header-cell">{{i18n.syntymapaiva | translate}}</th>
+              <td class="mat-mdc-cell mdc-data-table__cell">{{getDateDisplayValue(lapsiKooste.henkilo.syntyma_pvm)}}</td>
+            </tr>
+            @if (lapsiKooste.oma_organisaatio_nimi) {
+              <tr class="mat-mdc-row mdc-data-table__row"
+                >
+                <th scope="row" class="mat-mdc-header-cell mdc-data-table__header-cell">{{i18n.lapsi_oma_organisaatio | translate}}</th>
+                <td class="mat-mdc-cell mdc-data-table__cell">{{lapsiKooste.paos_organisaatio_nimi}}</td>
+              </tr>
+            }
+          </table>
+        </div>
+      </div>
+      <div class="toimipaikan-lapset-container-margin-bottom">
+        <h3 class="oph-bold">{{i18n.katsele_tietoja_lapsi_vakatiedot | translate}}</h3>
+        @if (!userAccess.lapsitiedot.katselija) {
+          <div class="varda-text-secondary d-block">
+            {{i18n.katsele_tietoja_error_invalid_permissions | translate}}
+          </div>
+        } @else {
+          @if (lapsiKooste.varhaiskasvatuspaatokset.length === 0) {
+            <div class="varda-text-secondary d-block">
+              {{i18n.katsele_tietoja_lapsi_no_vakatiedot | translate}}
+            </div>
+          }
+          @if (lapsiKooste.varhaiskasvatuspaatokset && lapsiKooste.varhaiskasvatuspaatokset.length > 0) {
+            <div>
+              @for (vakapaatos of lapsiKooste.varhaiskasvatuspaatokset | slice:0:numberOfDisplayed.vakapaatos; track vakapaatos) {
+                <div class="vakatieto-container">
+                  <mat-expansion-panel class="vakapaatos-panel blue-panel">
+                    <mat-expansion-panel-header class="toimipaikan-lapset-header">
+                      <mat-panel-title>
+                        {{i18n.varhaiskasvatuspaatos | translate}}
+                        {{getDateRangeDisplayValue(vakapaatos.alkamis_pvm, vakapaatos.paattymis_pvm)}}
+                        <app-varda-timestamp [dateAdded]="vakapaatos.luonti_pvm" [dateChanged]="vakapaatos.muutos_pvm"></app-varda-timestamp>
+                      </mat-panel-title>
+                    </mat-expansion-panel-header>
+                    <div class="table-responsive">
+                      <table class="mat-mdc-table">
+                        <tr class="mat-mdc-row mdc-data-table__row">
+                          <th scope="row" class="mat-mdc-header-cell mdc-data-table__header-cell">{{i18n.id | translate}}</th>
+                          <td class="mat-mdc-cell mdc-data-table__cell">{{vakapaatos.id}}</td>
+                        </tr>
+                        <tr class="mat-mdc-row mdc-data-table__row">
+                          <th scope="row" class="mat-mdc-header-cell mdc-data-table__header-cell">{{i18n.varhaiskasvatuspaatos_hakemus_pvm | translate}}</th>
+                          <td class="mat-mdc-cell mdc-data-table__cell">{{getDateDisplayValue(vakapaatos.hakemus_pvm)}}</td>
+                        </tr>
+                        <tr class="mat-mdc-row mdc-data-table__row">
+                          <th scope="row" class="mat-mdc-header-cell mdc-data-table__header-cell">{{i18n.varhaiskasvatuspaatos_tuntimaara_viikossa | translate}}</th>
+                          <td class="mat-mdc-cell mdc-data-table__cell">{{vakapaatos.tuntimaara_viikossa}}</td>
+                        </tr>
+                        <tr class="mat-mdc-row mdc-data-table__row">
+                          <th scope="row" class="mat-mdc-header-cell mdc-data-table__header-cell">{{i18n.varhaiskasvatuspaatos_jarjestamismuoto_koodi | translate}}</th>
+                          <td class="mat-mdc-cell mdc-data-table__cell" [libKoodistoValue]="koodistoEnum.jarjestamismuoto" format="long">
+                            {{vakapaatos.jarjestamismuoto_koodi}}
+                          </td>
+                        </tr>
+                        @if (isKunnallinenJarjestamismuoto(vakapaatos.jarjestamismuoto_koodi)) {
+                          <tr class="mat-mdc-row mdc-data-table__row">
+                            <th scope="row" class="mat-mdc-header-cell mdc-data-table__header-cell">{{i18n.varhaiskasvatuspaatos_tilapainen_vaka_kytkin | translate}}</th>
+                            <td class="mat-mdc-cell mdc-data-table__cell">{{getBooleanLabel(vakapaatos.tilapainen_vaka_kytkin) | translate}}</td>
+                          </tr>
+                        }
+                        @if (vakapaatos.paivittainen_vaka_kytkin !== null) {
+                          <tr class="mat-mdc-row mdc-data-table__row">
+                            <th scope="row" class="mat-mdc-header-cell mdc-data-table__header-cell">{{i18n.varhaiskasvatuspaatos_paivittainen_vaka_kytkin | translate}}</th>
+                            <td class="mat-mdc-cell mdc-data-table__cell">{{(vakapaatos.paivittainen_vaka_kytkin ?
+                              i18n.varhaiskasvatuspaatos_paivittainen_vaka_kytkin_true :
+                            i18n.varhaiskasvatuspaatos_paivittainen_vaka_kytkin_false) | translate}}</td>
+                          </tr>
+                        }
+                        @if (vakapaatos.kokopaivainen_vaka_kytkin !== null) {
+                          <tr class="mat-mdc-row mdc-data-table__row">
+                            <th scope="row" class="mat-mdc-header-cell mdc-data-table__header-cell">{{i18n.varhaiskasvatuspaatos_kokopaivainen_vaka_kytkin | translate}}</th>
+                            <td class="mat-mdc-cell mdc-data-table__cell">{{(vakapaatos.kokopaivainen_vaka_kytkin ?
+                              i18n.varhaiskasvatuspaatos_kokopaivainen_vaka_kytkin_true :
+                            i18n.varhaiskasvatuspaatos_kokopaivainen_vaka_kytkin_false) | translate}}</td>
+                          </tr>
+                        }
+                        <tr class="mat-mdc-row mdc-data-table__row">
+                          <th scope="row" class="mat-mdc-header-cell mdc-data-table__header-cell">{{i18n.varhaiskasvatuspaatos_vuorohoito_kytkin | translate}}</th>
+                          <td class="mat-mdc-cell mdc-data-table__cell">{{getBooleanLabel(vakapaatos.vuorohoito_kytkin) | translate}}</td>
+                        </tr>
+                        <tr class="mat-mdc-row mdc-data-table__row">
+                          <th scope="row" class="mat-mdc-header-cell mdc-data-table__header-cell">{{i18n.varhaiskasvatuspaatos_pikakasittely | translate}}</th>
+                          <td class="mat-mdc-cell mdc-data-table__cell">{{getBooleanLabel(vakapaatos.pikakasittely_kytkin) | translate}}</td>
+                        </tr>
+                      </table>
+                    </div>
+                  </mat-expansion-panel>
+                  <div class="toimipaikan-lapset-container-margin-bottom vakasuhteet-wrapper">
+                    @for (vakasuhde of vakapaatos.varhaiskasvatussuhteet; track vakasuhde) {
+                      <div class="tree-child-container"
+                        >
+                        <mat-expansion-panel class="vakasuhde-panel white-panel tree-child">
+                          <mat-expansion-panel-header class="toimipaikan-lapset-header">
+                            <mat-panel-title>
+                              {{vakasuhde.toimipaikka_nimi}}
+                              {{getDateRangeDisplayValue(vakasuhde.alkamis_pvm, vakasuhde.paattymis_pvm)}}
+                              <app-varda-timestamp [dateAdded]="vakasuhde.luonti_pvm" [dateChanged]="vakasuhde.muutos_pvm"></app-varda-timestamp>
+                            </mat-panel-title>
+                          </mat-expansion-panel-header>
+                          <div class="table-responsive">
+                            <table class="mat-mdc-table">
+                              <tr class="mat-mdc-row mdc-data-table__row">
+                                <th scope="row" class="mat-mdc-header-cell mdc-data-table__header-cell">{{i18n.id | translate}}</th>
+                                <td class="mat-mdc-cell mdc-data-table__cell">{{vakasuhde.id}}</td>
+                              </tr>
+                              <tr class="mat-mdc-row mdc-data-table__row">
+                                <th scope="row" class="mat-mdc-header-cell mdc-data-table__header-cell">{{i18n.toimipaikka | translate}}</th>
+                                <td class="mat-mdc-cell mdc-data-table__cell">{{vakasuhde.toimipaikka_nimi}}</td>
+                              </tr>
+                              <tr class="mat-mdc-row mdc-data-table__row">
+                                <th scope="row" class="mat-mdc-header-cell mdc-data-table__header-cell">{{i18n.alkamis_pvm | translate}}</th>
+                                <td class="mat-mdc-cell mdc-data-table__cell">{{getDateDisplayValue(vakasuhde.alkamis_pvm)}}</td>
+                              </tr>
+                              <tr class="mat-mdc-row mdc-data-table__row">
+                                <th scope="row" class="mat-mdc-header-cell mdc-data-table__header-cell">{{i18n.paattymis_pvm | translate}}</th>
+                                <td class="mat-mdc-cell mdc-data-table__cell">{{getDateDisplayValue(vakasuhde.paattymis_pvm)}}</td>
+                              </tr>
+                            </table>
+                          </div>
+                        </mat-expansion-panel>
+                      </div>
+                    }
+                  </div>
+                </div>
+              }
+              @if (lapsiKooste.varhaiskasvatuspaatokset) {
+                <app-varda-show-more-less
+                  [showMoreKey]="i18n.varhaiskasvatuspaatokset_show_more"
+                  [(numberOfDisplayed)]="numberOfDisplayed.vakapaatos"
+                  [numberOfItems]="lapsiKooste.varhaiskasvatuspaatokset.length">
+                </app-varda-show-more-less>
+              }
+            </div>
+          }
+        }
+      </div>
+      <div class="toimipaikan-lapset-container-margin-bottom">
+        <h3 class="oph-bold">{{i18n.maksutiedot | translate}}</h3>
+        @if (!isMaksutietoPermission()) {
+          <div class="varda-text-secondary d-block">
+            {{i18n.katsele_tietoja_error_invalid_permissions | translate}}
+          </div>
+        } @else {
+          @if (lapsiKooste.maksutiedot.length === 0) {
+            <div class="varda-text-secondary d-block">
+              {{i18n.katsele_tietoja_lapsi_no_maksutiedot | translate}}
+            </div>
+          }
+          @if (lapsiKooste.maksutiedot && lapsiKooste.maksutiedot.length > 0) {
+            <div>
+              @for (maksutieto of lapsiKooste.maksutiedot | slice:0:numberOfDisplayed.maksutieto; track maksutieto) {
+                <div>
+                  <mat-expansion-panel class="maksutieto-panel blue-panel">
+                    <mat-expansion-panel-header class="toimipaikan-lapset-header">
+                      <mat-panel-title>
+                        {{i18n.maksutieto | translate}}
+                        {{getDateRangeDisplayValue(maksutieto.alkamis_pvm, maksutieto.paattymis_pvm)}}
+                        <app-varda-timestamp [dateAdded]="maksutieto.luonti_pvm" [dateChanged]="maksutieto.muutos_pvm"></app-varda-timestamp>
+                      </mat-panel-title>
+                    </mat-expansion-panel-header>
+                    <div class="table-responsive">
+                      <table class="mat-mdc-table">
+                        <tr class="mat-mdc-row mdc-data-table__row">
+                          <th scope="row" class="mat-mdc-header-cell mdc-data-table__header-cell">{{i18n.id | translate}}</th>
+                          <td class="mat-mdc-cell mdc-data-table__cell">{{maksutieto.id}}</td>
+                        </tr>
+                        <tr class="mat-mdc-row mdc-data-table__row">
+                          <th scope="row" class="mat-mdc-header-cell mdc-data-table__header-cell">{{i18n.maksutieto_maksunperuste_koodi | translate}}</th>
+                          <td class="mat-mdc-cell mdc-data-table__cell" [libKoodistoValue]="koodistoEnum.maksunperuste" format="long">
+                            {{maksutieto.maksun_peruste_koodi}}
+                          </td>
+                        </tr>
+                        @if (!lapsiKooste.yksityinen_kytkin) {
+                          <tr class="mat-mdc-row mdc-data-table__row">
+                            <th scope="row" class="mat-mdc-header-cell mdc-data-table__header-cell">{{i18n.maksutieto_palveluseteli_arvo | translate}}</th>
+                            <td class="mat-mdc-cell mdc-data-table__cell">{{maksutieto.palveluseteli_arvo}}</td>
+                          </tr>
+                        }
+                        <tr class="mat-mdc-row mdc-data-table__row">
+                          <th scope="row" class="mat-mdc-header-cell mdc-data-table__header-cell">{{i18n.maksutieto_asiakasmaksu | translate}}</th>
+                          <td class="mat-mdc-cell mdc-data-table__cell">{{maksutieto.asiakasmaksu}}</td>
+                        </tr>
+                        @if (!lapsiKooste.yksityinen_kytkin) {
+                          <tr class="mat-mdc-row mdc-data-table__row">
+                            <th scope="row" class="mat-mdc-header-cell mdc-data-table__header-cell">{{i18n.maksutieto_perheen_koko | translate}}</th>
+                            <td class="mat-mdc-cell mdc-data-table__cell">{{maksutieto.perheen_koko}}</td>
+                          </tr>
+                        }
+                        <tr class="mat-mdc-row mdc-data-table__row">
+                          <th scope="row" class="mat-mdc-header-cell mdc-data-table__header-cell">{{i18n.alkamis_pvm | translate}}</th>
+                          <td class="mat-mdc-cell mdc-data-table__cell">{{getDateDisplayValue(maksutieto.alkamis_pvm)}}</td>
+                        </tr>
+                        <tr class="mat-mdc-row mdc-data-table__row">
+                          <th scope="row" class="mat-mdc-header-cell mdc-data-table__header-cell">{{i18n.paattymis_pvm | translate}}</th>
+                          <td class="mat-mdc-cell mdc-data-table__cell">{{getDateDisplayValue(maksutieto.paattymis_pvm)}}</td>
+                        </tr>
+                      </table>
+                    </div>
+                    <div class="huoltajat-container">
+                      <h3 class="oph-bold">
+                        <span>{{i18n.maksutieto_huoltaja_plural | translate}}</span>
+                      </h3>
+                      @for (huoltaja of maksutieto.huoltajat; track huoltaja; let i = $index) {
+                        <div class="table-responsive"
+                          [class.margin-top]="i !== 0">
+                          <table class="mat-mdc-table">
+                            <tr class="mat-mdc-row mdc-data-table__row">
+                              <th scope="row" class="mat-mdc-header-cell mdc-data-table__header-cell">{{i18n.oppijanumero | translate}}</th>
+                              <td class="mat-mdc-cell mdc-data-table__cell">{{huoltaja.henkilo_oid}}</td>
+                            </tr>
+                            <tr class="mat-mdc-row mdc-data-table__row">
+                              <th scope="row" class="mat-mdc-header-cell mdc-data-table__header-cell">{{i18n.henkilo_etunimet | translate}}</th>
+                              <td class="mat-mdc-cell mdc-data-table__cell">{{huoltaja.etunimet}}</td>
+                            </tr>
+                            <tr class="mat-mdc-row mdc-data-table__row">
+                              <th scope="row" class="mat-mdc-header-cell mdc-data-table__header-cell">{{i18n.henkilo_sukunimi | translate}}</th>
+                              <td class="mat-mdc-cell mdc-data-table__cell">{{huoltaja.sukunimi}}</td>
+                            </tr>
+                          </table>
+                        </div>
+                      }
+                    </div>
+                  </mat-expansion-panel>
+                </div>
+              }
+              @if (lapsiKooste.maksutiedot) {
+                <app-varda-show-more-less
+                  [showMoreKey]="i18n.maksutiedot_show_more"
+                  [(numberOfDisplayed)]="numberOfDisplayed.maksutieto"
+                  [numberOfItems]="lapsiKooste.maksutiedot.length">
+                </app-varda-show-more-less>
+              }
+            </div>
+          }
+        }
+      </div>
+    </mat-card-content>
+  </mat-card>
+}

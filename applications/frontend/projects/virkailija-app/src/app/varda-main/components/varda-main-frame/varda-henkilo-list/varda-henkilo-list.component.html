@@ -1,0 +1,87 @@
+<div class="table-responsive">
+  <table class="henkilo-list">
+    <tbody>
+      @for (henkilo of henkiloList; track henkilo) {
+        @if (henkiloRooli === 'lapsi') {
+          <tr class="henkilo-list-item"
+            tabindex="0"
+            [class.disabled]="henkilo.expanded"
+            (keydown.enter)="clickItem(henkilo)"
+            (click)="clickItem(henkilo)">
+            <td>
+              @if (henkilo.lapset.length === 1) {
+                <mat-icon>perm_identity</mat-icon>
+              }
+              @if (henkilo.lapset.length > 1 && !henkilo.expanded) {
+                <mat-icon>add</mat-icon>
+              }
+            </td>
+            <td>
+              {{ henkilo.sukunimi }} {{ henkilo.etunimet }}
+              @if (henkilo.lapset?.length > 1) {
+                <span>({{henkilo.lapset.length}})</span>
+              }
+            </td>
+            <td>
+              @if (henkilo.lapset?.length === 1) {
+                <i>
+                  {{ getPaosText(henkilo.lapset[0]) }}
+                </i>
+              }
+            </td>
+          </tr>
+          @if (henkilo.expanded) {
+            @for (lapsi of henkilo.lapset; track lapsi) {
+              <tr class="henkilo-list-item sub-item"
+                tabindex="0"
+                (keydown.enter)="openItem(lapsi, henkilo)"
+                (click)="openItem(lapsi, henkilo)"
+                >
+                <td>
+                  <mat-icon alt="">perm_identity</mat-icon>
+                </td>
+                <td>{{ henkilo.sukunimi }} {{ henkilo.etunimet }}</td>
+                <td><i>{{ getPaosText(lapsi) }}</i></td>
+              </tr>
+            }
+          }
+        }
+        @if (henkiloRooli === 'tyontekija') {
+          @for (tyontekija of henkilo.tyontekijat; track tyontekija) {
+            <tr class="henkilo-list-item"
+              tabindex="0"
+              (keydown.enter)="clickItem(henkilo)"
+              (click)="clickItem(henkilo)">
+              <td>
+                <mat-icon alt="">perm_identity</mat-icon>
+              </td>
+              <td>{{ henkilo.sukunimi }} {{ henkilo.etunimet }}</td>
+              @if (tyontekija.is_missing_data) {
+                <td
+                  class="henkilo-warning">
+                  <mat-icon alt="">error_outline</mat-icon>
+                  {{ i18n.henkilo_tyontekija_tiedot_puuttuu | translate }}
+                </td>
+              }
+              @if (tyontekija.tehtavanimikkeet?.length > 0) {
+                <td>
+                  @for (koodi of tyontekija.tehtavanimikkeet; track koodi; let index = $index; let last = $last) {
+                    <div>
+                      @if (index < 2) {
+                        <span
+                        libKoodistoValue="vardatehtavanimike">{{ koodi }}</span>
+                      }
+                      @if (index === 1 && !last) {
+                        <span> (+{{tyontekija.tehtavanimikkeet.length - 2}})</span>
+                      }
+                    </div>
+                  }
+                </td>
+              }
+            </tr>
+          }
+        }
+      }
+    </tbody>
+  </table>
+</div>

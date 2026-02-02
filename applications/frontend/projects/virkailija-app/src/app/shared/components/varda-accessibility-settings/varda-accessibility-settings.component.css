@@ -1,0 +1,47 @@
+.varda-accessibility-settings-content {
+    padding: 20px
+}
+
+.varda-accessibility-settings-font-size-section,
+.varda-accessibility-settings-font-size-btn-wrapper {
+    display: flex;
+    justify-content: center;
+}
+
+.varda-accessibility-settings-font-size-section h3 {
+    font-size: 1.1rem;
+    margin-bottom: 10px;
+    color: #000;
+}
+
+.varda-accessibility-settings-font-size-btn-wrapper button {
+    cursor: pointer;
+    padding-left: 15px;
+    padding-right: 15px;
+}
+
+.varda-accessibility-settings-font-size-btn-wrapper {
+    margin-bottom: 10px;
+}
+
+.varda-accessibility-settings-adjust-contrast-btn-wrapper {
+    display: flex;
+    justify-content: center;
+    border-top: 1px solid #9a9a9a;
+    padding: 10px;
+}
+
+#closeAccessibilitySettingsIcon {
+    position: absolute;
+    right: 7px;
+    top: 7px;
+    cursor: pointer;
+    height: 25px;
+}
+
+#fontSize {
+    position: absolute;
+    right: 10px;
+    top: 30%;
+    font-weight: bold;
+}

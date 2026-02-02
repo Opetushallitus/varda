@@ -1,0 +1,57 @@
+.varda-henkilo-list-content-scrollable
+{
+  min-height: 50px;
+  max-height: 300px;
+  overflow: auto;
+  margin-bottom: 1em;
+}
+
+.henkilo-list {
+  width: 100%;
+}
+
+.henkilo-list-item {
+  user-select: none;
+  cursor: pointer;
+  display: flex;
+}
+
+.henkilo-list-item:hover:not(.disabled) {
+  background: var(--black);
+  color: var(--white);
+}
+
+.henkilo-list-item.disabled {
+  color: var(--gray-lighten-1);
+  cursor: unset;
+}
+
+.henkilo-list-item > td:first-child {
+  width: 2em;
+}
+
+.henkilo-list-item > td {
+  padding: 0.25em;
+}
+
+.henkilo-list-item.disabled,
+.henkilo-list-item.sub-item {
+  background-color: var(--gray-lighten-5);
+}
+
+.henkilo-list tr {
+  margin-right: 0;
+  margin-left: 0;
+}
+
+.error-title {
+  width: 10em;
+}
+
+.sub-item > td {
+  padding-left: 1em;
+}
+
+.henkilo-warning {
+  color: var(--red);
+}

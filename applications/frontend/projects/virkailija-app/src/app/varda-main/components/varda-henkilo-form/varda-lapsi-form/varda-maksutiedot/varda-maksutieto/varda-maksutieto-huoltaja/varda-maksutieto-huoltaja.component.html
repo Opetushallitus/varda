@@ -1,0 +1,83 @@
+@if (huoltajaForm) {
+  <ng-container
+    [formGroup]="huoltajaForm">
+    <fieldset class="maksutieto-henkilo">
+      <div class="henkilo-head">
+        <legend class="oph-h4 oph-bold">{{ i18n.maksutieto_huoltaja | translate }} #{{ indexNr + 1 }}</legend>
+        @if (showDeleteButton) {
+          <button class="varda-button varda-button-danger secondary responsive-md"
+            (click)="deleteHuoltaja()"
+            type="button">
+            <mat-icon alt="">delete_outline</mat-icon>
+            {{ i18n.maksutieto_poista_huoltaja | translate }} #{{ indexNr + 1 }}
+          </button>
+        }
+      </div>
+      <app-varda-form-field name="addWithSsnOrOid"
+        [form]="huoltajaForm"
+        [instructionText]="i18n.henkilo_instruction_ssn_or_oid | translate">
+        <mat-radio-group #fieldItem
+          (change)="addWithSsnOrOidChanged($event)"
+          formControlName="addWithSsnOrOid">
+          <mat-radio-button [value]="true">{{ i18n.henkilo_lisaa_henkilotunnuksella | translate }}</mat-radio-button>
+          <mat-radio-button [value]="false">{{ i18n.henkilo_lisaa_oppijanumerolla | translate }}</mat-radio-button>
+        </mat-radio-group>
+      </app-varda-form-field>
+      @if (huoltajaForm.controls.addWithSsnOrOid.value) {
+        <app-varda-form-field name="henkilotunnus"
+          [form]="huoltajaForm"
+          [label]="i18n.henkilo_henkilotunnus | translate"
+          [errorText]="i18n.henkilo_error_henkilotunnus | translate"
+          [placeholder]="i18n.henkilo_placeholder_henkilotunnus | translate"
+          [instructionText]="i18n.henkilo_instruction_henkilotunnus | translate">
+          <input #fieldItem
+            type="text"
+            class="oph-input"
+            formControlName="henkilotunnus" />
+        </app-varda-form-field>
+      }
+      @if (!huoltajaForm.controls.addWithSsnOrOid.value) {
+        <app-varda-form-field name="henkilo_oid"
+          [form]="huoltajaForm"
+          [label]="i18n.henkilo_henkilo_oid | translate"
+          [errorText]="i18n.henkilo_error_henkilo_oid | translate"
+          [placeholder]="i18n.henkilo_placeholder_henkilo_oid | translate"
+          [instructionText]="i18n.henkilo_instruction_henkilo_oid | translate">
+          <input #fieldItem
+            type="text"
+            class="oph-input"
+            formControlName="henkilo_oid" />
+        </app-varda-form-field>
+      }
+      <app-varda-form-field name="etunimet"
+        [form]="huoltajaForm"
+        [label]="i18n.henkilo_etunimet | translate"
+        [errorText]="i18n.henkilo_error_etunimet | translate"
+        [errorMap]="[{ key: 'nameHasDisallowedCharacters', value: i18n.henkilo_error_nimi_disallowed_characters }]"
+        [placeholder]="i18n.henkilo_placeholder_etunimet | translate"
+        [instructionText]="i18n.henkilo_instruction_etunimet | translate">
+        <input #fieldItem
+          type="text"
+          class="oph-input"
+          formControlName="etunimet" />
+      </app-varda-form-field>
+      <app-varda-form-field name="sukunimi"
+        [form]="huoltajaForm"
+        [label]="i18n.henkilo_sukunimi | translate"
+        [errorText]="i18n.henkilo_error_sukunimi | translate"
+        [errorMap]="[{ key: 'nameHasDisallowedCharacters', value: i18n.henkilo_error_nimi_disallowed_characters }]"
+        [placeholder]="i18n.henkilo_placeholder_sukunimi | translate"
+        [instructionText]="i18n.henkilo_instruction_sukunimi | translate">
+        <input #fieldItem
+          type="text"
+          class="oph-input"
+          formControlName="sukunimi" />
+      </app-varda-form-field>
+    </fieldset>
+  </ng-container>
+} @else {
+  <div class="huoltaja-rivi">
+    <span class="huoltaja-nimi">{{ huoltaja.sukunimi }}, {{ huoltaja.etunimet }}</span>
+    <span class="huoltaja-oid">{{ huoltaja.henkilo_oid }}</span>
+  </div>
+}

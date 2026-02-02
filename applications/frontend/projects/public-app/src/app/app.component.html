@@ -1,0 +1,16 @@
+<div class="main-wrapper">
+  <header class="main-header">
+    <app-public-header></app-public-header>
+  </header>
+  <main>
+    <router-outlet></router-outlet>
+  </main>
+  <footer class="main-footer">
+    <div class="container">
+      <span>{{ translation.site_version | translate: {value: '1.3.2'} }}</span>
+    </div>
+  </footer>
+  @if (isLoading | async) {
+    <lib-loading-indicator></lib-loading-indicator>
+  }
+</div>

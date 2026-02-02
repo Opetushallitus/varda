@@ -1,0 +1,30 @@
+.mat-mdc-table.excel-table {
+  font-family: var(--font-family-base);
+  width: 100%;
+}
+
+.excel-table .download-cell {
+  width: 1px;
+  white-space: nowrap;
+}
+
+.excel-table .mat-mdc-cell, .excel-table .mat-mdc-header-cell {
+  padding-left: 1em;
+}
+
+.excel-table .excel-password-field button:first-child {
+  margin-right: 0.5em;
+}
+
+.excel-table .mat-mdc-input-element:disabled {
+  color: inherit;
+}
+
+.excel-list-container {
+  align-items: center;
+}
+
+.excel-list-container .refresh-button {
+  width: auto;
+  margin-left: auto;
+}

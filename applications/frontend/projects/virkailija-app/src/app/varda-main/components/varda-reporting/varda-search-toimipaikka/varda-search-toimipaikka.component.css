@@ -1,0 +1,8 @@
+.varda-date-range-container {
+  padding-top: calc(var(--space-1) / 2);
+  padding-bottom: calc(var(--space-1) / 2);
+}
+
+.custom-col {
+  max-width: 40%;
+}

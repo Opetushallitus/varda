@@ -1,0 +1,26 @@
+.varda-main-frame-henkilo-search {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+}
+
+.varda-main-frame-henkilo-search-input-wrapper {
+  flex: 1 1 310px;
+}
+
+.varda-main-frame-henkilo-search > .flex-wrap-filler {
+  flex: 1 1 180px;
+}
+
+.varda-main-frame-henkilo-section > div {
+  margin-bottom: 1em;
+}
+
+.varda-main-frame-henkilo-section > .toimipaikka-empty {
+  margin: auto 1em;
+}
+
+.henkilo-section-header h3{
+  padding-right: 0;
+  margin-bottom: 0;
+}

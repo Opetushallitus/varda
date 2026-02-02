@@ -1,0 +1,32 @@
+<h2 mat-dialog-title>
+  {{ i18n.tyontekijatiedot_dialog_otsikko | translate }}
+</h2>
+<mat-dialog-content class="mat-typography">
+  <div class="dialog-content"
+    role="dialog-content">
+    @if (data.toimija) {
+      <div class="jarjestaja">{{ i18n.tyontekijatiedot_dialog_toimija | translate }}: {{ data.toimija }}</div>
+      @if (data.lakkautettu) {
+        <div class="lakkautettu">
+          <mat-icon aria-ignore>warning</mat-icon>
+          {{ i18n.tyontekijatiedot_dialog_toiminta_lakkautettu | translate }}
+        </div>
+        <div [innerHTML]="i18n.tyontekijatiedot_dialog_ota_yhteytta_lakkautettu | translateMarkdown: {email: i18n.varda_email | translate}"></div>
+      } @else {
+        @if (data.email) {
+          <div [innerHTML]="i18n.tyontekijatiedot_dialog_ota_yhteytta | translateMarkdown: {toimija: data.toimija, email: data.email}"></div>
+        } @else {
+          {{ i18n.tyontekijatiedot_dialog_ota_yhteytta_tyonantajaan | translate }}
+        }
+      }
+    } @else {
+      {{ i18n.tyontekijatiedot_dialog_ota_yhteytta_tyonantajaan | translate }}
+    }
+
+
+  </div>
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <button class="dialog-button"
+  mat-dialog-close>{{ i18n.poistu | translate }}</button>
+</mat-dialog-actions>

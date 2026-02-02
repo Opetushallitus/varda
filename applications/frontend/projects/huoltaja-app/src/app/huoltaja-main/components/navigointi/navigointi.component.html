@@ -1,0 +1,60 @@
+<div class="varda-page-content">
+  @if (kayttajatyyppi === VardaKayttajatyyppi.OPPIJA_CAS_VALTUUDET && this.henkilot) {
+    <nav
+      [attr.aria-label]="i18n.navigointi_henkilot_aria_label | translate"
+      class="henkilot">
+      @if (henkilot?.length > 1) {
+        <mat-form-field>
+          <mat-label>{{ i18n.navigointi_henkilot_label | translate }} ({{ this.henkilot.length }})</mat-label>
+          <mat-select [(ngModel)]="henkilo"
+            (selectionChange)="changeHenkilo()">
+            @for (lapsi of henkilot; track lapsi) {
+              <mat-option
+                [value]="lapsi">
+                {{ lapsi.sukunimi }}, {{ lapsi.etunimet }}
+              </mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+      } @else {
+        <div class="ei-huollettavia"
+          role="alert">
+          <mat-icon aria-ignore>warning</mat-icon>
+          {{ i18n.navigointi_henkilot_ei_huollettavia | translate }}
+        </div>
+      }
+    </nav>
+  }
+  <nav class="raportit-nav"
+    mat-tab-nav-bar mat-stretch-tabs="false" mat-align-tabs="start" [tabPanel]="navigointiTabPanel">
+    @if (availableTabs.varhaiskasvatustiedot) {
+      <a mat-tab-link
+        [routerLink]="huoltajaRoute.varhaiskasvatustiedot"
+        (click)="activeLink = huoltajaRoute.varhaiskasvatustiedot"
+        [active]="activeLink === huoltajaRoute.varhaiskasvatustiedot">
+        <mat-icon alt="">hotel</mat-icon>
+        {{ i18n.varhaiskasvatustiedot | translate }}
+      </a>
+    }
+    @if (availableTabs.huoltajatiedot) {
+      <a mat-tab-link
+        [routerLink]="huoltajaRoute.huoltajuussuhteet"
+        (click)="activeLink = huoltajaRoute.huoltajuussuhteet"
+        [active]="activeLink === huoltajaRoute.huoltajuussuhteet">
+        <mat-icon alt="">escalator_warning</mat-icon>
+        {{ i18n.huoltajuussuhteet | translate }}
+      </a>
+    }
+    @if (availableTabs.tyontekijatiedot) {
+      <a mat-tab-link
+        [routerLink]="huoltajaRoute.tyontekijatiedot"
+        (click)="activeLink = huoltajaRoute.tyontekijatiedot"
+        [active]="activeLink === huoltajaRoute.tyontekijatiedot">
+        <mat-icon alt="">person</mat-icon>
+        {{ i18n.tyontekijatiedot | translate }}
+      </a>
+    }
+  </nav>
+  <mat-tab-nav-panel #navigointiTabPanel></mat-tab-nav-panel>
+  <router-outlet></router-outlet>
+</div>

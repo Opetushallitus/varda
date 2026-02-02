@@ -1,0 +1,60 @@
+<main class="reminder-report-section">
+
+  <form class="reminder-report-form" [formGroup]="reportForm">
+    <div class="varda-info"
+      [innerHTML]="i18n.reminder_report_instructions | translateMarkdown">
+    </div>
+
+    <div class="row">
+      <div class="col-md-4">
+        <app-varda-form-field name="startDate"
+          [form]="reportForm"
+          [label]="i18n.reminder_report_start_date | translate"
+                                  [errorMap]="[
+                                    { key: 'required', value: i18n.reminder_report_start_date_error },
+                                  ]"
+          [instructionText]="i18n.reminder_report_instruction_start_date | translate">
+          <app-varda-datepicker
+            [required]="true"
+            formControlName="startDate">
+          </app-varda-datepicker>
+        </app-varda-form-field>
+      </div>
+    </div>
+    <div class="row">
+      <div class="col-md-4">
+        <app-varda-form-field name="endDate"
+          [form]="reportForm"
+          [label]="i18n.reminder_report_end_date | translate"
+                        [errorMap]="[
+                          { key: 'required', value: i18n.reminder_report_end_date_error },
+                        ]"
+          [instructionText]="i18n.reminder_report_instruction_end_date | translate">
+          <app-varda-datepicker
+            [required]="true"
+            formControlName="endDate">
+          </app-varda-datepicker>
+        </app-varda-form-field>
+      </div>
+    </div>
+    <div class="row">
+      <div class="col-md-4">
+        <button class="varda-button varda-icon-button" #downloadButton [disabled]="reportForm.invalid || (isLoading | async)" (click)="downloadCsv()">
+          <mat-icon alt="">download</mat-icon>
+          {{i18n.reminder_report_download | translate}}
+        </button>
+      </div>
+    </div>
+  </form>
+
+  @if (isLoading | async) {
+    <mat-progress-bar mode="indeterminate" color="accent"></mat-progress-bar>
+  }
+  <app-varda-error-field [errors]="errors"></app-varda-error-field>
+  @if (noReport) {
+    <p class="alert-container">
+      {{i18n.reminder_report_no_report | translate}}
+    </p>
+  }
+
+</main>

@@ -1,0 +1,42 @@
+<div class="container">
+  <div class="koodistot-wrapper">
+    <div class="koodistot-header">
+      <h1 class="page-header">
+        {{ translation.koodistot_title | translate}}
+      </h1>
+    </div>
+    <div class="koodistot-nav">
+      @if (isSmall | async) {
+        <select
+          [ngModel]="selectedKoodisto"
+          (ngModelChange)="selectKoodisto($event)"
+          class="form-control">
+          <option value="" disabled>--{{ translation.koodistot_select | translate }}--</option>
+          @for (koodistoName of koodistoNames | async; track koodistoName) {
+            <option
+              [ngValue]="koodistoName">
+              {{koodistoName}}
+            </option>
+          }
+        </select>
+      }
+      @if (!(isSmall | async)) {
+        <div class="koodistot-links">
+          @for (koodistoName of koodistoNames | async; track koodistoName) {
+            <a
+              [routerLink]="['/koodistot', koodistoName]"
+              routerLinkActive="active-link">
+              {{koodistoName}}
+            </a>
+          }
+        </div>
+      }
+    </div>
+    <div class="koodistot-content">
+      @if (selectedKoodisto === '') {
+        <p>{{ translation.koodistot_no_selection | translate}}</p>
+      }
+      <router-outlet></router-outlet>
+    </div>
+  </div>
+</div>

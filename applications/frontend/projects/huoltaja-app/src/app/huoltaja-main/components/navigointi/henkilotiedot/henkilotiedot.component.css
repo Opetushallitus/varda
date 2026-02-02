@@ -1,0 +1,11 @@
+h2 .material-icons {
+  position: relative;
+  top: 5px;
+}
+
+table {
+  padding-top: 1em;
+  border-spacing: 0;
+  text-align: left;
+  width: 100%;
+}

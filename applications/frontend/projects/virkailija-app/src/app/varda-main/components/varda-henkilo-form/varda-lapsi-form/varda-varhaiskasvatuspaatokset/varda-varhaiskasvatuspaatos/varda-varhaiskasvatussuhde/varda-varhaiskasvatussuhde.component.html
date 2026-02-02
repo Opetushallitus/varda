@@ -1,0 +1,119 @@
+@if (formGroup) {
+  <div [id]="'varhaiskasvatussuhde_' + currentObject?.id"
+    class="tyoskentelypaikka">
+    <app-robo-id [tunniste]="currentObject?.id"
+      nimi="varhaiskasvatussuhde"
+      [alkamis_pvm]="currentObject?.alkamis_pvm"
+    [paattymis_pvm]="currentObject?.paattymis_pvm"></app-robo-id>
+    <mat-expansion-panel #matPanel
+      (opened)="togglePanel(true)"
+      (closed)="togglePanel(false)">
+      <mat-expansion-panel-header>
+        @if (currentObject) {
+          <mat-panel-title>
+            <h4>
+              <app-varda-form-error-icon [errors]="errorList"></app-varda-form-error-icon>
+              <span appToimipaikkaNimi>
+                {{ currentObject.toimipaikka_oid }}
+              </span>
+              @if (!currentObject.paattymis_pvm) {
+                <span>
+                  {{ i18n.tyoskentelypaikka_alkaen_PVM | translate: {pvm: currentObject.alkamis_pvm | vardaDate} }}
+                </span>
+              }
+              @if (currentObject.paattymis_pvm) {
+                <span>
+                  {{currentObject.alkamis_pvm | vardaDate}} -
+                  {{currentObject.paattymis_pvm | vardaDate}}
+                </span>
+              }
+            </h4>
+            @if (currentObject) {
+              <app-varda-timestamp [dateAdded]="currentObject.luonti_pvm" [dateChanged]="currentObject.muutos_pvm"></app-varda-timestamp>
+            }
+            <span class="headerVakaId">
+              ID: {{currentObject?.id}}
+            </span>
+          </mat-panel-title>
+        }
+        @if (!currentObject) {
+          <mat-panel-title>
+            <h4>{{ i18n.varhaiskasvatuspaatos_lisaa_varhaiskasvatussuhde | translate }}</h4>
+          </mat-panel-title>
+        }
+      </mat-expansion-panel-header>
+      <form [formGroup]="formGroup"
+        (submit)="saveVarhaiskasvatussuhde(formGroup)">
+        <app-varda-form-error-list [errors]="errorList"></app-varda-form-error-list>
+        <app-varda-form-field name="toimipaikka_oid"
+          [form]="formGroup"
+          [label]="i18n.varhaiskasvatussuhde_toimipaikka | translate"
+          [errorText]="i18n.varhaiskasvatussuhde_error_toimipaikka | translate"
+          [instructionText]="i18n.varhaiskasvatussuhde_instruction_toimipaikka | translate">
+          @if (currentObject) {
+            <div
+              class="my-3"
+              appToimipaikkaNimi>
+              {{ currentObject.toimipaikka_oid }}
+            </div>
+          } @else {
+            <div class="oph-select-container" [attr.disabled]="formGroup.controls.toimipaikka_oid.disabled">
+              <select #fieldItem
+                class="oph-input oph-select"
+                formControlName="toimipaikka_oid">
+                <option [value]="null"
+                disabled>-- {{ i18n.choose | translate }} --</option>
+                @for (toimipaikka of toimipaikat; track toimipaikka) {
+                  <option
+                    [value]="toimipaikka.organisaatio_oid">
+                    {{ toimipaikka.nimi }}
+                  </option>
+                }
+              </select>
+            </div>
+          }
+        </app-varda-form-field>
+        <app-varda-form-field name="alkamis_pvm"
+          [form]="formGroup"
+          [label]="i18n.varhaiskasvatussuhde_alkamis_pvm | translate"
+          [errorText]="i18n.varhaiskasvatussuhde_error_alkamis_pvm | translate"
+                              [errorMap]="[
+                                { key: 'required', value: i18n.varhaiskasvatussuhde_error_alkamis_pvm },
+                                { key: 'matDatepickerMin', value: i18n.varhaiskasvatussuhde_error_min_alkamis_pvm },
+                                { key: 'matDatepickerMax', value: i18n.varhaiskasvatussuhde_error_max_alkamis_pvm },
+                                { key: 'matDatepickerParse', value: i18n.katsele_tietoja_error_date_format }
+                              ]"
+          [instructionText]="i18n.varhaiskasvatussuhde_instruction_alkamis_pvm | translate">
+          <app-varda-datepicker #fieldItem
+            [min]="startDateRange.min"
+            [max]="startDateRange.max"
+            (dateChange)="startDateChange($event.value)"
+          formControlName='alkamis_pvm'></app-varda-datepicker>
+        </app-varda-form-field>
+        <app-varda-form-field name="paattymis_pvm"
+          [form]="formGroup"
+          [label]="i18n.varhaiskasvatussuhde_paattymis_pvm | translate"
+          [errorText]="i18n.varhaiskasvatussuhde_error_paattymis_pvm | translate"
+                              [errorMap]="[
+                                { key: 'matDatepickerMin', value: i18n.varhaiskasvatussuhde_error_min_paattymis_pvm },
+                                { key: 'matDatepickerMax', value: i18n.varhaiskasvatussuhde_error_max_paattymis_pvm },
+                                { key: 'matDatepickerParse', value: i18n.katsele_tietoja_error_date_format }
+                              ]"
+          [instructionText]="i18n.varhaiskasvatussuhde_instruction_paattymis_pvm | translate">
+          <app-varda-datepicker #fieldItem
+            [min]="endDateRange.min"
+            [max]="endDateRange.max"
+          formControlName='paattymis_pvm'></app-varda-datepicker>
+        </app-varda-form-field>
+        <app-varda-error-field [errors]="varhaiskasvatussuhdeFormErrors"></app-varda-error-field>
+        <app-varda-action-row [saveDisabled]="formGroup.pristine || isSubmitting"
+          [saveAccess]="lapsitiedotTallentaja"
+          [formExists]="!!currentObject"
+          [isEdit]="isEdit"
+          (togglePanel)="togglePanel($event)"
+          (deleteForm)="deleteVarhaiskasvatussuhde()"
+        (enableEdit)="enableForm()"></app-varda-action-row>
+      </form>
+    </mat-expansion-panel>
+  </div>
+}

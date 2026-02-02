@@ -1,0 +1,210 @@
+<div #scrollTo></div>
+@if (toimipaikkaKooste) {
+  <mat-card appearance="outlined" tabindex="0">
+    <mat-card-header>
+      <mat-card-title>
+        <span>{{toimipaikkaKooste.nimi}}</span>
+        <app-varda-timestamp [dateAdded]="toimipaikkaKooste.luonti_pvm" [dateChanged]="toimipaikkaKooste.muutos_pvm"></app-varda-timestamp>
+      </mat-card-title>
+      <mat-card-subtitle>
+        {{toimipaikkaKooste.vakajarjestaja_nimi}}
+      </mat-card-subtitle>
+    </mat-card-header>
+    <mat-card-content>
+      <div class="table-responsive">
+        <table class="mat-mdc-table">
+          <tr class="mat-mdc-row mdc-data-table__row" id="toimipaikkaId">
+            <th scope="row" class="mat-mdc-header-cell mdc-data-table__header-cell">{{i18n.id | translate}}</th>
+            <td class="mat-mdc-cell mdc-data-table__cell">{{toimipaikkaKooste.id}}</td>
+          </tr>
+          <tr class="mat-mdc-row mdc-data-table__row" id="toimipaikkaOrganisaatioOid">
+            <th scope="row" class="mat-mdc-header-cell mdc-data-table__header-cell">{{i18n.toimipaikka_oid | translate}}</th>
+            <td class="mat-mdc-cell mdc-data-table__cell">{{toimipaikkaKooste.organisaatio_oid}}</td>
+          </tr>
+          <tr class="mat-mdc-row mdc-data-table__row" id="toimipaikkaNimi">
+            <th scope="row" class="mat-mdc-header-cell mdc-data-table__header-cell">{{i18n.nimi | translate}}</th>
+            <td class="mat-mdc-cell mdc-data-table__cell">{{toimipaikkaKooste.nimi}}</td>
+          </tr>
+          <tr class="mat-mdc-row mdc-data-table__row" id="toimipaikkaKayntiosoite">
+            <th scope="row" class="mat-mdc-header-cell mdc-data-table__header-cell">{{i18n.organisaatio_kayntiosoite | translate}}</th>
+            <td class="mat-mdc-cell mdc-data-table__cell">{{toimipaikkaKooste.kayntiosoite}}</td>
+          </tr>
+          <tr class="mat-mdc-row mdc-data-table__row" id="toimipaikkaKayntiosoitePostinumero">
+            <th scope="row" class="mat-mdc-header-cell mdc-data-table__header-cell">{{i18n.organisaatio_kayntiosoite_postinumero | translate}}</th>
+            <td class="mat-mdc-cell mdc-data-table__cell">{{toimipaikkaKooste.kayntiosoite_postinumero}}</td>
+          </tr>
+          <tr class="mat-mdc-row mdc-data-table__row" id="toimipaikkaKayntiosoitePostitoimipaikka">
+            <th scope="row" class="mat-mdc-header-cell mdc-data-table__header-cell">{{i18n.organisaatio_kayntiosoite_postitoimipaikka | translate}}</th>
+            <td class="mat-mdc-cell mdc-data-table__cell">{{toimipaikkaKooste.kayntiosoite_postitoimipaikka}}</td>
+          </tr>
+          <tr class="mat-mdc-row mdc-data-table__row" id="toimipaikkaPostiosoite">
+            <th scope="row" class="mat-mdc-header-cell mdc-data-table__header-cell">{{i18n.organisaatio_postiosoite | translate}}</th>
+            <td class="mat-mdc-cell mdc-data-table__cell">{{toimipaikkaKooste.postiosoite}}</td>
+          </tr>
+          <tr class="mat-mdc-row mdc-data-table__row" id="toimipaikkaPostinumero">
+            <th scope="row" class="mat-mdc-header-cell mdc-data-table__header-cell">{{i18n.organisaatio_postinumero | translate}}</th>
+            <td class="mat-mdc-cell mdc-data-table__cell">{{toimipaikkaKooste.postinumero}}</td>
+          </tr>
+          <tr class="mat-mdc-row mdc-data-table__row" id="toimipaikkaPostitoimipaikka">
+            <th scope="row" class="mat-mdc-header-cell mdc-data-table__header-cell">{{i18n.organisaatio_postitoimipaikka | translate}}</th>
+            <td class="mat-mdc-cell mdc-data-table__cell">{{toimipaikkaKooste.postitoimipaikka}}</td>
+          </tr>
+          <tr class="mat-mdc-row mdc-data-table__row" id="toimipaikkaKunta">
+            <th scope="row" class="mat-mdc-header-cell mdc-data-table__header-cell">{{i18n.organisaatio_kuntakoodi | translate}}</th>
+            <td class="mat-mdc-cell mdc-data-table__cell"
+              [libKoodistoValue]="koodistoEnum.kunta"
+              [value]="toimipaikkaKooste.kunta_koodi"
+              format="long">
+            </td>
+          </tr>
+          <tr class="mat-mdc-row mdc-data-table__row" id="toimipaikkaPuhelinnumero">
+            <th scope="row" class="mat-mdc-header-cell mdc-data-table__header-cell">{{i18n.yhteystiedot_puhelinnumero | translate}}</th>
+            <td class="mat-mdc-cell mdc-data-table__cell">{{toimipaikkaKooste.puhelinnumero}}</td>
+          </tr>
+          <tr class="mat-mdc-row mdc-data-table__row" id="toimipaikkaSahkopostiosoite">
+            <th scope="row" class="mat-mdc-header-cell mdc-data-table__header-cell">{{i18n.yhteystiedot_sahkopostiosoite | translate}}</th>
+            <td class="mat-mdc-cell mdc-data-table__cell">{{toimipaikkaKooste.sahkopostiosoite}}</td>
+          </tr>
+          <tr class="mat-mdc-row mdc-data-table__row" id="toimipaikkaKasvatusopillinenJarjestelma">
+            <th scope="row" class="mat-mdc-header-cell mdc-data-table__header-cell">{{i18n.toimipaikka_kasvatusopillinen_jarjestelma | translate}}</th>
+            <td class="mat-mdc-cell mdc-data-table__cell"
+              [libKoodistoValue]="koodistoEnum.kasvatusopillinenjarjestelma"
+              [value]="toimipaikkaKooste.kasvatusopillinen_jarjestelma_koodi"
+              format="long">
+            </td>
+          </tr>
+          <tr class="mat-mdc-row mdc-data-table__row" id="toimipaikkaVarhaiskasvatuspaikat">
+            <th scope="row" class="mat-mdc-header-cell mdc-data-table__header-cell">{{i18n.toimipaikka_varhaiskasvatuspaikat | translate}}</th>
+            <td class="mat-mdc-cell mdc-data-table__cell">{{toimipaikkaKooste.varhaiskasvatuspaikat}}</td>
+          </tr>
+          <tr class="mat-mdc-row mdc-data-table__row" id="toimipaikkaToimintamuoto">
+            <th scope="row" class="mat-mdc-header-cell mdc-data-table__header-cell">{{i18n.toimipaikka_toimintamuoto | translate}}</th>
+            <td class="mat-mdc-cell mdc-data-table__cell"
+              [libKoodistoValue]="koodistoEnum.toimintamuoto"
+              [value]="toimipaikkaKooste.toimintamuoto_koodi"
+              format="long">
+            </td>
+          </tr>
+          <tr class="mat-mdc-row mdc-data-table__row" id="toimipaikkaToimintakieli">
+            <th scope="row" class="mat-mdc-header-cell mdc-data-table__header-cell">{{i18n.toimipaikka_toimintakieli | translate}}</th>
+            <td class="mat-mdc-cell mdc-data-table__cell">
+              @for (toimintakieli of toimipaikkaKooste.toimintakieli_koodi; track toimintakieli; let index = $index; let length = $count) {
+                <span [libKoodistoValue]="koodistoEnum.kieli" format="long">
+                  {{toimintakieli}}
+                </span>
+                @if (index !== length - 1 && length > 1) {
+                  <span>, </span>
+                }
+              }
+            </td>
+          </tr>
+          <tr class="mat-mdc-row mdc-data-table__row" id="toimipaikkaJarjestamismuoto">
+            <th scope="row" class="mat-mdc-header-cell mdc-data-table__header-cell">{{i18n.toimipaikka_jarjestamismuoto | translate}}</th>
+            <td class="mat-mdc-cell mdc-data-table__cell">
+              @for (jarjestamismuoto of toimipaikkaKooste.jarjestamismuoto_koodi; track jarjestamismuoto; let index = $index; let length = $count) {
+                <span [libKoodistoValue]="koodistoEnum.jarjestamismuoto" format="long">
+                  {{jarjestamismuoto}}
+                </span>
+                @if (index !== length - 1 && length > 1) {
+                  <span>, </span>
+                }
+              }
+            </td>
+          </tr>
+          <tr class="mat-mdc-row mdc-data-table__row" id="toimipaikkaKielipainotus">
+            <th scope="row" class="mat-mdc-header-cell mdc-data-table__header-cell">{{i18n.toimipaikka_kielipainotus | translate}}</th>
+            <td class="mat-mdc-cell mdc-data-table__cell">{{getBooleanLabel(toimipaikkaKooste.kielipainotus_kytkin) | translate}}</td>
+          </tr>
+          <tr class="mat-mdc-row mdc-data-table__row" id="toimipaikkaToiminnallinenPainotus">
+            <th scope="row" class="mat-mdc-header-cell mdc-data-table__header-cell">{{i18n.toimipaikka_toiminnallinen_painotus | translate}}</th>
+            <td class="mat-mdc-cell mdc-data-table__cell">{{getBooleanLabel(toimipaikkaKooste.toiminnallinenpainotus_kytkin) | translate}}</td>
+          </tr>
+          <tr class="mat-mdc-row mdc-data-table__row" id="toimipaikkaAlkamisPvm">
+            <th scope="row" class="mat-mdc-header-cell mdc-data-table__header-cell">{{i18n.alkamis_pvm | translate}}</th>
+            <td class="mat-mdc-cell mdc-data-table__cell">{{getDateDisplayValue(toimipaikkaKooste.alkamis_pvm)}}</td>
+          </tr>
+          <tr class="mat-mdc-row mdc-data-table__row" id="toimipaikkaPaattymisPvm">
+            <th scope="row" class="mat-mdc-header-cell mdc-data-table__header-cell">{{i18n.paattymis_pvm | translate}}</th>
+            <td class="mat-mdc-cell mdc-data-table__cell">{{getDateDisplayValue(toimipaikkaKooste.paattymis_pvm)}}</td>
+          </tr>
+        </table>
+      </div>
+      @if (toimipaikkaKooste.kielipainotukset.length > 0) {
+        <label class="oph-bold margin-top-large">{{i18n.toimipaikka_kielipainotus_plural | translate}}</label>
+        @for (kielipainotus of toimipaikkaKooste.kielipainotukset | slice:0:numberOfDisplayed.kielipainotus; track kielipainotus) {
+          <div class="table-responsive"
+            [class.margin-top]="toimipaikkaKooste.kielipainotukset.indexOf(kielipainotus) !== 0">
+            <table class="mat-mdc-table" [id]="'toimipaikkaKielipainotus-' + kielipainotus.id">
+              <tr class="mat-mdc-row mdc-data-table__row" [id]="'toimipaikkaKielipainotusId-' + kielipainotus.id">
+                <th scope="row" class="mat-mdc-header-cell mdc-data-table__header-cell">{{i18n.id | translate }}</th>
+                <td class="mat-mdc-cell mdc-data-table__cell">{{kielipainotus.id}}</td>
+              </tr>
+              <tr class="mat-mdc-row mdc-data-table__row" [id]="'toimipaikkaKielipainotusKoodi-' + kielipainotus.id">
+                <th scope="row" class="mat-mdc-header-cell mdc-data-table__header-cell">{{i18n.toimipaikka_kielipainotus | translate }}</th>
+                <td class="mat-mdc-cell mdc-data-table__cell" [libKoodistoValue]="koodistoEnum.kieli" format="long">
+                  {{kielipainotus.kielipainotus_koodi}}
+                </td>
+              </tr>
+              <tr class="mat-mdc-row mdc-data-table__row" [id]="'toimipaikkaKielipainotusTyyppiKoodi-' + kielipainotus.id">
+                <th scope="row" class="mat-mdc-header-cell mdc-data-table__header-cell">{{i18n.toimipaikka_kielipainotustyyppi | translate }}</th>
+                <td class="mat-mdc-cell mdc-data-table__cell" [libKoodistoValue]="koodistoEnum.kielipainotustyyppi" format="long">
+                  {{kielipainotus.kielipainotustyyppi_koodi}}
+                </td>
+              </tr>
+              <tr class="mat-mdc-row mdc-data-table__row" [id]="'toimipaikkaKielipainotusAlkamisPvm-' + kielipainotus.id">
+                <th scope="row" class="mat-mdc-header-cell mdc-data-table__header-cell">{{i18n.alkamis_pvm | translate }}</th>
+                <td class="mat-mdc-cell mdc-data-table__cell">{{getDateDisplayValue(kielipainotus.alkamis_pvm)}}</td>
+              </tr>
+              <tr class="mat-mdc-row mdc-data-table__row" [id]="'toimipaikkaKielipainotusPaattymisPvm-' + kielipainotus.id">
+                <th scope="row" class="mat-mdc-header-cell mdc-data-table__header-cell">{{i18n.paattymis_pvm | translate }}</th>
+                <td class="mat-mdc-cell mdc-data-table__cell">{{getDateDisplayValue(kielipainotus.paattymis_pvm)}}</td>
+              </tr>
+            </table>
+          </div>
+        }
+        @if (toimipaikkaKooste.kielipainotukset) {
+          <app-varda-show-more-less
+            [showMoreKey]="i18n.painotukset_kielipainotukset_show_more"
+            [(numberOfDisplayed)]="numberOfDisplayed.kielipainotus"
+            [numberOfItems]="toimipaikkaKooste.kielipainotukset.length">
+          </app-varda-show-more-less>
+        }
+      }
+      @if (toimipaikkaKooste.toiminnalliset_painotukset.length > 0) {
+        <label class="oph-bold margin-top-large">{{i18n.toimipaikka_toiminnallinen_painotus_plural | translate}}</label>
+        @for (toimintapainotus of toimipaikkaKooste.toiminnalliset_painotukset | slice:0:numberOfDisplayed.toiminnallinenpainotus; track toimintapainotus) {
+          <div class="table-responsive"
+            [class.margin-top]="toimipaikkaKooste.toiminnalliset_painotukset.indexOf(toimintapainotus) !== 0">
+            <table class="mat-mdc-table" [id]="'toimipaikkaToiminnallinenPainotus-' + toimintapainotus.id">
+              <tr class="mat-mdc-row mdc-data-table__row" [id]="'toimipaikkaToiminnallinenPainotusId-' + toimintapainotus.id">
+                <th scope="row" class="mat-mdc-header-cell mdc-data-table__header-cell">{{i18n.id | translate }}</th>
+                <td class="mat-mdc-cell mdc-data-table__cell">{{toimintapainotus.id}}</td>
+              </tr>
+              <tr class="mat-mdc-row mdc-data-table__row" [id]="'toimipaikkaToiminnallinenPainotusKoodi-' + toimintapainotus.id">
+                <th scope="row" class="mat-mdc-header-cell mdc-data-table__header-cell">{{i18n.toimipaikka_toiminnallinen_painotus | translate }}</th>
+                <td class="mat-mdc-cell mdc-data-table__cell" [libKoodistoValue]="koodistoEnum.toiminnallinenpainotus" format="long">
+                  {{toimintapainotus.toimintapainotus_koodi}}
+                </td>
+              </tr>
+              <tr class="mat-mdc-row mdc-data-table__row" [id]="'toimipaikkaToiminnallinenPainotusAlkamisPvm-' + toimintapainotus.id">
+                <th scope="row" class="mat-mdc-header-cell mdc-data-table__header-cell">{{i18n.alkamis_pvm | translate }}</th>
+                <td class="mat-mdc-cell mdc-data-table__cell">{{getDateDisplayValue(toimintapainotus.alkamis_pvm)}}</td>
+              </tr>
+              <tr class="mat-mdc-row mdc-data-table__row" [id]="'toimipaikkaToiminnallinenPainotusPaattymisPvm-' + toimintapainotus.id">
+                <th scope="row" class="mat-mdc-header-cell mdc-data-table__header-cell">{{i18n.paattymis_pvm | translate }}</th>
+                <td class="mat-mdc-cell mdc-data-table__cell">{{getDateDisplayValue(toimintapainotus.paattymis_pvm)}}</td>
+              </tr>
+            </table>
+          </div>
+        }
+        @if (toimipaikkaKooste.toiminnalliset_painotukset) {
+          <app-varda-show-more-less
+            [showMoreKey]="i18n.painotukset_toimintapainotukset_show_more"
+            [(numberOfDisplayed)]="numberOfDisplayed.toiminnallinenpainotus"
+            [numberOfItems]="toimipaikkaKooste.toiminnalliset_painotukset.length">
+          </app-varda-show-more-less>
+        }
+      }
+    </mat-card-content>
+  </mat-card>
+}
