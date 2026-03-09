@@ -1,0 +1,46 @@
+<main class="varhaiskasvatustiedot">
+  <div class="section-intro">
+    <h1>{{ i18n.varhaiskasvatustiedot | translate}}</h1>
+    <div [innerHTML]="i18n.varhaiskasvatustiedot_instruction | translateMarkdown"></div>
+  </div>
+
+  <app-henkilotiedot></app-henkilotiedot>
+
+  @if (varhaiskasvatustiedot) {
+    <section
+      class="varhaiskasvatuspaatokset">
+      <div class="section-header">
+        <h2>{{ i18n.varhaiskasvatustiedot | translate}} ({{ this.varhaiskasvatustiedot.lapset?.length}})</h2>
+        <span class="button-group">
+          <button class="button h5"
+            (click)="openDialog(i18n.info, i18n.tooltip_info)">
+            <mat-icon alt="">help_outline</mat-icon>
+            <span>{{ i18n.info | translate }}</span>
+          </button>
+          <button class="button h5"
+            (click)="openDialog(i18n.onko_tiedoissa_puutteita, i18n.contact_dialog_ota_yhteytta_vakajarjestajaan)">
+            <mat-icon alt="">help_outline</mat-icon>
+            <span>{{ i18n.onko_tiedoissa_puutteita | translate }}</span>
+          </button>
+        </span>
+      </div>
+      @if (varhaiskasvatustiedot.voimassaolevia_varhaiskasvatuspaatoksia > 0) {
+        <div class="green-info"
+          [innerHTML]="i18n.voimassa_useita_vakapaatoksia | translateMarkdown">
+        </div>
+      }
+      @if (!varhaiskasvatustiedot.lapset?.length) {
+        <div class="no-results"
+          >
+          {{ i18n.ei_vakapaatoksia | translate}}
+        </div>
+      }
+      @for (toimijanLapsi of varhaiskasvatustiedot.lapset; track toimijanLapsi) {
+        <app-varhaiskasvatuspaatos [lapsi]="toimijanLapsi"
+          [oma_organisaatio_sahkoposti]="toimijanLapsi.yhteysosoite"
+          [vakapaatos]="toimijanLapsi.varhaiskasvatuspaatos">
+        </app-varhaiskasvatuspaatos>
+      }
+    </section>
+  }
+</main>

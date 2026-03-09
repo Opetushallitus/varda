@@ -1,0 +1,47 @@
+<div>
+  @if (toimipaikat && toimipaikat.length) {
+    <div>
+      <mat-form-field>
+        <input type="text"
+          class="varda-input"
+          matInput
+          id="add-toiminta-list-search-input"
+          [placeholder]="i18n.paos_toimipaikat_search_placeholder | translate"
+          (keyup)="filterToimipaikat($event.target.value)" />
+      </mat-form-field>
+    </div>
+  }
+  @for (toimipaikka of filteredToimipaikat; track toimipaikka) {
+    <div
+      class="paos-add-toiminta-list-result-wrapper">
+      <div class="paos-add-toiminta-list-result-column paos-add-toiminta-list-result-column-wide small-text">
+        <div>
+          <h6>{{toimipaikka.nimi}}</h6>
+        </div>
+        <div>
+          {{i18n.organisaatio_oid | translate}}: {{toimipaikka.organisaatio_oid}}
+        </div>
+      </div>
+      <div class="paos-add-toiminta-list-result-column paos-add-toiminta-list-result-middle">
+        @if (isAdminUser || isVardaPaakayttaja) {
+          @if (!ignoredIds.has(toimipaikka.id)) {
+            <button class="varda-button add-paos-toiminta-toimipaikka-add-button"
+              (click)="addToimipaikka(toimipaikka)">
+              {{i18n.paos_toimipaikat_submit | translate}}
+            </button>
+          }
+        }
+        @if (ignoredIds.has(toimipaikka.id)) {
+          <span>
+            {{i18n.paos_toimipaikat_already_added | translate}}
+          </span>
+        }
+      </div>
+    </div>
+  }
+  @if (!filteredToimipaikat.length) {
+    <div>
+      {{i18n.paos_toimipaikat_no_results | translate}}
+    </div>
+  }
+</div>

@@ -1,0 +1,247 @@
+<div [id]="'palvelussuhde-'+ currentObject?.id">
+  @if (formGroup) {
+    <div [id]="'palvelussuhde_'+ currentObject?.id"
+      class="palvelussuhde">
+      <app-robo-id [tunniste]="currentObject?.id"
+        nimi="palvelussuhde"
+        [alkamis_pvm]="currentObject?.alkamis_pvm"
+      [paattymis_pvm]="currentObject?.paattymis_pvm"></app-robo-id>
+      <mat-icon class="d-none d-md-block"
+      alt="">assignment</mat-icon>
+      <mat-expansion-panel [id]="'palvelussuhde-panel_'+ currentObject?.id"
+        [class.before-icon]="true"
+        (opened)="togglePanel(true)"
+        (closed)="togglePanel(false)"
+        #matPanel>
+        <mat-expansion-panel-header>
+          @if (objectExists()) {
+            <mat-panel-title>
+              <app-varda-form-error-icon [errors]="errorList"></app-varda-form-error-icon>
+              @if (!currentObject.paattymis_pvm) {
+                <span>
+                  {{ i18n.palvelussuhde_alkaen_PVM | translate: {pvm: currentObject.alkamis_pvm | vardaDate} }}
+                </span>
+              } @else {
+                @if (currentObject.paattymis_pvm) {
+                  <span>
+                    {{ i18n.palvelussuhde | translate }}
+                    {{currentObject.alkamis_pvm | vardaDate }} - {{currentObject.paattymis_pvm | vardaDate }}
+                  </span>
+                }
+                @if (currentObject) {
+                  <app-varda-timestamp [dateAdded]="currentObject.luonti_pvm" [dateChanged]="currentObject.muutos_pvm"></app-varda-timestamp>
+                }
+              }
+              <span class="headerPalvelussuhdeId">
+                ID: {{currentObject?.id}}
+              </span>
+            </mat-panel-title>
+          } @else {
+            <mat-panel-title>
+              <span>
+                {{ i18n.palvelussuhteet_lisaa_palvelussuhde | translate }}
+              </span>
+            </mat-panel-title>
+          }
+          @if (toimipaikkaAccess?.tyontekijatiedot.tallentaja && objectExists()) {
+            <button type="button"
+              robot="copy-button"
+              class="copy-button varda-button varda-button-small secondary"
+              (click)="useAsCopy($event)">
+              {{ i18n.use_as_copy | translate }}
+            </button>
+          }
+        </mat-expansion-panel-header>
+        <form [formGroup]="formGroup"
+          (submit)="savePalvelussuhde(formGroup)">
+          <app-varda-form-error-list [errors]="errorList"></app-varda-form-error-list>
+          <app-varda-form-field name="tyosuhde_koodi"
+            [form]="formGroup"
+            [label]="i18n.palvelussuhde_palvelussuhteen_tyyppi | translate"
+            [errorText]="i18n.palvelussuhde_error_palvelussuhteen_tyyppi | translate"
+            [instructionText]="i18n.palvelussuhde_instruction_palvelussuhteen_tyyppi | translate">
+            <mat-radio-group #fieldItem
+              formControlName="tyosuhde_koodi">
+              @for (tyosuhdeKoodi of tyosuhdeKoodisto.codes; track tyosuhdeKoodi) {
+                <mat-radio-button
+                  [value]="tyosuhdeKoodi.code_value">
+                  {{ tyosuhdeKoodi.name }}
+                </mat-radio-button>
+              }
+            </mat-radio-group>
+          </app-varda-form-field>
+          <app-varda-form-field name="alkamis_pvm"
+            [form]="formGroup"
+            [label]="i18n.palvelussuhde_alkamis_pvm | translate"
+            [errorText]="i18n.palvelussuhde_error_alkamis_pvm | translate"
+            [instructionText]="i18n.palvelussuhde_instruction_alkamis_pvm | translate">
+            <app-varda-datepicker #fieldItem
+              (dateChange)="startDateChange($event.value)"
+            formControlName='alkamis_pvm'></app-varda-datepicker>
+          </app-varda-form-field>
+          <app-varda-form-field name="paattymis_pvm"
+            [form]="formGroup"
+            [label]="i18n.palvelussuhde_paattymis_pvm | translate"
+            [errorText]="i18n.palvelussuhde_error_paattymis_pvm | translate"
+            [instructionText]="i18n.palvelussuhde_instruction_paattymis_pvm | translate">
+            <app-varda-datepicker #fieldItem
+              [min]="minEndDate"
+            formControlName='paattymis_pvm'></app-varda-datepicker>
+          </app-varda-form-field>
+          <app-varda-form-field name="tyoaika_koodi"
+            [form]="formGroup"
+            [label]="i18n.palvelussuhde_tyoajan_tyyppi | translate"
+            [errorText]="i18n.palvelussuhde_error_tyoajan_tyyppi | translate"
+            [instructionText]="i18n.palvelussuhde_instruction_tyoajan_tyyppi | translate">
+            <mat-radio-group #fieldItem
+              formControlName="tyoaika_koodi">
+              @for (tyoaikaKoodi of tyoaikaKoodisto.codes; track tyoaikaKoodi) {
+                <mat-radio-button
+                  [value]="tyoaikaKoodi.code_value">
+                  {{ tyoaikaKoodi.name }}
+                </mat-radio-button>
+              }
+            </mat-radio-group>
+          </app-varda-form-field>
+          <app-varda-form-field name="tyoaika_viikossa"
+            [form]="formGroup"
+            [label]="i18n.palvelussuhde_tyoaika_viikossa | translate"
+            [errorText]="i18n.palvelussuhde_error_tyoaika_viikossa | translate"
+            [instructionText]="i18n.palvelussuhde_instruction_tyoaika_viikossa | translate">
+            <input #fieldItem
+              type="number"
+              class="oph-input"
+              min="0.5"
+              step="0.5"
+              max="50"
+              formControlName="tyoaika_viikossa" />
+          </app-varda-form-field>
+          <app-varda-form-field name="tutkinto_koodi"
+            [form]="formGroup"
+            [label]="i18n.palvelussuhde_tutkinto | translate"
+            [errorText]="i18n.palvelussuhde_error_tutkinto | translate"
+            [instructionText]="i18n.palvelussuhde_instruction_tutkinto | translate">
+            <div class="oph-select-container" [attr.disabled]="formGroup.controls.tutkinto_koodi.disabled">
+              <select #fieldItem
+                class="oph-input oph-select"
+                formControlName="tutkinto_koodi">
+                <option [value]="null"
+                disabled>-- {{ i18n.tutkinnot_valitse_ylin_tutkinto | translate }} --</option>
+                @for (tutkinto of tutkintoList; track tutkinto) {
+                  <option
+                    [value]="tutkinto.tutkinto_koodi"
+                    [libKoodistoValue]="koodistoEnum.tutkinto"
+                    format="long">
+                    {{ tutkinto.tutkinto_koodi }}
+                  </option>
+                }
+              </select>
+            </div>
+          </app-varda-form-field>
+          <app-varda-error-field [errors]="palvelussuhdeFormErrors"></app-varda-error-field>
+          <app-varda-action-row [saveDisabled]="formGroup.pristine || isSubmitting"
+            [saveAccess]="toimipaikkaAccess?.tyontekijatiedot.tallentaja"
+            [formExists]="objectExists()"
+            [isEdit]="isEdit"
+            (togglePanel)="togglePanel($event)"
+            (deleteForm)="deletePalvelussuhde()"
+          (enableEdit)="enableForm()"></app-varda-action-row>
+        </form>
+      </mat-expansion-panel>
+    </div>
+    @if (objectExists()) {
+      @if (tyoskentelypaikkaList) {
+        <div
+          [class.tree-border]="tyoskentelypaikkaList.length || pidempiPoissaoloList?.length"
+          [class.no-save2]="!toimipaikkaAccess.tyontekijatiedot.tallentaja"
+          [class.has-poissaolo]="pidempiPoissaoloList?.length || addPoissaoloBoolean"
+          class="tyoskentelypaikat tyontekija-panel-content">
+          <h3 class="oph-h3">{{i18n.palvelussuhde_tyoskentelypaikat_palvelussuhteessa | translate }}
+            @if (tyoskentelypaikkaList.length > 1) {
+              <span>({{ tyoskentelypaikkaList.length }})</span>
+            }
+          </h3>
+          @if (tyoskentelypaikkaList.length === 0) {
+            <div class="missing-info"
+              >
+              <mat-icon alt="">error_outline</mat-icon>
+              {{ i18n.palvelussuhde_ei_tyoskentelypaikkoja | translate }}
+            </div>
+          }
+          <mat-accordion>
+            @for (tyoskentelypaikka of tyoskentelypaikkaList; track tyoskentelypaikka) {
+              <app-varda-tyoskentelypaikka
+                [palvelussuhde]="currentObject"
+                [toimipaikkaAccess]="toimipaikkaAccess"
+                [henkilonToimipaikka]="henkilonToimipaikka"
+                [currentObject]="tyoskentelypaikka"
+                (addObject)="addTyoskentelypaikka($event)"
+                (deleteObject)="deleteTyoskentelypaikka($event)">
+              </app-varda-tyoskentelypaikka>
+            }
+            @if (addTyoskentelypaikkaBoolean) {
+              <app-varda-tyoskentelypaikka
+                [palvelussuhde]="currentObject"
+                [toimipaikkaAccess]="toimipaikkaAccess"
+                [henkilonToimipaikka]="henkilonToimipaikka"
+                (addObject)="addTyoskentelypaikka($event)"
+                (deleteObject)="deleteTyoskentelypaikka($event)"
+                (closeEmitter)="hideAddTyoskentelypaikka()">
+              </app-varda-tyoskentelypaikka>
+            }
+          </mat-accordion>
+          @if (!addTyoskentelypaikkaBoolean && toimipaikkaAccess.tyontekijatiedot.tallentaja) {
+            <button class="varda-text-button" id="add-tyoskentelypaikka"
+              (click)="addTyoskentelypaikkaBoolean = true">
+              <mat-icon alt="">add</mat-icon> {{ i18n.palvelussuhde_lisaa_tyoskentelypaikka | translate }}
+            </button>
+          }
+        </div>
+      }
+      @if (pidempiPoissaoloList) {
+        <div
+          [class.tree-border]="pidempiPoissaoloList.length"
+          [class.no-save]="!toimipaikkaAccess.tyontekijatiedot.tallentaja"
+          class="poissaolot tyontekija-panel-content">
+          <h3 class="oph-h3">{{ i18n.palvelussuhde_poissaolot_palvelussuhteessa | translate }}
+            @if (pidempiPoissaoloList.length > 1) {
+              <span>({{ pidempiPoissaoloList.length }})</span>
+            }
+          </h3>
+          @if (pidempiPoissaoloList.length === 0 && !toimipaikkaAccess.tyontekijatiedot.tallentaja) {
+            <div>
+              {{ i18n.palvelussuhde_ei_poissaoloja | translate }}
+            </div>
+          }
+          <mat-accordion>
+            @for (poissaolo of pidempiPoissaoloList; track poissaolo) {
+              <app-varda-poissaolo
+                [henkilonToimipaikka]="henkilonToimipaikka"
+                [palvelussuhde]="currentObject"
+                [toimipaikkaAccess]="toimipaikkaAccess"
+                [currentObject]="poissaolo"
+                (addObject)="addPidempiPoissaolo($event)"
+              (deleteObject)="deletePidempiPoissaolo($event)"></app-varda-poissaolo>
+            }
+            @if (addPoissaoloBoolean) {
+              <app-varda-poissaolo
+                [henkilonToimipaikka]="henkilonToimipaikka"
+                [palvelussuhde]="currentObject"
+                [toimipaikkaAccess]="toimipaikkaAccess"
+                (addObject)="addPidempiPoissaolo($event)"
+                (deleteObject)="deletePidempiPoissaolo($event)"
+                (closeEmitter)="hideAddPidempiPoissaolo()">
+              </app-varda-poissaolo>
+            }
+          </mat-accordion>
+          @if (!addPoissaoloBoolean && toimipaikkaAccess.tyontekijatiedot.tallentaja) {
+            <button class="varda-text-button" id="add-poissaolo"
+              (click)="addPoissaoloBoolean = true">
+              <mat-icon alt="">add</mat-icon> {{ i18n.palvelussuhde_lisaa_poissaolo | translate }}
+            </button>
+          }
+        </div>
+      }
+    }
+  }
+</div>

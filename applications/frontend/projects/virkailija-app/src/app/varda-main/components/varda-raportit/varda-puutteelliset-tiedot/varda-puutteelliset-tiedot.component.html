@@ -1,0 +1,74 @@
+<main class="puutteelliset-tiedot-section">
+  <mat-button-toggle-group class="puutteelliset-navi"
+    aria-role="navigation"
+    name="henkiloSection"
+    [value]="activeLink"
+    [attr.aria-label]="i18n.tiedonsiirrot_navigointi_label | translate">
+    @if (showToimipaikat) {
+      <mat-button-toggle
+        routerLink="toimipaikat"
+        value="toimipaikat">
+        <mat-icon aria-ignore>home</mat-icon>
+        {{ i18n.toimipaikka_plural | translate }}
+      </mat-button-toggle>
+    }
+    @if (showLapset) {
+      <mat-button-toggle
+        routerLink="lapset"
+        value="lapset">
+        <mat-icon aria-ignore>child_friendly</mat-icon>
+        {{ i18n.henkilo_lapset | translate }}
+      </mat-button-toggle>
+    }
+    @if (showTyontekijat) {
+      <mat-button-toggle
+        routerLink="tyontekijat"
+        value="tyontekijat">
+        <mat-icon aria-ignore>group</mat-icon>
+        {{ i18n.henkilo_tyontekijat | translate }}
+      </mat-button-toggle>
+    }
+    @if (showOrganisaatio) {
+      <mat-button-toggle
+        routerLink="organisaatio"
+        value="organisaatio">
+        <mat-icon aria-ignore>apartment</mat-icon>
+        {{ i18n.vakajarjestaja | translate }}
+      </mat-button-toggle>
+    }
+  </mat-button-toggle-group>
+
+  <div class="raportit-info varda-info"
+    [innerHTML]="i18n.puutteelliset_tiedot_instruction | translateMarkdown">
+  </div>
+
+  <div class="henkilo-sections"
+    aria-live="polite"
+    role="region">
+    <router-outlet (activate)="onActivateChild($event)" (deactivate)="onDeactivateChild()"></router-outlet>
+  </div>
+
+  <app-varda-modal-form [identifier]="'henkiloModal'"
+    [isLg]="true"
+    [openModal]="!!activeHenkilo"
+    [closeWithoutConfirm]="confirmedFormLeave"
+    (events)="handleFormClose($event)">
+    @if (!!activeHenkilo) {
+      <app-varda-henkilo-form
+        [henkilonSuhde]="activeHenkilo"
+        (closeHenkiloForm)="handleFormClose(ModalEvent.hidden)"
+      (valuesChanged)="formValuesChanged($event)"></app-varda-henkilo-form>
+    }
+  </app-varda-modal-form>
+  <app-varda-modal-form [identifier]="'toimipaikkaModal'"
+    [isLg]="true"
+    [openModal]="!!activeToimipaikka"
+    [closeWithoutConfirm]="confirmedFormLeave"
+    (events)="handleFormClose($event)">
+    @if (!!activeToimipaikka) {
+      <app-varda-toimipaikka-form
+        [toimipaikka]="activeToimipaikka"
+      (valuesChanged)="formValuesChanged($event)"></app-varda-toimipaikka-form>
+    }
+  </app-varda-modal-form>
+</main>

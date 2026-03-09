@@ -1,0 +1,35 @@
+<div class="paos-container">
+  <h1 class="varda-page-header">{{i18n.paos | translate}}</h1>
+  <div class="varda-paos-hallinta-wrapper">
+    @if (isAdminUser || isVardaPaakayttaja) {
+      <main
+        class="varda-paos-hallinta-flex-column varda-paos-hallinta-flex-column-big varda-page-content">
+        <h1>{{i18n.paos | translate}}</h1>
+        <div [innerHTML]="(selectedVakajarjestaja.kunnallinen_kytkin ? i18n.paos_instruction_kunta : i18n.paos_instruction_yksityinen) | translateMarkdown"></div>
+        <app-varda-error-alert [errorMessageKey$]="errorMessage$"></app-varda-error-alert>
+        <app-paos-add-paos-toiminta [isVardaPaakayttaja]="isVardaPaakayttaja"
+          [isAdminUser]="isAdminUser"
+          [isVakajarjestajaKunta]="selectedVakajarjestaja.kunnallinen_kytkin"
+        [selectedVakajarjestaja]="selectedVakajarjestaja"></app-paos-add-paos-toiminta>
+      </main>
+    }
+
+    <aside class="varda-paos-hallinta-flex-column m-y-2">
+      @if (selectedVakajarjestaja.kunnallinen_kytkin) {
+        <section
+          class="varda-page-content">
+          <app-paos-added-toimipaikat [isVardaPaakayttaja]="isVardaPaakayttaja"
+            [isAdminUser]="isAdminUser"
+            [selectedVakajarjestaja]="selectedVakajarjestaja">
+          </app-paos-added-toimipaikat>
+        </section>
+      }
+      <section class="varda-page-content">
+        <app-paos-added-toimijat [isVardaPaakayttaja]="isVardaPaakayttaja"
+          [isAdminUser]="isAdminUser"
+          [selectedVakajarjestaja]="selectedVakajarjestaja">
+        </app-paos-added-toimijat>
+      </section>
+    </aside>
+  </div>
+</div>

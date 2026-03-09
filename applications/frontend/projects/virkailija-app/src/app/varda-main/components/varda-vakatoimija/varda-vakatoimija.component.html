@@ -1,0 +1,114 @@
+<h1 class="varda-page-header">
+  {{ i18n.yhteystiedot_label | translate }}
+</h1>
+<main class="varda-page-content">
+  @if (vakatoimijaForm) {
+    <form
+      class="vakatoimija-form"
+      autocomplete="off"
+      [formGroup]="vakatoimijaForm"
+      (submit)="saveVakatoimijaForm(vakatoimijaForm)">
+      <h2 class="oph-h3 oph-bold">{{ vakajarjestajaDetails.nimi }} - {{ i18n.yhteystiedot | translate }}</h2>
+      <div class="vakatoimija-static-info">
+        <div>
+          <strong>{{i18n.organisaatio_oid | translate}}:</strong>
+          <span class="varda-text-secondary">
+            {{ vakajarjestajaDetails.organisaatio_oid }}
+          </span>
+        </div>
+        <div class="vakatoimija-static-id">
+          <strong>{{i18n.varda_id | translate}}:</strong>
+          <span class="varda-text-secondary">
+            {{ vakajarjestajaDetails.id }}
+          </span>
+        </div>
+      </div>
+      <div class="modal-form-intro"
+        [innerHTML]="i18n.yhteystiedot_instruction | translateMarkdown">
+      </div>
+      <app-varda-form-field name="sahkopostiosoite"
+        [form]="vakatoimijaForm"
+        [label]="i18n.yhteystiedot_sahkopostiosoite | translate"
+        [errorText]="i18n.yhteystiedot_error_sahkopostiosoite | translate"
+        [placeholder]="i18n.yhteystiedot_placeholder_sahkopostiosoite | translate"
+        [instructionText]="i18n.yhteystiedot_instruction_sahkopostiosoite | translate">
+        @if (saveAccess) {
+          <input #fieldItem
+            type="text"
+            class="oph-input"
+            formControlName="sahkopostiosoite" />
+        } @else {
+          @if (!vakajarjestajaDetails.sahkopostiosoite) {
+            <span class="yhteystieto-field-missing"
+              >
+              {{ i18n.yhteystiedot_missing_sahkopostiosoite | translate }}
+            </span>
+          } @else {
+            <span>{{ vakajarjestajaDetails.sahkopostiosoite }}</span>
+          }
+        }
+      </app-varda-form-field>
+      <app-varda-form-field name="puhelinnumero"
+        [form]="vakatoimijaForm"
+        [label]="i18n.yhteystiedot_puhelinnumero | translate"
+        [errorText]="i18n.yhteystiedot_error_puhelinnumero | translate"
+        [placeholder]="i18n.yhteystiedot_placeholder_puhelinnumero | translate"
+        [instructionText]="i18n.yhteystiedot_instruction_puhelinnumero | translate">
+        @if (saveAccess) {
+          <input #fieldItem
+            type="text"
+            class="oph-input"
+            formControlName="puhelinnumero" />
+        } @else {
+          @if (!vakajarjestajaDetails.puhelinnumero) {
+            <span class="yhteystieto-field-missing"
+              >
+              {{ i18n.yhteystiedot_missing_puhelinnumero | translate }}
+            </span>
+          } @else {
+            <span>{{ vakajarjestajaDetails.puhelinnumero }}</span>
+          }
+        }
+      </app-varda-form-field>
+      <app-varda-error-field [errors]="vakatoimijaFormErrors"></app-varda-error-field>
+      @if (saveSuccess) {
+        <div
+          role="alert"
+          aria-live="polite"
+        class="alert alert-success">{{ i18n.save_success | translate }}</div>
+      }
+      @if (saveAccess) {
+        <div
+          class="vakatoimija-button-row">
+          @if (isEdit) {
+            <button
+              [disabled]="(isLoading | async) || vakatoimijaForm.pristine"
+              type="submit"
+              id="submit-button"
+              class="varda-button varda-button-wide responsive-md">
+              {{ i18n.save | translate }}
+            </button>
+          }
+          @if (!isEdit) {
+            <button
+              (click)="enableForm()"
+              type="button"
+              id="edit-button"
+              class="varda-button varda-button-wide secondary responsive-md">
+              {{ i18n.edit | translate }}
+            </button>
+          }
+          @if (isEdit) {
+            <button
+              (click)="disableForm()"
+              type="button"
+              id="cancel-button"
+              class="varda-button varda-button-neutral varda-button-wide secondary responsive-md">
+              {{ i18n.cancel | translate }}
+            </button>
+          }
+        </div>
+      }
+    </form>
+  }
+</main>

@@ -1,0 +1,146 @@
+<nav class="navbar navbar-expand-md navbar-light bg-light varda-navbar">
+  @if (vakajarjestajat && vakajarjestajat.length) {
+    <div class="navbar-brand varda-navbar-toimija"
+      >
+      <span id="siteTitle"
+      class="d-none d-lg-inline">{{ i18n.toimija | translate}}:</span>
+      @if (vakajarjestajat) {
+        <app-varda-dropdown-filter [filterBy]="['nimi', 'organisaatio_oid', 'y_tunnus']"
+          [label]="selectedVakajarjestaja?.nimi"
+          [attr.aria-label]="i18n.navi_oma_organisaatio | translate"
+          [placeholder]="i18n.navi_haku_filter_placeholder | translate"
+          [noResults]="i18n.navi_haku_filter_no_results | translate"
+          (valueSelected)="changeVakajarjestaja($event)"
+          [list]="vakajarjestajaGroups">
+        </app-varda-dropdown-filter>
+      }
+    </div>
+  }
+  <button class="navbar-toggler"
+    type="button"
+    (click)="toggleMenu()"
+    [attr.aria-expanded]="!isCollapsed"
+    aria-controls="navbarSupportedContent"
+    [attr.aria-label]="i18n.navi_toggle_menu | translate">
+    <span class="navbar-toggler-text">{{ i18n.navi_menu | translate }}</span>
+    <mat-icon alt="">expand_more</mat-icon>
+  </button>
+
+  @if (userAccess) {
+    <div
+      class="collapse navbar-collapse varda-navbar-links"
+      [class.collapse]="isCollapsed"
+      [class.navbar-collapse]="true"
+      id="navbarSupportedContent">
+      @if (vakajarjestajat) {
+        <ul class="navbar-nav mr-auto"
+          >
+          @if (userAccess.lapsitiedot.tallentaja || userAccess.huoltajatiedot.tallentaja ||
+            userAccess.tyontekijatiedot.tallentaja || userAccess.taydennyskoulutustiedot.tallentaja ||
+            userAccess.oph.katselija) {
+            <li class="varda-header-nav-item-container"
+              routerLinkActive="active-nav-item" [routerLinkActiveOptions]="{ exact: false }">
+              <a routerLink="/syota-tietoja" (click)="isCollapsed = true">
+              {{ i18n.navi_syota_tietoja | translate}}</a>
+            </li>
+          }
+          <li class="varda-header-nav-item-container"
+            routerLinkActive="active-nav-item" [routerLinkActiveOptions]="{ exact: false }">
+            <a routerLink="/tietojen-katselu" (click)="isCollapsed = true">
+            {{ i18n.katsele_tietoja | translate}}</a>
+          </li>
+          <li class="varda-header-nav-item-container divider">
+            <span class="d-none d-md-block"> | </span>
+          </li>
+          <li class="varda-header-nav-item-container"
+            [matMenuTriggerFor]="menu"
+            #trigger="matMenuTrigger"
+            routerLinkActive="active-nav-item" [routerLinkActiveOptions]="{ exact: false }">
+            <button class="varda-text-button">
+              @if (showRaportitBoolean && puutteellisetWarning) {
+                <mat-icon
+                  aria-ignore="true"
+                class="text-warning warning">warning</mat-icon>
+              }
+              <span>{{ i18n.toimijan_tiedot | translate }}</span>
+              @if (!trigger.menuOpen) {
+                <mat-icon>arrow_drop_down</mat-icon>
+              }
+              @if (trigger.menuOpen) {
+                <mat-icon>arrow_drop_up</mat-icon>
+              }
+            </button>
+            <mat-menu #menu="matMenu">
+              <a routerLink="/vakatoimija"
+                (click)="isCollapsed = true"
+                (keydown.tab)="$event.stopPropagation()"
+                (keydown.shift.tab)="$event.stopPropagation()"
+                mat-menu-item>
+                {{ i18n.yhteystiedot | translate }}
+              </a>
+              @if (userAccess.lapsitiedot.katselija) {
+                <a routerLink="/paos-hallinta"
+                  (click)="isCollapsed = true"
+                  (keydown.tab)="$event.stopPropagation()"
+                  (keydown.shift.tab)="$event.stopPropagation()"
+                  mat-menu-item>
+                  {{ i18n.paos | translate }}
+                </a>
+              }
+              @if (userAccess.vuokrattuHenkilosto.katselija) {
+                <a
+                  routerLink="/vuokrattu-henkilosto"
+                  (click)="isCollapsed = true"
+                  (keydown.tab)="$event.stopPropagation()"
+                  (keydown.shift.tab)="$event.stopPropagation()"
+                  mat-menu-item>
+                  {{i18n.vuokrattu_henkilosto | translate }}
+                </a>
+              }
+              @if (userAccess.tukipaatokset.katselija) {
+                <a
+                  routerLink="/tukipaatos"
+                  (click)="isCollapsed = true"
+                  (keydown.tab)="$event.stopPropagation()"
+                  (keydown.shift.tab)="$event.stopPropagation()"
+                  mat-menu-item>
+                  {{i18n.tuen_tiedot | translate }}
+                </a>
+              }
+              @if (showRaportitBoolean) {
+                <a
+                  routerLink="/raportit"
+                  (click)="isCollapsed = true"
+                  (keydown.tab)="$event.stopPropagation()"
+                  (keydown.shift.tab)="$event.stopPropagation()"
+                  mat-menu-item
+                  appHighContrast>
+                  <mat-icon [class.text-warning]="puutteellisetWarning"
+                  aria-ignore="true">warning</mat-icon>
+                  <span>{{i18n.raportit | translate }}</span>
+                </a>
+              }
+              @if (userAccess.oph.katselija) {
+                <a
+                  routerLink="/paata-tiedot"
+                  (click)="isCollapsed = true"
+                  (keydown.tab)="$event.stopPropagation()"
+                  (keydown.shift.tab)="$event.stopPropagation()"
+                  mat-menu-item
+                  appHighContrast>
+                  <span>{{i18n.paata_tiedot | translate }}</span>
+                </a>
+              }
+            </mat-menu>
+          </li>
+          <li class="varda-header-nav-item-container">
+            <button class="varda-text-button" (click)="openVardaGuidesLink()">
+              {{ i18n.navi_ohjeet | translate }}
+              <mat-icon class="mat-icon-smaller">open_in_new</mat-icon>
+            </button>
+          </li>
+        </ul>
+      }
+    </div>
+  }
+</nav>

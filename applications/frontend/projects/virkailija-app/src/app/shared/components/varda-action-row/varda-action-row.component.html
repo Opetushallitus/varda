@@ -1,0 +1,74 @@
+<mat-action-row [class.margin-normal]="!noMargin" [class.margin-none]="noMargin">
+  <div class="action-button-wrapper"
+    [class.margin-normal]="!noMargin">
+    <div class="left">
+      @if (!promptDelete) {
+        @if (isEdit && saveAccess) {
+          <button type="submit"
+            robot="submit-button"
+            [disabled]="saveDisabled"
+            class="varda-button varda-button-wide responsive-md">
+            {{ i18n.save | translate}}
+          </button>
+        }
+        @if (!noToggle && isEdit) {
+          <button class="varda-button varda-button-wide varda-button-neutral responsive-md secondary"
+            type="button"
+            robot="cancel-button"
+            (click)="_togglePanel(false)">
+            {{ i18n.cancel | translate }}
+          </button>
+        } @else {
+          @if (isEdit) {
+            <button class="varda-button varda-button-wide varda-button-neutral responsive-md secondary"
+              type="button"
+              robot="cancel-button"
+              (click)="_disableEdit()">
+              {{ i18n.cancel | translate }}
+            </button>
+          }
+        }
+        @if (formExists && saveAccess) {
+          @if (!isEdit) {
+            <button
+              type="button"
+              robot="edit-button"
+              class="varda-button varda-button-wide responsive-md"
+              (click)="_enableEdit()"
+              [disabled]="editDisabled">
+              {{ i18n.edit | translate}}
+            </button>
+          }
+        }
+      }
+    </div>
+    @if (isEdit && saveAccess && !noDelete) {
+      <div class="right"
+        >
+        @if (formExists && !promptDelete) {
+          <button
+            type="button"
+            robot="prompt-delete-button"
+            class="varda-button varda-button-wide varda-button-danger responsive-md secondary"
+            (click)="promptDelete = true">
+            {{ i18n.delete | translate }}
+          </button>
+        }
+        @if (promptDelete) {
+          <button type="button"
+            robot="submit-delete-button"
+            class="varda-button varda-button-wide varda-button-danger responsive-md secondary"
+            (click)="_deleteForm()">
+            {{ i18n.delete | translate }}
+          </button>
+          <button class="varda-button varda-button-wide varda-button-neutral responsive-md secondary"
+            type="button"
+            robot="cancel-delete-button"
+            (click)="promptDelete = false">
+            {{ i18n.cancel | translate }}
+          </button>
+        }
+      </div>
+    }
+  </div>
+</mat-action-row>

@@ -1,0 +1,21 @@
+.main-wrapper {
+  display: flex;
+  flex-flow: column;
+  min-height: 100vh;
+}
+
+header.main-header {
+  background-color: #3d9fcc;
+}
+
+main {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+footer.main-footer {
+  background-color: #f0f3f8;
+  padding-top: 1em;
+  padding-bottom: 1em;
+}

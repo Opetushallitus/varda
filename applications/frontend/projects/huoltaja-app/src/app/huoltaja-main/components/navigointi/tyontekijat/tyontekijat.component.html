@@ -1,0 +1,38 @@
+<main class="tyontekijatiedot">
+  <div class="section-intro">
+    <h1>{{ i18n.tyontekijatiedot | translate}}</h1>
+    <div [innerHTML]="i18n.tyontekijatiedot_instruction | translateMarkdown"></div>
+  </div>
+
+  @if (tyontekijatiedot) {
+    <app-henkilotiedot></app-henkilotiedot>
+    @if (tyontekijatiedot.tyontekijat) {
+      <section class="tyontekijat"
+        >
+        <div class="section-header">
+          <h2>{{ i18n.tyontekijatiedot | translate }} ({{ tyontekijatiedot.tyontekijat?.length }})</h2>
+          <span class="button-group">
+            <button class="button h5"
+              (click)="openDialog(i18n.info, i18n.tooltip_info_tyontekijatiedot)">
+              <mat-icon alt="">help_outline</mat-icon>
+              <span>{{ i18n.info | translate }}</span>
+            </button>
+            <button class="button h5"
+              (click)="openDialog(i18n.onko_tiedoissa_puutteita, i18n.tyontekijatiedot_dialog_ota_yhteytta_tyonantajaan)">
+              <mat-icon alt="">help_outline</mat-icon>
+              <span>{{ i18n.onko_tiedoissa_puutteita | translate }}</span>
+            </button>
+          </span>
+        </div>
+        <mat-accordion>
+          @for (tyontekija of tyontekijatiedot.tyontekijat; track tyontekija) {
+            <app-tyontekija
+              [first]="tyontekijatiedot.tyontekijat.length === 1"
+              [tyontekija]="tyontekija">
+            </app-tyontekija>
+          }
+        </mat-accordion>
+      </section>
+    }
+  }
+</main>

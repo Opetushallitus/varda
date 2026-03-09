@@ -1,0 +1,47 @@
+# Django
+Django==5.2.*  # BSD-license
+django-cors-headers==4.9.*  # MIT-license
+django-crispy-forms==2.4  # MIT-license
+crispy-bootstrap5==2025.6  # MIT-license
+django-csp==4.0  # BSD-license
+django-filter==25.1  # BSD-license
+django-guardian==2.4.*  # BSD-license
+django-pg-bulk-update==3.7.*  # BSD-license
+django-ratelimit==4.1.*  # Apache 2.0-license
+django-rest-knox==5.0.*  # MIT-license
+django-simple-history==3.10.*  # BSD-license
+django-spaghetti-and-meatballs==0.4.*  # MIT-license
+
+# Django REST Framework
+djangorestframework==3.14.*  # BSD-license
+djangorestframework-guardian==0.3.*  # BSD-license
+drf-nested-routers==0.94.*  # Apache 2.0-license
+drf-yasg==1.21.*  # BSD 3-Clause License
+
+# Django auth
+django-cas-ng==5.0.*  # BSD-license
+
+# Django cache
+redis==5.3.*  # MIT-license
+hiredis==3.2.*  # BSD-license
+
+# Celery
+celery[redis]==5.5.*  # BSD-license
+django-celery-beat==2.8.*  # BSD-license
+django-celery-results==2.6.*  # BSD-license
+flower==2.0.*  # BSD-license
+
+# Misc
+boto3==1.37.*  # Apache 2.0-license
+cryptography==46.0.*  # BSD-license
+gunicorn==23.0.*  # MIT-license
+psycopg[binary]==3.2.*  # LGPL with exceptions or ZPL
+python-json-logger==3.2.*  # BSD-license
+requests==2.32.*  # Apache 2.0-license
+responses==0.25.*  # Mocks. Apache 2.0-license
+setuptools==80.*  # MIT-license
+XlsxWriter==3.2.*  # BSD-2-Clause License
+
+# Dev
+flake8==7.3.*  # MIT-license
+pre-commit==4.3.*  # MIT-license

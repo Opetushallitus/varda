@@ -1,0 +1,23 @@
+<div class="clickable text-nowrap"
+  (click)="toggle()"><span>{{ label | translate }}</span>
+  @if (!expand) {
+    <mat-icon [attr.alt]="i18n.show_more | translate">search</mat-icon>
+  } @else {
+    <mat-icon class="oph-red"
+      [attr.alt]="i18n.show_less | translate"
+    alt="">close</mat-icon>
+  }
+</div>
+@if (expand) {
+  <form [class.text-nowrap]="!multiline"
+    (ngSubmit)="submitFilter.emit(true)">
+    <ng-content></ng-content>
+    @if (!hideSearchButton) {
+      <button mat-button
+        type="submit">
+        <mat-icon alt="">search</mat-icon>
+        {{ i18n.tiedonsiirrot_search | translate }}
+      </button>
+    }
+  </form>
+}
