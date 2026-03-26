@@ -1,0 +1,154 @@
+<div class="yhteenveto-wrapper">
+  <div class="varda-card-bottom">
+    <div class="varda-info my-2" [innerHTML]="i18n.yhteenveto_instruction | translateMarkdown"></div>
+    @if (timestamp) {
+      <em>{{ i18n.yhteenveto_timestamp | translate }}: {{ timestamp | vardaLongDate }}</em>
+    }
+    <div class="yhteenveto-row">
+      <div class="col-12 col-md-10 col-lg-8 col-xl-7">
+        <div class="yhteenveto-container">
+          <h3 class="oph-bold">{{i18n.katsele_tietoja_toimipaikat | translate}}</h3>
+          <div class="table-responsive">
+            <table mat-table [dataSource]="datasourceToimipaikat">
+              <ng-container matColumnDef="name">
+                <th mat-header-cell *matHeaderCellDef>{{i18n.katsele_tietoja_yhteenveto_key | translate }}</th>
+                <td mat-cell *matCellDef="let element">{{element.name | translate}}</td>
+              </ng-container>
+              <ng-container matColumnDef="value">
+                <th mat-header-cell *matHeaderCellDef>{{i18n.katsele_tietoja_yhteenveto_value | translate }}</th>
+                <td mat-cell *matCellDef="let element">
+                  {{element.value !== null ?
+                  (element.value | number:undefined:'fi') :
+                  i18n.katsele_tietoja_yhteenveto_not_reported | translate}}
+                </td>
+              </ng-container>
+              <ng-container matColumnDef="tooltip">
+                <th mat-header-cell *matHeaderCellDef></th>
+                <td mat-cell *matCellDef="let element">
+                  <span mat-icon-button
+                    class="varda-text-button"
+                    [matTooltip]="element.tooltip | translate"
+                    matTooltipClass="varda-tooltip"
+                    [attr.aria-label]="element.tooltip | translate">
+                    <mat-icon alt="">help_outline</mat-icon>
+                  </span>
+                </td>
+              </ng-container>
+              <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+              <tr mat-row *matRowDef="let row; columns: displayedColumns;" [id]="row.id"></tr>
+            </table>
+          </div>
+        </div>
+        <div class="yhteenveto-container">
+          <h3 class="oph-bold">{{i18n.katsele_tietoja_lapset | translate}}</h3>
+          <div class="table-responsive">
+            <table mat-table [dataSource]="datasourceLapset">
+              <ng-container matColumnDef="name">
+                <th mat-header-cell *matHeaderCellDef>{{i18n.katsele_tietoja_yhteenveto_key | translate }}</th>
+                <td mat-cell *matCellDef="let element">{{element.name | translate}}</td>
+              </ng-container>
+              <ng-container matColumnDef="value">
+                <th mat-header-cell *matHeaderCellDef>{{i18n.katsele_tietoja_yhteenveto_value | translate }}</th>
+                <td mat-cell *matCellDef="let element">
+                  {{element.value !== null ?
+                  (element.value | number:undefined:'fi') :
+                  i18n.katsele_tietoja_yhteenveto_not_reported | translate}}
+                </td>
+              </ng-container>
+              <ng-container matColumnDef="tooltip">
+                <th mat-header-cell *matHeaderCellDef></th>
+                <td mat-cell *matCellDef="let element">
+                  <span mat-icon-button
+                    class="varda-text-button"
+                    [matTooltip]="element.tooltip | translate"
+                    matTooltipClass="varda-tooltip"
+                    [attr.aria-label]="element.tooltip | translate">
+                    <mat-icon alt="">help_outline</mat-icon>
+                  </span>
+                </td>
+              </ng-container>
+              <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+              <tr mat-row *matRowDef="let row; columns: displayedColumns;" [id]="row.id"></tr>
+            </table>
+          </div>
+        </div>
+        <div class="yhteenveto-container">
+          <h3 class="oph-bold">{{i18n.katsele_tietoja_tyontekijat | translate}}</h3>
+          <div class="table-responsive">
+            <table mat-table [dataSource]="datasourceTyontekijat">
+              <ng-container matColumnDef="name">
+                <th mat-header-cell *matHeaderCellDef>{{i18n.katsele_tietoja_yhteenveto_key | translate }}</th>
+                <td mat-cell *matCellDef="let element">{{element.name | translate}}</td>
+              </ng-container>
+              <ng-container matColumnDef="value">
+                <th mat-header-cell *matHeaderCellDef>{{i18n.katsele_tietoja_yhteenveto_value | translate }}</th>
+                <td mat-cell *matCellDef="let element">
+                  {{element.value !== null ?
+                  (element.value | number:undefined:'fi') :
+                  i18n.katsele_tietoja_yhteenveto_not_reported | translate}}
+                </td>
+              </ng-container>
+              <ng-container matColumnDef="tooltip">
+                <th mat-header-cell *matHeaderCellDef></th>
+                <td mat-cell *matCellDef="let element">
+                  <span mat-icon-button
+                    class="varda-text-button"
+                    [matTooltip]="element.tooltip | translate"
+                    matTooltipClass="varda-tooltip"
+                    [attr.aria-label]="element.tooltip | translate">
+                    <mat-icon alt="">help_outline</mat-icon>
+                  </span>
+                </td>
+              </ng-container>
+              <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+              <tr mat-row *matRowDef="let row; columns: displayedColumns;" [id]="row.id">{{row}}</tr>
+            </table>
+          </div>
+        </div>
+        @if (is_kunta) {
+          <div class="yhteenveto-container">
+            <label class="oph-bold">{{i18n.katsele_tietoja_tuen_tiedot | translate}}</label>
+            <div class="table-responsive">
+              <table mat-table [dataSource]="datasourceTuenTiedot">
+                <ng-container matColumnDef="name">
+                  <th mat-header-cell *matHeaderCellDef>{{i18n.katsele_tietoja_yhteenveto_key | translate }}</th>
+                  <td mat-cell *matCellDef="let element">{{element.name | translate}}</td>
+                </ng-container>
+                <ng-container matColumnDef="date">
+                  <th mat-header-cell *matHeaderCellDef>{{i18n.katsele_tietoja_yhteenveto_date | translate }}</th>
+                  <td mat-cell *matCellDef="let element">
+                    {{element.date !== null ?
+                    element.date :
+                    i18n.katsele_tietoja_yhteenveto_not_reported | translate }}
+                  </td>
+                </ng-container>
+                <ng-container matColumnDef="value">
+                  <th mat-header-cell *matHeaderCellDef>{{i18n.katsele_tietoja_yhteenveto_value | translate }}</th>
+                  <td mat-cell *matCellDef="let element">
+                    {{element.value !== null ?
+                    (element.value | number:undefined:'fi') :
+                    i18n.katsele_tietoja_yhteenveto_not_reported | translate}}
+                  </td>
+                </ng-container>
+                <ng-container matColumnDef="tooltip">
+                  <th mat-header-cell *matHeaderCellDef></th>
+                  <td mat-cell *matCellDef="let element">
+                    <span mat-icon-button
+                      class="varda-text-button"
+                      [matTooltip]="element.tooltip | translate"
+                      matTooltipClass="varda-tooltip"
+                      [attr.aria-label]="element.tooltip | translate">
+                      <mat-icon alt="">help_outline</mat-icon>
+                    </span>
+                  </td>
+                </ng-container>
+                <tr mat-header-row *matHeaderRowDef="displayedColumnsTuenTiedot"></tr>
+                <tr mat-row *matRowDef="let row; columns: displayedColumnsTuenTiedot;" [id]="row.id">{{row}}</tr>
+              </table>
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+  </div>
+</div>

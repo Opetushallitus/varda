@@ -1,0 +1,15 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "outDir": "../../out-tsc/app",
+    "types": []
+  },
+  "files": [
+    "src/main.ts"
+  ],
+  "include": [
+    "projects/pulssi-app/src/**/*.ts",
+    "projects/pulssi-app/src/**/*.d.ts",
+    "projects/varda-shared/src/**/*.ts"
+  ]
+}

@@ -1,0 +1,21 @@
+<div class="margin-top">
+  @if (resultCount === 0) {
+    <label class="oph-bold"
+      >
+      {{i18n.katsele_tietoja_no_results | translate}}
+    </label>
+  }
+  @if (resultCount > 0) {
+    <label class="oph-bold"
+      >
+      {{i18n.katsele_tietoja_results | translate}}: {{resultCount}}
+    </label>
+  }
+  @if (filterString && filterString !== '') {
+    <label class="varda-small-text varda-filter-summary"
+      >
+      {{i18n.katsele_tietoja_selected_filters | translate}}:
+      {{filterString}}
+    </label>
+  }
+</div>
