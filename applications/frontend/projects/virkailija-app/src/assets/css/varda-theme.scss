@@ -1,0 +1,59 @@
+@use '@angular/material' as mat;
+
+@include mat.elevation-classes();
+@include mat.app-background();
+
+// Varda theme
+$varda-primary-palette: (
+  50 : #e3f3f9,
+  100 : #b9e2ef,
+  200 : #8acfe5,
+  300 : #5bbbdb,
+  400 : #38add3,
+  500 : #159ecb,
+  600 : #1296c6,
+  700 : #0f8cbe,
+  800 : #0c82b8,
+  900 : #0670ac,
+  A100 : #d6efff,
+  A200 : #a3daff,
+  A400 : #70c6ff,
+  A700 : #57bcff,
+  contrast: (
+    50 : #000000,
+    100 : #000000,
+    200 : #000000,
+    300 : #000000,
+    400 : #000000,
+    500 : #ffffff,
+    600 : #ffffff,
+    700 : #ffffff,
+    800 : #ffffff,
+    900 : #ffffff,
+    A100 : #000000,
+    A200 : #000000,
+    A400 : #000000,
+    A700 : #000000,
+  )
+);
+
+$varda-primary: mat.m2-define-palette($varda-primary-palette);
+$varda-accent:  mat.m2-define-palette($varda-primary-palette);
+$varda-warn:    mat.m2-define-palette(mat.$m2-red-palette);
+$varda-theme:   mat.m2-define-light-theme((
+  color: (
+    primary: $varda-primary,
+    accent: $varda-accent,
+    warn: $varda-warn,
+  )
+));
+
+
+// This is the font used in production and testing.
+// The default font of body might be different during local development.
+$varda-typography: mat.m2-define-typography-config(
+  $font-family: "'Open Sans', 'sans-serif'",
+);
+
+@include mat.all-component-typographies($varda-typography);
+@include mat.all-component-themes($varda-theme);

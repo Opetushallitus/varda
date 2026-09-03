@@ -1,0 +1,27 @@
+
+.taydennyskoulutus-table {
+  width: 100%;
+}
+
+th.mat-mdc-header-cell:not(:first-of-type),
+td.mat-mdc-cell:not(:first-of-type) {
+  padding-left: 0.5em;
+  padding-right: 0.5em;
+}
+
+
+table td .mat-icon {
+  user-select: none;
+  margin-right: 0.5em;
+}
+
+.table th .mat-mdc-checkbox,
+.table td .mat-mdc-checkbox  {
+  position: relative;
+  top: 4px;
+}
+
+.taydennyskoulutus-row:hover {
+  cursor: pointer;
+  background-color: var(--blue-lighten-1);
+}

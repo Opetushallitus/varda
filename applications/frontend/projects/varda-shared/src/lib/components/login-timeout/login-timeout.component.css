@@ -1,0 +1,19 @@
+.mat-mdc-snack-bar-container {
+  max-width: 90vw;
+}
+
+.timeout {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.cdk-overlay-pane .mat-mdc-snack-bar-container .mat-mdc-snack-bar-action button {
+  font-weight: bold;
+  color: var(--red);
+  background-color: var(--black);
+  border: none;
+  padding: 0.5rem;
+  border-radius: 4px;
+}

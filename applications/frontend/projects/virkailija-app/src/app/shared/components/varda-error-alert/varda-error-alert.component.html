@@ -1,0 +1,16 @@
+@if (errorMessageKey && isOpen) {
+  <div class="varda-error-alert-wrapper">
+    <div class="varda-error-alert-column1">
+      <span>{{errorMessageKey | translate}}</span>
+    </div>
+    <div class="varda-error-alert-column2">
+      <button class="varda-button-close"
+        type="button"
+        [title]="i18n.close | translate"
+        [attr.aria-label]="i18n.close | translate"
+        (click)="isOpen = false">
+        <span aria-hidden="true">×</span>
+      </button>
+    </div>
+  </div>
+}

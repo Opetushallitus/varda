@@ -1,0 +1,19 @@
+@if (numberOfItems > VIEW_INITIAL_COUNT) {
+  <div class="show-more-container">
+    @if (numberOfDisplayed < numberOfItems) {
+      <button class="varda-button varda-icon-button secondary"
+        (click)="showMore()">
+        <mat-icon>expand_more</mat-icon>
+        {{showMoreKey | translate}}
+      </button>
+    }
+    @if (numberOfDisplayed > VIEW_INITIAL_COUNT) {
+      <button class="varda-button varda-icon-button secondary"
+        (click)="showLess()">
+        <mat-icon>expand_less</mat-icon>
+        {{i18n.show_less | translate}}
+      </button>
+    }
+    <span class="varda-small-text">{{i18n.showing | translate}} {{ numberOfDisplayed }}/{{ numberOfItems }}</span>
+  </div>
+}

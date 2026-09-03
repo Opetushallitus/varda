@@ -1,0 +1,17 @@
+@if (showModal) {
+  <div class="varda-prompt-modal"
+    >
+    <div class="varda-prompt-modal-content promt-modal-content-wrapper">
+      <div>
+        <p><ng-content></ng-content></p>
+      </div>
+      <div class="promt-modal-button-wrapper">
+        <button class="varda-button varda-button-neutral"
+          (click)="showModal = false">
+          {{ i18n.cancel | translate}}
+        </button>
+        <app-varda-delete-button (click)="saveAndHide()">{{ i18n.delete | translate}}</app-varda-delete-button>
+      </div>
+    </div>
+  </div>
+}

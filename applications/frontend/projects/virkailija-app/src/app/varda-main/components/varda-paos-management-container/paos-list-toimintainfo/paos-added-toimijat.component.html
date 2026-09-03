@@ -1,0 +1,89 @@
+<h3>{{i18n.paos_toimijat | translate}} ({{paosToiminnat.length}})</h3>
+<div>
+  <p [innerHTML]="i18n.paos_toimijat_instruction | translateMarkdown"></p>
+  @if (!paosToiminnat.length) {
+    <p
+      class="paos-list-toimijat-search-empty">
+    {{i18n.paos_toimijat_empty | translate}}</p>
+  }
+</div>
+@if (showSuccess) {
+  <div
+    class="oph-alert oph-alert-success"
+    [@fadeOut]>
+    {{i18n.paos_toimijat_already_added | translate}}
+  </div>
+}
+@if (paosToiminnat.length) {
+  <div>
+    <mat-form-field>
+      <input type="text"
+        matInput
+        id="paos-list-toimijat-search"
+        class="varda-input"
+        [placeholder]="i18n.search | translate"
+        (keyup)="filterToimintaInfo($event.target.value)" />
+    </mat-form-field>
+    <div [class.scrollable]="paosToiminnat.length > 3">
+      @for (paosToiminta of filteredToiminnat; track paosToiminta) {
+        <div
+          class="paos-yksikot oph-alert oph-alert-info small-text"
+          [class.varda-paos-list-toimintainfo-highlight]="highlighted.indexOf(paosToiminta.vakajarjestaja_url) !== -1">
+          <div>
+            <h4>
+              {{paosToiminta.vakajarjestaja_nimi}}
+              @if (paosToiminta.paos_oikeus.voimassa_kytkin) {
+                <mat-icon
+                  title="{{i18n.paos_toimijat_both_added | translate }}">sync_alt
+                </mat-icon>
+              }
+            </h4>
+            <div class="paos-list-flexbox">
+              <div>
+                <div>
+                  {{i18n.organisaatio_oid | translate}}: {{paosToiminta.vakajarjestaja_organisaatio_oid}}
+                </div>
+                <div>
+                  {{i18n.id | translate}}: {{paosToiminta.vakajarjestaja_id}}
+                </div>
+              </div>
+              <app-varda-toggle-button [isUp]="openToimija !== paosToiminta.vakajarjestaja_id"
+              (click)="toggleToimija(paosToiminta.vakajarjestaja_id)"></app-varda-toggle-button>
+            </div>
+          </div>
+          @if (openToimija === paosToiminta.vakajarjestaja_id) {
+            <div>
+              <div class="paos-toimijat-list-tallennusvastuu-wrapper paos-list-flexbox">
+                <div class="paos-list-flexbox">
+                  <div class="paos-toimipaikat-list-tallennusvastuu-column">
+                    {{i18n.paos_saved_by | translate}}:
+                  </div>
+                  <div class="paos-toimipaikat-list-tallennusvastuu-column">
+                    {{getCurrentTallentajaName(paosToiminta.paos_oikeus, paosToiminta.vakajarjestaja_nimi)}}
+                  </div>
+                </div>
+                @if (isAdminUser || isVardaPaakayttaja) {
+                  <app-varda-delete-button
+                    (click)="showDeleteConfirm(paosToiminta)">
+                    {{i18n.delete | translate}}
+                  </app-varda-delete-button>
+                }
+              </div>
+            </div>
+          }
+        </div>
+      }
+    </div>
+  </div>
+}
+<app-varda-prompt-modal [show$]="showConfirmModal$"
+  (saveEvent)="deletePaosToiminta()">
+  @if (paosToimintaToDelete) {
+    <div class="paos-prompt-modal-header"
+      >
+      {{paosToimintaToDelete.vakajarjestaja_nimi}}
+    </div>
+  }
+  {{i18n.paos_toimijat_delete_confirm | translate}}
+
+</app-varda-prompt-modal>

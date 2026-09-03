@@ -1,0 +1,46 @@
+<div class="table-responsive">
+  <table class="henkilo-list">
+    <tbody>
+      @for (instance of errorList; track instance) {
+        <tr class="row">
+          <div class="henkilo-list-item col-9 col-lg-11"
+            tabindex="0"
+            (keydown.enter)="clickErrorItem(instance)"
+            (click)="clickErrorItem(instance)">
+            @if (instance.henkilo_id) {
+              <div class="error-title">
+                <td>
+                  <mat-icon alt="">perm_identity</mat-icon>
+                </td>
+                <td>{{ instance.sukunimi }} {{ instance.etunimet }}</td>
+              </div>
+            } @else {
+              <div class="error-title">
+                <td>
+                  <mat-icon alt="">home</mat-icon>
+                </td>
+                <td>{{ instance.nimi }}</td>
+              </div>
+            }
+            <td>
+              @for (error of instance.errors; track error; let index = $index) {
+                <div>
+                  <span [libKoodistoValue]="koodistoEnum.virhe"
+                  format="long">{{ error.error_code }}</span>
+                  @if (error.model_id_list?.length > 1) {
+                    <span> x{{ error.model_id_list?.length }}</span>
+                  }
+                </div>
+              }
+            </td>
+          </div>
+          <div class="col-3 col-lg-1">
+            <button (click)="clickFilterItem(instance)" mat-icon-button aria-label="Example icon button with a menu icon">
+              <mat-icon>filter_alt</mat-icon>
+            </button>
+          </div>
+        </tr>
+      }
+    </tbody>
+  </table>
+</div>

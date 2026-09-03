@@ -1,0 +1,63 @@
+.oph-select {
+  padding: 0.1em 1em;
+  margin: 0 0.5em;
+  border-radius: 4px;
+}
+
+.table {
+  max-width: 600px;
+  --bs-table-bg: null;
+  --bs-table-color-state: null;
+}
+
+.table thead th {
+  border-top-width: 0px;
+}
+
+.table tbody tr td {
+  vertical-align: top;
+}
+
+.table tbody tr td:first-child {
+  vertical-align: middle;
+}
+
+.table tbody tr:first-child {
+  color: var(--gray-lighten-3);
+  font-size: 0.9em;
+}
+
+.table tr:nth-child(even) {
+  background-color: var(--gray-lighten-3);
+}
+
+
+.table tbody tr td input {
+  max-width: 150px;
+}
+
+.toggle-henkilosto {
+  margin: 0.5em 1em;
+}
+
+.henkilostoKytkin {
+  user-select: none;
+  cursor: pointer;
+  margin: 1em;
+}
+
+.henkilostoKytkin.no-pointer {
+  cursor: initial;
+}
+
+.last-updated {
+  margin: 0.5em 0.5em;
+}
+
+.last-updated>span {
+  margin-left: 0.5em;
+}
+
+.black-border {
+  border-top: 2px solid var(--black);
+}

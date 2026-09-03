@@ -1,0 +1,25 @@
+.paos-container .varda-paos-hallinta-wrapper {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.paos-container .varda-paos-hallinta-flex-column {
+  flex: 2 1 250px;
+  max-width: 100%;
+  margin: 0.5em;
+}
+
+.paos-container .varda-paos-hallinta-flex-column .varda-page-content {
+  margin-bottom: 1em;
+}
+
+.paos-container .varda-paos-hallinta-flex-column-big {
+  flex: 3 1 300px;
+  width: 50%;
+}
+
+.paos-container .varda-paos-hallinta-wrapper a {
+  color: var(--link-color);
+}

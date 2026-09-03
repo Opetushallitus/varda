@@ -1,0 +1,132 @@
+<div class="toimipaikka-selector-wrapper"
+     aria-live="polite">
+  <div class="toimipaikka-selector-top">
+    <nav class="toimipaikka-selector-navi">
+      @if (toimijaAccess.taydennyskoulutustiedot.katselija) {
+        <a
+          [routerLink]="['/taydennyskoulutus']">{{ i18n.taydennyskoulutukset | translate }}</a>
+      }
+      @if (toimijaAccess.vuokrattuHenkilosto.katselija) {
+        <a
+          [routerLink]="['/vuokrattu-henkilosto']">{{ i18n.vuokrattu_henkilosto | translate }}</a>
+      }
+      @if (toimijaAccess.lapsitiedot.katselija) {
+        <a
+          [routerLink]="['/paos-hallinta']">{{ i18n.paos | translate }}</a>
+      }
+    </nav>
+
+    <h2 class="oph-h3">
+      {{ selectedVakajarjestaja.nimi }}
+      @if (!selectedVakajarjestaja.active) {
+        <span class="badge text-bg-secondary">{{ i18n.passive | translate }}</span>
+      }
+    </h2>
+  </div>
+  <section class="toimipaikka-selector-section">
+    <label for="toimipaikkaSelectionList"
+           class="toimipaikka-selector-label oph-h4 oph-bold">
+      {{ i18n.toimipaikka | translate }}
+      @if (toimipaikat.length > 1) {
+        <span class="toimipaikka-number">({{ filteredToimipaikat.length }})</span>
+      }
+      <button mat-icon-button
+              class="varda-info-button col-auto"
+              [matTooltip]="i18n.katsele_tietoja_toimipaikka_tooltip_search | translate"
+              matTooltipClass="varda-tooltip"
+              aria-label="hae toimipaikkaa ohje">
+        <mat-icon alt="">info</mat-icon>
+      </button>
+      @if (toimijaAccess.lapsitiedot.tallentaja) {
+        <button id="add-toimipaikka-button"
+                class="varda-button addBtn responsive"
+                (click)="addToimipaikka()">+ {{ i18n.lisaa_toimipaikka | translate }}
+        </button>
+      }
+    </label>
+    <div class="toimipaikka-selector">
+      <div class="toimipaikka-selector-selection">
+        <label for="toimipaikkaSelected" class="selected-toimipaikka-label">
+          {{ i18n.valittu | translate }}:
+        </label>
+        <span id="toimipaikkaSelected" class="toimipaikka-selected">
+            {{ activeToimipaikka?.nimi || (i18n.kaikki_toimipaikat | translate) }}
+        </span>
+        @if (activeToimipaikka) {
+          <button
+            (click)="openToimipaikka(activeToimipaikka)"
+            class="varda-button varda-button-small secondary responsive">
+            {{ i18n.nayta_tiedot | translate }}
+          </button>
+          <button
+            (click)="discardSelection()"
+            class="varda-button varda-button-small secondary responsive">
+            {{ i18n.poista_valinta | translate }}
+          </button>
+        }
+      </div>
+    </div>
+    <div class="toimipaikka-selector-filter">
+      @if (toimipaikat.length > 0) {
+        <mat-form-field class="toimipaikka-input" floatLabel="always">
+          <mat-label>{{ i18n.toimipaikka_hae_nimella | translate }}</mat-label>
+          <input autocomplete="off"
+                 matInput
+                 type="text"
+                 id="toimipaikkaFilter"
+                 [(ngModel)]="toimipaikkaFilterText"
+                 [ngModelOptions]="{ standalone: true }"
+                 (ngModelChange)="filterToimipaikat()"
+          />
+        </mat-form-field>
+      }
+      <mat-checkbox
+        class="varda-checkbox"
+        [(ngModel)]="toimipaikkaFilterShowAll"
+        (change)="filterToimipaikat()"
+      >
+        {{ i18n.toimipaikka_nayta_kaikki_kytkin | translate }}
+      </mat-checkbox>
+    </div>
+    <app-varda-toimipaikka-list
+      [toimipaikkaList]="paginatedToimipaikat"
+      (updateToimipaikkaSelection)="setToimipaikka($event)"
+    />
+    @if (activeToimipaikka && activeToimipaikka?.hallinnointijarjestelma !== hallinnointijarjestelmaTypes.VARDA) {
+      <div>
+        <small class="text-danger"
+               role="alert"
+               aria-live="polite">{{ i18n.toimipaikka_ei_varda | translate }}</small>
+      </div>
+    }
+
+    @if (this.filteredToimipaikat.length > defaultPaginationFilters.pageSize) {
+      <mat-paginator
+        [pageSize]="this.paginationFilters.pageSize"
+        [pageIndex]=this.paginationFilters.pageIndex
+        [length]="this.filteredToimipaikat.length"
+        (page)="onPageChange($event)"
+      />
+    }
+  </section>
+</div>
+
+<app-varda-modal-form [identifier]="'toimipaikkaModal'"
+                      [isLg]="true"
+                      [openModal]="toimipaikkaFormOpen"
+                      [closeWithoutConfirm]="confirmedToimipaikkaFormLeave"
+                      (events)="handleFormClose($event)">
+  @if (toimipaikkaFormOpen) {
+    <app-varda-toimipaikka-form
+      [toimipaikka]="formToimipaikka"
+      (saveToimipaikkaFormSuccess)="updateToimipaikat($event)"
+      (valuesChanged)="toimipaikkaFormValuesChanged($event)"
+      (closeEmitter)="closeToimipaikkaForm()"></app-varda-toimipaikka-form>
+  }
+</app-varda-modal-form>
+
+<app-varda-success-modal [identifier]="'toimipaikkaSuccessModal'"
+                         [successTitle]="'Tallennus onnistui'"></app-varda-success-modal>
+
+<app-varda-success-modal [identifier]="'toimipaikkaDeleteSuccessModal'"
+                         [successTitle]="'Toimipaikan poisto onnistui'"></app-varda-success-modal>

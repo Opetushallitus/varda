@@ -1,0 +1,14 @@
+.ei-tietoja-warning {
+  margin-top: 1rem;
+  padding: 1rem;
+}
+
+.ei-tietoja-warning p:first-child {
+  display: flex;
+  align-items: center;
+}
+
+.ei-tietoja-warning p:first-child>.material-icons {
+  margin-right: 1rem;
+  color: var(--oph-orange);
+}

@@ -1,0 +1,136 @@
+<form [formGroup]="taydennyskoulutusForm"
+  autocomplete="off"
+  (submit)="saveTaydennyskoulutus(taydennyskoulutusForm)">
+  <div class="modal-header">
+    <div class="taydennyskoulutus-header"
+      [class.taydennyskoulutus-flex-header]="!isEdit">
+      <h1 class="modal-title varda-modal-title"
+        [id]="'vardaModalTitleLabelhenkiloModal'">
+        @if (taydennyskoulutus?.id) {
+          <span>
+            {{ taydennyskoulutus.nimi }}
+          </span>
+        } @else {
+          {{ i18n.taydennyskoulutukset_lisaa_taydennyskoulutus | translate }}
+        }
+      </h1>
+
+      @if (userAccess.taydennyskoulutustiedot.tallentaja) {
+        <div>
+          @if (!isEdit) {
+            <button
+              type="button"
+              class="varda-button secondary responsive-md"
+            (click)="enableForm()">{{ i18n.edit | translate }}</button>
+          } @else {
+            <app-varda-action-row [saveDisabled]="taydennyskoulutusForm.pristine || (isLoading | async)"
+              [saveAccess]="true"
+              [formExists]="!!taydennyskoulutus?.id"
+              [isEdit]="isEdit"
+              [noToggle]="true"
+              [noMargin]="true"
+              (deleteForm)="deleteTaydennyskoulutus()"
+              (enableEdit)="enableForm()"
+            (disableEdit)="disableForm()"></app-varda-action-row>
+          }
+        </div>
+      }
+    </div>
+    <button type="button"
+      class="btn-close float-end"
+      [attr.data-bs-dismiss]="'modal'"
+      [attr.aria-label]="i18n.close | translate">
+    </button>
+  </div>
+
+  <div class="modal-body">
+    <div>
+      <app-varda-form-field name="nimi"
+        [form]="taydennyskoulutusForm"
+        [label]="i18n.taydennyskoulutus_nimi | translate"
+        [errorText]="i18n.taydennyskoulutus_error_nimi | translate"
+        [instructionText]="i18n.taydennyskoulutus_instruction_nimi | translate">
+        <input #fieldItem
+          type="text"
+          class="oph-input"
+          [readonly]="limitedEditAccess"
+          formControlName="nimi" />
+      </app-varda-form-field>
+
+      <app-varda-form-field name="suoritus_pvm"
+        [form]="taydennyskoulutusForm"
+        [label]="i18n.taydennyskoulutus_suoritus_pvm | translate"
+        [errorText]="i18n.taydennyskoulutus_error_suoritus_pvm | translate"
+                            [errorMap]="[
+                            { key: 'matDatepickerMin', value: i18n.taydennyskoulutus_error_min_suoritus_pvm },
+                            { key: 'matDatepickerMax', value: i18n.taydennyskoulutus_error_max_suoritus_pvm }
+                            ]"
+        [instructionText]="i18n.taydennyskoulutus_instruction_suoritus_pvm | translate">
+        <app-varda-datepicker #fieldItem
+          [min]="firstAllowedDate"
+          [max]="lastAllowedDate"
+          [readonly]="limitedEditAccess"
+        formControlName='suoritus_pvm'></app-varda-datepicker>
+      </app-varda-form-field>
+
+      <app-varda-form-field name="koulutuspaivia"
+        [form]="taydennyskoulutusForm"
+        [label]="i18n.taydennyskoulutus_koulutuspaivia | translate"
+        [errorText]="i18n.taydennyskoulutus_error_koulutuspaivia | translate"
+        [instructionText]="i18n.taydennyskoulutus_instruction_koulutuspaivia | translate">
+        <input #fieldItem
+          type="number"
+          class="oph-input"
+          min="0.5"
+          max="160"
+          step="0.5"
+          [readonly]="limitedEditAccess"
+          formControlName="koulutuspaivia" />
+      </app-varda-form-field>
+
+      @if (limitedEditAccess) {
+        <div class="taydennyskoulutus-rajoitettu"
+          role="alert">
+          <mat-icon alt="">info_outlined</mat-icon>
+          {{ i18n.taydennyskoulutus_instruction_massasyotto_muokkaus_rajoitettu | translate }}
+        </div>
+      }
+
+      @if (taydennyskoulutusForm.enabled) {
+        <div
+          class="open-tyontekijat-button-row">
+          @if (!openTyontekijatBoolean) {
+            <button
+              type="button"
+              class="varda-button responsive"
+              (click)="openTyontekijatBoolean = true">
+              {{ i18n.taydennyskoulutus_valitse_osallistujat | translate }}
+            </button>
+          }
+        </div>
+      }
+
+      @if (tyontekijaList) {
+        <div class="taydennyskoulutus-osallistuja-sections clearfix"
+          >
+          <app-taydennyskoulutus-osallistuja-list [tyontekijaList]="tyontekijaList"
+            [osallistujat]="currentOsallistujat"
+            [isDisabled]="taydennyskoulutusForm.disabled"
+            [userAccess]="userAccess"
+            (selectOsallistujat)="selectOsallistujat($event)">
+          </app-taydennyskoulutus-osallistuja-list>
+          @if (userAccess.taydennyskoulutustiedot.tallentaja && openTyontekijatBoolean) {
+            <app-taydennyskoulutus-osallistuja-picker
+              [tyontekijaList]="tyontekijaList"
+              [osallistujat]="currentOsallistujat"
+              (selectOsallistujat)="selectOsallistujat($event)">
+            </app-taydennyskoulutus-osallistuja-picker>
+          }
+        </div>
+      }
+      <app-varda-error-field [errors]="taydennyskoulutusFormErrors"></app-varda-error-field>
+
+
+    </div>
+  </div>
+</form>

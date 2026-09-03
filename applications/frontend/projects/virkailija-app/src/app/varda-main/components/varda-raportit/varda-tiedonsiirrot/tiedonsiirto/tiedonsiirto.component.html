@@ -1,0 +1,309 @@
+<section class="tiedonsiirto">
+  <div class="varda-info">
+    @if (searchFilter.successful) {
+      <div
+        [innerHTML]="i18n.tiedonsiirrot_successful_instruction | translateMarkdown">
+      </div>
+    } @else {
+      <div [innerHTML]="i18n.tiedonsiirrot_unsuccessful_instruction | translateMarkdown"></div>
+    }
+  </div>
+
+  @if (toimijaAccess.oph.katselija) {
+    <app-tiedonsiirto-filter
+    [oph]="toimijaAccess.oph.katselija"></app-tiedonsiirto-filter>
+  }
+
+  <div class="varda-table-column-selector">
+    @for (column of columnFields; track column) {
+      <mat-checkbox (change)="toggleColumn()"
+        [disabled]="column.disabled || isLoading"
+        [(ngModel)]="column.selected">
+        {{ column.name | translate }}
+      </mat-checkbox>
+    }
+  </div>
+
+  <a class="varda-link oph-link float-right"
+    target="_blank"
+    href="/varda/julkinen/koodistot/vardavirheviestit">
+    {{ i18n.tiedonsiirrot_virhekoodisto_text | translate }}
+  </a>
+
+  <div class="table-responsive" #scrollContainer>
+    <table mat-table
+      #tiedonsiirtoTable
+      [dataSource]="tiedonsiirrot"
+      class="onnistuneet-tiedonsiirrot-table">
+      @if (displayedColumns.includes('timestamp')) {
+        <ng-container
+          matColumnDef="timestamp">
+          <th mat-header-cell
+            class="timestamp"
+            *matHeaderCellDef>
+            <app-tiedonsiirto-filter-header [label]="i18n.tiedonsiirrot_aikaleima"
+              [multiline]="true"
+              [formGroup]="timestampFormGroup"
+              (resetFilter)="resetTimestampFormGroup()"
+              (submitFilter)="getPage(true)">
+              <app-varda-datepicker formControlName="timestampAfter"
+                [placeholder]="i18n.tiedonsiirrot_placeholder_timestamp_after | translate"
+                [required]="true"
+                [min]="timestampAfterMin"
+                [isTouched]="timestampFormGroup.controls.timestampAfter.touched"
+                                  [errorMap]="[
+                                    { key: 'required', value: i18n.required_field },
+                                    { key: 'matDatepickerParse', value: i18n.katsele_tietoja_error_date_format },
+                                    { key: 'matDatepickerMin', value: i18n.tiedonsiirrot_timestamp_error_min }
+                                  ]"
+                (dateChange)="timestampAfterChange($event.value)">
+              </app-varda-datepicker>
+              <app-varda-datepicker formControlName="timestampBefore"
+                [placeholder]="i18n.tiedonsiirrot_placeholder_timestamp_before | translate"
+                [required]="true"
+                [min]="timestampBeforeRange.min"
+                [max]="timestampBeforeRange.max"
+                [isTouched]="timestampFormGroup.controls.timestampBefore.touched"
+                                  [errorMap]="[
+                                    { key: 'required', value: i18n.required_field },
+                                    { key: 'matDatepickerParse', value: i18n.katsele_tietoja_error_date_format },
+                                    { key: 'matDatepickerMin', value: i18n.tiedonsiirrot_timestamp_error_order },
+                                    { key: 'matDatepickerMax', value: i18n.tiedonsiirrot_timestamp_error_short }
+                                  ]">
+              </app-varda-datepicker>
+            </app-tiedonsiirto-filter-header>
+          </th>
+          <td mat-cell
+            *matCellDef="let row">
+            <span>{{ row.timestamp | vardaLongDate }}</span>
+          </td>
+        </ng-container>
+      }
+
+      @if (displayedColumns.includes('json')) {
+        <ng-container
+          matColumnDef="json">
+          <th mat-header-cell
+            *matHeaderCellDef>
+            <app-tiedonsiirto-filter-header [label]="i18n.tiedonsiirrot_json"
+              (resetFilter)="searchFilter.request_body = null"
+              (submitFilter)="getPage(true)">
+              <input type="text"
+                class="oph-input"
+                [placeholder]="i18n.tiedonsiirrot_placeholder_request_body | translate"
+                [(ngModel)]="searchFilter.request_body" />
+            </app-tiedonsiirto-filter-header>
+          </th>
+          <td mat-cell
+            *matCellDef="let row">
+            <button class="tiedonsiirto-text-button varda-text-button"
+            (click)="openJSON(row)">JSON</button>
+          </td>
+        </ng-container>
+      }
+
+      @if (displayedColumns.includes('target')) {
+        <ng-container
+          matColumnDef="target">
+          <th mat-header-cell
+            *matHeaderCellDef>
+            <app-tiedonsiirto-filter-header [label]="i18n.tiedonsiirrot_kohde"
+              (resetFilter)="searchFilter.search_target = null"
+              (submitFilter)="getPage(true)">
+              <input type="text"
+                class="oph-input"
+                [placeholder]="i18n.tiedonsiirrot_placeholder_search_target | translate"
+                [(ngModel)]="searchFilter.search_target" />
+            </app-tiedonsiirto-filter-header>
+          </th>
+          <td mat-cell
+            *matCellDef="let row">
+            @if (row.target) {
+              <span>
+                {{ row.target.sukunimi }}, {{ row.target.etunimet }} {{ row.target.henkilo_oid }}
+              </span>
+            }
+          </td>
+        </ng-container>
+      }
+
+      @if (displayedColumns.includes('request_method')) {
+        <ng-container
+          matColumnDef="request_method">
+          <th mat-header-cell
+            *matHeaderCellDef>
+            <app-tiedonsiirto-filter-header [label]="i18n.tiedonsiirrot_tyyppi"
+              (resetFilter)="searchFilter.request_method = null"
+              (submitFilter)="getPage(true)">
+              <input type="text"
+                class="oph-input"
+                [placeholder]="i18n.tiedonsiirrot_placeholder_request_method | translate"
+                [(ngModel)]="searchFilter.request_method" />
+            </app-tiedonsiirto-filter-header>
+          </th>
+          <td mat-cell
+            *matCellDef="let row">
+            {{ row.request_method | uppercase }}
+          </td>
+        </ng-container>
+      }
+
+      @if (displayedColumns.includes('request_url')) {
+        <ng-container
+          matColumnDef="request_url">
+          <th mat-header-cell
+            *matHeaderCellDef>
+            <app-tiedonsiirto-filter-header [label]="i18n.tiedonsiirrot_rajapinta"
+              (resetFilter)="searchFilter.request_url = null"
+              (submitFilter)="getPage(true)">
+              <input type="text"
+                class="oph-input"
+                [placeholder]="i18n.tiedonsiirrot_placeholder_request_url | translate"
+                [(ngModel)]="searchFilter.request_url" />
+            </app-tiedonsiirto-filter-header>
+          </th>
+          <td mat-cell
+            *matCellDef="let row"
+            class="no-wrap">
+            <span class="mr-2"
+              [class.oph-green]="row.response_code < 400"
+            [class.oph-red]="row.response_code >= 400">{{ row.response_code }}</span>
+            <span>{{ row.request_url }}</span>
+          </td>
+        </ng-container>
+      }
+
+      @if (displayedColumns.includes('error')) {
+        <ng-container
+          matColumnDef="error">
+          <th mat-header-cell
+            *matHeaderCellDef>
+            <div class="error-column">
+              <app-tiedonsiirto-filter-header [label]="i18n.tiedonsiirrot_syy"
+                (resetFilter)="searchFilter.response_body = null"
+                (submitFilter)="getPage(true)">
+                <input type="text"
+                  class="oph-input"
+                  [placeholder]="i18n.tiedonsiirrot_placeholder_response_body | translate"
+                  [(ngModel)]="searchFilter.response_body" />
+              </app-tiedonsiirto-filter-header>
+              <button class="tiedonsiirto-text-button varda-text-button ml-4"
+                (click)="toggleReasonsExpand()">
+                @if (!expandResponse) {
+                  <span>{{ i18n.show | translate }}</span>
+                  <mat-icon aria-ignore>switch_left</mat-icon>
+                } @else {
+                  <span>{{ i18n.hide | translate }}</span>
+                  <mat-icon aria-ignore>switch_right</mat-icon>
+                }
+              </button>
+            </div>
+          </th>
+          <td mat-cell
+            *matCellDef="let row">
+            <div class="tiedonsiirto-error-grid">
+              @for (response of row.response_list; track response) {
+                <div>{{ response.error_code }}</div>
+                <div>{{ response.field }}</div>
+                <div [class.expanded-grid]="response.expand">
+                  @if (response.expand) {
+                    <span
+                      [libKoodistoValue]="koodistoEnum.virhe">
+                      {{ response.error_code }}
+                    </span>
+                  }
+                </div>
+                <div>
+                  @if (!response.expand && !expandResponse) {
+                    <button class="tiedonsiirto-text-button varda-text-button"
+                    (click)="response.expand = true">{{ i18n.show | translate }}</button>
+                  }
+                  @if (response.expand && !expandResponse) {
+                    <button
+                      class="tiedonsiirto-text-button varda-text-button"
+                    (click)="response.expand = false">{{ i18n.hide | translate }}</button>
+                  }
+                </div>
+              }
+            </div>
+          </td>
+        </ng-container>
+      }
+
+      @if (displayedColumns.includes('username')) {
+        <ng-container
+          matColumnDef="username">
+          <th mat-header-cell
+            *matHeaderCellDef>
+            <app-tiedonsiirto-filter-header [label]="i18n.tiedonsiirrot_kayttaja"
+              (resetFilter)="searchFilter.username = null"
+              (submitFilter)="getPage(true)">
+              <input type="text"
+                class="oph-input"
+                [placeholder]="i18n.tiedonsiirrot_placeholder_username | translate"
+                [(ngModel)]="searchFilter.username" />
+            </app-tiedonsiirto-filter-header>
+          </th>
+          <td mat-cell
+            class="no-wrap"
+          *matCellDef="let row"> {{ row.username }} </td>
+        </ng-container>
+      }
+
+      @if (displayedColumns.includes('lahdejarjestelma')) {
+        <ng-container
+          matColumnDef="lahdejarjestelma">
+          <th mat-header-cell
+            *matHeaderCellDef>
+            <app-tiedonsiirto-filter-header [label]="i18n.lahdejarjestelma"
+              [multiline]="true"
+              [hideSearchButton]="true"
+              (resetFilter)="searchFilter.lahdejarjestelma = null">
+              @if (lahdejarjestelmaKoodisto | async; as lahdejarjestelmat) {
+                <select
+                  class="oph-input oph-select"
+                  (change)="getPage(true)"
+                  [(ngModel)]="searchFilter.lahdejarjestelma">
+                  <option [ngValue]="null">{{ i18n.tiedonsiirrot_kaikki_lahdejarjestelmat | translate }}</option>
+                  @for (lahdejarjestelmaOption of lahdejarjestelmat.codes; track lahdejarjestelmaOption) {
+                    <option
+                      [value]="lahdejarjestelmaOption.code_value">
+                      {{ lahdejarjestelmaOption.name }} ({{ lahdejarjestelmaOption.code_value }})
+                    </option>
+                  }
+                </select>
+              }
+            </app-tiedonsiirto-filter-header>
+          </th>
+          <td mat-cell
+            class="no-wrap"
+            [libKoodistoValue]="koodistoEnum.lahdejarjestelma"
+            format="long"
+          *matCellDef="let row">{{ row.lahdejarjestelma }}</td>
+        </ng-container>
+      }
+
+      <tr mat-header-row
+      *matHeaderRowDef="displayedColumns"></tr>
+      <tr mat-row
+      *matRowDef="let row; columns: displayedColumns;"></tr>
+    </table>
+    @if (tiedonsiirrot?.data.length === 0) {
+      <div class="ml-1"
+      >{{ i18n.yksiloimattomat_ei_hakutuloksia | translate }}</div>
+    }
+    @if (isLoading) {
+      <mat-progress-bar
+        mode="indeterminate"
+      color="accent"></mat-progress-bar>
+    }
+    <app-varda-error-field [errors]="formErrors"></app-varda-error-field>
+
+    <mat-paginator [disabled]="isLoading"
+      [length]="resultCount"
+      [pageSize]="searchFilter.page_size"
+      (page)="changePage($event)"
+      #tiedonsiirtoPaginator>
+    </mat-paginator>
+  </div>
+</section>

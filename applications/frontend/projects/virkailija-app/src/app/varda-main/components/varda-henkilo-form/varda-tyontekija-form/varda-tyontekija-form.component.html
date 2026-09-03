@@ -1,0 +1,55 @@
+@if (toimipaikkaAccess?.tyontekijatiedot.katselija || toimipaikkaAccess?.taydennyskoulutustiedot.katselija) {
+  <div class="modal-form-intro"
+    aria-role="info"
+    [innerHTML]="i18n.tyontekija_instruction | translateMarkdown">
+  </div>
+  <app-varda-error-field [errors]="tyontekijaFormErrors"></app-varda-error-field>
+  <form class="henkilo-perustiedot">
+    <h2 class="varda-fieldset-legend">{{ i18n.perustiedot | translate}}</h2>
+    @if (henkilo.turvakielto) {
+      <div class="alert-container"
+        >
+        <mat-icon>visibility</mat-icon> {{i18n.turvakielto | translate}}
+      </div>
+    }
+    <div class="oph-field oph-field-inline">
+      <label class="oph-label">{{ i18n.nimi | translate }}:</label>
+      <span>{{henkilo.sukunimi}}, {{henkilo.etunimet}}</span>
+    </div>
+    <div class="oph-field oph-field-inline">
+      <label class="oph-label">{{ i18n.syntymapaiva | translate }}:</label>
+      <span>{{henkilo.syntyma_pvm | vardaDate}}</span>
+    </div>
+    <div class="oph-field oph-field-inline">
+      <label class="oph-label">{{ i18n.oppijanumero | translate }}:</label>
+      <span>{{henkilo.henkilo_oid}}</span>
+    </div>
+  </form>
+  <app-varda-tyontekija-tutkinto [toimipaikkaAccess]="toimipaikkaAccess"
+    [henkilonToimipaikka]="henkilonToimipaikka"
+    [henkilo]="henkilo"
+    [tyontekija]="tyontekija"
+    (updateTyontekija)="updateTyontekija($event)">
+  </app-varda-tyontekija-tutkinto>
+  @if (tyontekijaKooste) {
+    <app-varda-tyontekija-extra [toimipaikkaAccess]="toimipaikkaAccess"></app-varda-tyontekija-extra>
+    @if (tyontekijaKooste.tutkinnot.length ||
+      (!toimipaikkaAccess.tyontekijatiedot.katselija && toimipaikkaAccess.taydennyskoulutustiedot.katselija)) {
+      <app-varda-palvelussuhteet [henkilonToimipaikka]="henkilonToimipaikka"
+        [toimipaikkaAccess]="toimipaikkaAccess">
+      </app-varda-palvelussuhteet>
+      <app-varda-tyontekija-taydennyskoulutukset [toimipaikkaAccess]="toimipaikkaAccess">
+      </app-varda-tyontekija-taydennyskoulutukset>
+    }
+    @if (toimipaikkaAccess.tyontekijatiedot.tallentaja) {
+      <app-varda-error-field [errors]="deleteTyontekijaErrors"></app-varda-error-field>
+      @if (tyontekija?.id) {
+        <app-varda-delete-henkilo
+          [instructionText]="i18n.tyontekija_instruction_delete | translateMarkdown"
+          [deleteText]="i18n.henkilo_poista_tyontekija | translate"
+          (deleteAction)="deleteTyontekija()">
+        </app-varda-delete-henkilo>
+      }
+    }
+  }
+}

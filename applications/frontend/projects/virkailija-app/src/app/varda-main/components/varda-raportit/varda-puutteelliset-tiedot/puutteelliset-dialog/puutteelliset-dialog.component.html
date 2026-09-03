@@ -1,0 +1,18 @@
+<div class="puutteelliset-dialog-header" role="alertdialog">
+  <mat-icon aria-ignore="true" class="text-warning">warning</mat-icon>
+  <button type="button"
+          mat-dialog-close
+          class="btn-close float-end"
+          [attr.aria-label]="i18n.close | translate">
+  </button>
+</div>
+<div class="puutteelliset-dialog-content">
+  <h2 class="oph-h3 oph-bold"
+      mat-dialog-title>{{ i18n.puutteelliset_tiedot_dialog_header | translate }}</h2>
+  <mat-dialog-content>{{ i18n.puutteelliset_tiedot_dialog_content | translate }}</mat-dialog-content>
+  <button routerLink="/raportit"
+          mat-dialog-close
+          class="varda-button varda-button-primary responsive">
+    {{ i18n.puutteelliset_tiedot_dialog_button | translate }}
+  </button>
+</div>

@@ -1,0 +1,51 @@
+<mat-expansion-panel [expanded]="first"
+  class="tyontekija padded-panel">
+  <mat-expansion-panel-header class="bold">
+    <mat-panel-title>
+      {{ tyontekija.vakajarjestaja_nimi }} ({{ tyontekija.palvelussuhteet.length }})
+    </mat-panel-title>
+    <mat-panel-description>
+      <div class="subheader">({{tyontekija.vakajarjestaja_oid}})</div>
+    </mat-panel-description>
+  </mat-expansion-panel-header>
+
+  <app-tutkinnot [tutkinnot]="tyontekija.tutkinnot"></app-tutkinnot>
+
+  <h3>{{ i18n.palvelussuhteet | translate }} ({{ tyontekija.palvelussuhteet.length }})</h3>
+
+  @if (tyontekija.palvelussuhteet?.length > 1) {
+    <div class="green-info"
+      [innerHTML]="i18n.info_palvelussuhteet | translateMarkdown">
+    </div>
+  }
+
+  @if (!tyontekija.palvelussuhteet.length) {
+    <div
+    class="no-results">{{ i18n.palvelussuhteet_ei_palvelussuhteita | translate }}</div>
+  }
+  <mat-accordion>
+    @for (palvelussuhde of tyontekija.palvelussuhteet; track palvelussuhde) {
+      <app-palvelussuhde
+      [palvelussuhde]="palvelussuhde"></app-palvelussuhde>
+    }
+  </mat-accordion>
+
+  <h3>{{ i18n.taydennyskoulutukset | translate }} ({{ tyontekija.taydennyskoulutukset.length }})</h3>
+  <div class="green-info"
+    [innerHTML]="i18n.info_taydennyskoulutukset | translateMarkdown">
+  </div>
+  @if (!tyontekija.taydennyskoulutukset.length) {
+    <div
+    class="no-results">{{ i18n.taydennyskoulutukset_ei_taydennyskoulutuksia | translate }}</div>
+  }
+  <mat-accordion>
+    @for (taydennyskoulutus of tyontekija.taydennyskoulutukset; track taydennyskoulutus) {
+      <app-taydennyskoulutus
+      [taydennyskoulutus]="taydennyskoulutus"></app-taydennyskoulutus>
+    }
+  </mat-accordion>
+
+  <button class="onko-tiedoissa-virhe"
+    (click)="openDialog(tyontekija)">{{ i18n.varhaiskasvatuspaatos_onko_tiedoissa_virhe | translate}}
+  </button>
+</mat-expansion-panel>

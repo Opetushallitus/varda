@@ -1,0 +1,27 @@
+<main class="tiedonsiirrot-section">
+  <mat-button-toggle-group class="tiedonsiirrot-navi"
+                           aria-role="navigation"
+                           name="tiedonsiirtoType"
+                           [value]="activeLink"
+                           [attr.aria-label]="i18n.tiedonsiirrot_navigointi_label | translate">
+    <mat-button-toggle routerLink="yhteenveto"
+                       value="yhteenveto">
+      <mat-icon aria-ignore>list_alt</mat-icon>
+      {{ i18n.tiedonsiirrot_yhteenveto | translate }}
+    </mat-button-toggle>
+    <mat-button-toggle routerLink="onnistuneet"
+                       value="onnistuneet">
+      <mat-icon aria-ignore
+                class="oph-green">done_outline</mat-icon>
+      {{ i18n.tiedonsiirrot_onnistuneet | translate }}
+    </mat-button-toggle>
+    <mat-button-toggle routerLink="epaonnistuneet"
+                       value="epaonnistuneet">
+      <mat-icon aria-ignore
+                class="oph-red">error_outline</mat-icon>
+      {{ i18n.tiedonsiirrot_epaonnistuneet | translate }}
+    </mat-button-toggle>
+  </mat-button-toggle-group>
+
+  <router-outlet></router-outlet>
+</main>

@@ -1,0 +1,83 @@
+.varda-main-frame-henkilo-section-container {
+  display: flex;
+  justify-content: space-between;
+}
+
+.varda-main-frame-henkilo-section-container>* {
+  display: block;
+  width: 100%;
+  margin-bottom: 1em;
+}
+
+.varda-main-frame-henkilo-section-container>*:nth-child(2) {
+  margin-left: 1em;
+}
+
+
+.henkilo-section-header {
+  display: flex;
+  flex-wrap: wrap-reverse;
+  justify-content: space-between;
+  margin-bottom: 1em;
+}
+
+.addBtn {
+  align-self: center;
+}
+
+.henkilo-section-filter {
+  display: flex;
+  gap: 0rem 1rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.henkilo-section-filter .checkbox-filter {
+  display: flex;
+  flex-direction: column;
+}
+
+.mat-mdc-progress-bar {
+  margin: 1em auto;
+}
+
+@media (max-width: 992px) {
+  .varda-main-frame-henkilo-section-container {
+    flex-direction: column;
+  }
+
+  .varda-main-frame-henkilo-section-container>*:nth-child(2) {
+    margin-left: 0;
+  }
+}
+
+/* styles for list items used in henkilo-list and toimipaikka-list */
+.list-item {
+  user-select: none;
+  cursor: pointer;
+  display: flex;
+}
+
+.list-item:hover:not(.disabled) {
+  background: var(--black);
+  color: var(--white);
+}
+
+.list-item.disabled {
+  color: var(--gray-lighten-1);
+  cursor: unset;
+}
+
+ .list-item > .list-item-icon {
+   width: 2em;
+}
+
+.list-item > td {
+  padding: 0.25em;
+  align-self: center;
+}
+
+.list-item.disabled,
+.list-item.sub-item {
+  background-color: var(--gray-lighten-5);
+}

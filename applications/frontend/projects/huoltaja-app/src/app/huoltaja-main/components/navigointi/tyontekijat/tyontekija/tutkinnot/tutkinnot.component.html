@@ -1,0 +1,27 @@
+<div class="tutkinnot">
+  <div class="section-header">
+    <h3>{{ i18n.tutkinnot | translate }} ({{tutkinnot.length}})</h3>
+    <span class="button-group">
+      <button [matTooltip]="i18n.tooltip_tutkinnot | translate"
+        matTooltipClass="tooltip"
+        #tutkintoTooltipButton="matTooltip"
+        (click)="tutkintoTooltipButton.toggle()"
+        (mouseenter)="$event.stopImmediatePropagation()"
+        (mouseleave)="$event.stopImmediatePropagation()">
+        <mat-icon alt="">help_outline</mat-icon>
+      </button>
+    </span>
+  </div>
+
+  <mat-list role="list">
+    @for (tutkinto of tutkinnot; track tutkinto) {
+      <mat-list-item role="listitem">
+        <div>
+          <mat-icon aria-ignore>school</mat-icon>
+          <span [libKoodistoValue]="koodistoEnum.tutkinto"
+          format="long">{{ tutkinto.tutkinto_koodi }}</span>
+        </div>
+      </mat-list-item>
+    }
+  </mat-list>
+</div>

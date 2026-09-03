@@ -1,0 +1,48 @@
+<div class="modal fade"
+  [id]="identifier"
+  #vardamodal
+  tabindex="-1"
+  role="dialog"
+  [attr.aria-labelledby]="'vardaModalTitleLabel' + identifier"
+  [attr.aria-hidden]="true">
+  <div class="modal-dialog"
+    [ngClass]="{'modal-lg': isLg, 'modal-xl': isXl}"
+    role="document">
+    <div class="modal-content varda-modal-content"
+      appHighContrast>
+      <!-- ng-content needs to be visible on construct, so initial *ngIf="false" is invalid -->
+      @if (!showPrompt) {
+        <ng-content></ng-content>
+      }
+    </div>
+  </div>
+  @if (showPrompt) {
+    <div [id]="'vardaPromptModal' + identifier"
+      #vardaPromptModal
+      class="varda-prompt-modal"
+      role="alertdialog"
+      aria-describedby="vardaPromptModalDesc">
+      <div class="varda-prompt-modal-content">
+        <div>
+          <h2 id="vardaPromptModalDesc">{{ i18n.form_exit_prompt | translate}}</h2>
+        </div>
+        <div class="varda-prompt-modal-btn-wrapper">
+          <div>
+            <button class="varda-button varda-button-neutral prompt-no"
+              id="vardaPromptModalStay"
+              (click)="stayOnForm()"
+              (keydown.tab)="moveToLeave()"
+            (keydown.shift.tab)="moveToLeave()">{{ i18n.cancel | translate}}</button>
+          </div>
+          <div>
+            <button class="varda-button varda-button-neutral prompt-yes"
+              id="vardaPromptModalLeave"
+              (click)="leaveFormByPrompt()"
+              (keydown.tab)="moveToCancel()"
+            (keydown.shift.tab)="moveToCancel()">{{ i18n.form_leave | translate}}</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  }
+</div>

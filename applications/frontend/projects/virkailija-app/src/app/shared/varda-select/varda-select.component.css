@@ -1,0 +1,13 @@
+
+.transparent-disable.mat-mdc-select-disabled {
+  border-width: 0;
+  box-shadow: none;
+}
+
+.transparent-disable.mat-mdc-select-disabled .mat-mdc-select-value {
+  color: var(--black);
+}
+
+.transparent-disable.mat-mdc-select-disabled .mat-mdc-select-arrow-wrapper{
+  display: none;
+}

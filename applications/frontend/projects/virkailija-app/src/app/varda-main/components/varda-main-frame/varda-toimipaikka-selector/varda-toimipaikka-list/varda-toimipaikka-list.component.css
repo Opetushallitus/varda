@@ -1,0 +1,9 @@
+#toimipaikkaSelectionList {
+  width: 100%;
+}
+
+.toimipaikka-list-item {
+  user-select: none;
+  cursor: pointer;
+  display: flex;
+}

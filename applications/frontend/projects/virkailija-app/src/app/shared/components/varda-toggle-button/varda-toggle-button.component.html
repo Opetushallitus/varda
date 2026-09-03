@@ -1,0 +1,12 @@
+<button mat-button class="varda-button secondary">
+  @if (isUp) {
+    <span>{{showTextKey || i18n.show | translate}}</span>
+    }@if (isUp) {
+    <i class="material-icons" alt="">arrow_drop_down</i>
+  }
+  @if (!isUp) {
+    <span>{{hideTextKey || i18n.hide | translate}}</span>
+    }@if (!isUp) {
+    <i class="material-icons" alt="">arrow_drop_up</i>
+  }
+</button>

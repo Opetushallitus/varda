@@ -1,0 +1,31 @@
+<th scope="row"
+class="mat-cell">{{ header | translate }}</th>
+@if (content) {
+  @if (!koodisto) {
+    <td
+    class="mat-cell content">{{ content | translate }}</td>
+  }
+  @if (koodisto) {
+    <td
+      [libKoodistoValue]="koodisto"
+      [format]="format"
+    class="mat-cell content">{{ content | translate }}</td>
+  }
+} @else {
+  <td class="mat-cell content">
+    <ng-content></ng-content>
+  </td>
+}
+<td class="mat-cell tooltip">
+  @if (tooltip) {
+    <button
+      [matTooltip]="tooltip | translate"
+      matTooltipClass="tooltip"
+      #tooltipButton="matTooltip"
+      (click)="tooltipButton.toggle()"
+      (mouseenter)="$event.stopImmediatePropagation()"
+      (mouseleave)="$event.stopImmediatePropagation()">
+      <mat-icon alt="">help_outline</mat-icon>
+    </button>
+  }
+</td>

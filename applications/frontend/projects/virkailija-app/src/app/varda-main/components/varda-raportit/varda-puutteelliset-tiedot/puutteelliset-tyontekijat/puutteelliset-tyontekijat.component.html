@@ -1,0 +1,130 @@
+<section class="henkilo-section varda-page-content">
+  <div class="henkilo-section-header">
+    <h3 class="oph-h4 oph-bold">
+      {{ i18n.henkilo_tyontekijat | translate }}
+      @if (searchFilter.count) {
+        <span
+          class="henkilo-section-header-counter">
+          ({{ searchFilter.count }})
+        </span>
+      }
+    </h3>
+  </div>
+
+  <div class="row puutteelliset-filter margin-bottom">
+    <div class="col-sm col-lg-5">
+      <label for="puutteellinenSearchInput"
+      class="oph-bold">{{i18n.katsele_tietoja_nimi_tunniste | translate}}</label>
+      <input class="oph-input"
+        name="puutteellinenSearchInput"
+        id="puutteellinenSearchInput"
+        type="text"
+        [placeholder]="i18n.henkilo_hae_nimella | translate"
+        [(ngModel)]="searchFilter.search"
+        (keydown.enter)="searchErrors()">
+    </div>
+  </div>
+  <div class="row puutteelliset-filter margin-bottom">
+    <div class="col-sm col-md-5 margin-top-sm">
+      <label for="puutteellinenSearchInput"
+      class="oph-bold">{{i18n.puutteelliset_tiedot_select_error | translate}}</label>
+      <button mat-icon-button
+        class="varda-info-button"
+        [matTooltip]="i18n.puutteelliset_tiedot_tooltip_search | translate"
+        matTooltipClass="varda-tooltip"
+        aria-label="puutteelliset tiedot ohje">
+        <mat-icon alt="">info</mat-icon>
+      </button>
+      <mat-form-field class="error-code-chip-list" subscriptSizing="dynamic">
+        <mat-label>{{i18n.puutteelliset_tiedot_select_error | translate}}</mat-label>
+        <mat-chip-grid #chipGrid aria-label="Fruit selection">
+          @for (errorCode of selectedErrorCodes; track errorCode) {
+            <mat-chip-row (removed)="remove(errorCode)">
+              {{errorCode}}
+              <button matChipRemove [attr.aria-label]="'remove ' + errorCode">
+                <mat-icon>cancel</mat-icon>
+              </button>
+            </mat-chip-row>
+          }
+        </mat-chip-grid>
+        <input placeholder="-- {{ i18n.search | translate }} --" #errorCodeInput [formControl]="errorCodeCtrl"
+          [matChipInputFor]="chipGrid" [matAutocomplete]="auto"
+          [matChipInputSeparatorKeyCodes]="separatorKeysCodes"
+          (matChipInputTokenEnd)="add($event)"/>
+        <mat-autocomplete #auto="matAutocomplete" (optionSelected)="selected($event)">
+          @for (errorCode of filteredErrorCodes | async; track errorCode) {
+            <mat-option
+              [value]="errorCode">{{errorCode}} -
+              <span [libKoodistoValue]="koodistoEnum.virhe">{{errorCode | truncateWords:4}}</span>
+            </mat-option>
+          }
+        </mat-autocomplete>
+      </mat-form-field>
+    </div>
+    <div class="col-sm-auto varda-theme">
+      <mat-checkbox name="displayAllCheckbox"
+        class="varda-checkbox"
+        labelPosition="after"
+        [(ngModel)]="excludeErrorCodes">
+        <span class="oph-bold">{{i18n.puutteelliset_tiedot_exclude | translate}}</span>
+      </mat-checkbox>
+    </div>
+  </div>
+  @if (filteredRows.length > 0) {
+    <div class="row puutteelliset-specific-filter mb-2">
+      <div class="col">
+        <h4 class="oph-h4 oph-bold">{{i18n.puutteelliset_tiedot_filtered_rows | translate}}</h4>
+        <mat-chip-listbox aria-label="Filtered rows">
+          @for (row of filteredRows; track row) {
+            <mat-chip (removed)="removeFilteredRowChip(row)">
+              {{row.etunimet}} {{row.sukunimi}}
+              <button matChipRemove [attr.aria-label]="'remove ' + row.nimi">
+                <mat-icon>cancel</mat-icon>
+              </button>
+            </mat-chip>
+          }
+        </mat-chip-listbox>
+      </div>
+    </div>
+  }
+  <div class="row puutteelliset-filter margin-bottom">
+    <div class="col-sm-auto">
+      <button class="varda-button varda-icon-button margin-top-sm"
+        type="button"
+        (click)="searchErrors()">
+        <mat-icon alt="">search</mat-icon>
+        {{i18n.search | translate}}
+      </button>
+    </div>
+  </div>
+
+  @if (henkilot?.length === 0) {
+    <div
+      class="varda-muted">
+      {{ i18n.henkilo_toimipaikasta_ei_loydy_tyontekijoita | translate }}
+    </div>
+  }
+
+  @if (!henkilot && isLoading | async) {
+    <mat-progress-bar
+    mode="indeterminate"></mat-progress-bar>
+  }
+
+  <app-varda-error-field [errors]="formErrors"></app-varda-error-field>
+
+  @if (henkilot?.length > 0) {
+    <app-puutteelliset-list (errorClicked)="errorClicked($event)"
+      (filterClicked)="filterClicked($event)"
+      [errorList]="henkilot">
+    </app-puutteelliset-list>
+    @if (searchFilter.count) {
+      <mat-paginator
+        [disabled]="isLoading | async"
+        [length]="searchFilter.count"
+        [pageSize]="searchFilter.page_size"
+        [pageIndex]="searchFilter.page - 1"
+        (page)="searchErrors($event)">
+      </mat-paginator>
+    }
+  }
+</section>

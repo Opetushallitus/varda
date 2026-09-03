@@ -1,0 +1,31 @@
+.paos-add-toiminta-list-result-wrapper {
+  display: flex;
+  flex-flow: wrap;
+}
+
+.paos-add-toiminta-list-result-wrapper:hover {
+  background-color: var(--blue-darken-1);
+  color: var(--white);
+}
+
+.paos-add-toiminta-list-result-wrapper:hover h6 {
+  color: var(--white);
+}
+
+.paos-add-toiminta-list-result-wrapper:not(:last-child) {
+  border-bottom: 2px solid var(--gray-lighten-3);
+}
+
+.paos-add-toiminta-list-result-column {
+  flex: 1 0 0;
+  border: 3px solid transparent;
+}
+
+.paos-add-toiminta-list-result-middle {
+  display: flex;
+  align-items: center;
+}
+
+.paos-add-toiminta-list-result-column-wide {
+  flex: 2 0 0;
+}

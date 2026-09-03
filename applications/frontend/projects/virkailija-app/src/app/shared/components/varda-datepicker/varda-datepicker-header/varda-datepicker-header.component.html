@@ -1,0 +1,31 @@
+<!-- https://github.com/angular/components/blob/aca253350c166fe1c04fbdcc75238647c8cd244f/src/material/datepicker/calendar-header.html -->
+<!-- https://github.com/angular/components/pull/29957/files -->
+<div class="mat-calendar-header">
+  <div class="mat-calendar-controls">
+    <button mat-button type="button" class="mat-calendar-period-button"
+            (click)="currentPeriodClicked()" [attr.aria-label]="periodButtonLabel">
+      {{periodButtonText}}
+      <div class="mat-calendar-arrow"
+           [class.mat-calendar-invert]="calendar.currentView !== 'month'"></div>
+    </button>
+
+    <div class="mat-calendar-spacer"></div>
+
+    <ng-content></ng-content>
+
+    <button mat-icon-button type="button" class="mat-calendar-previous-button"
+            [disabled]="!previousEnabled()" (click)="previousClicked()"
+            [attr.aria-label]="prevButtonLabel">
+      <svg viewBox="0 0 24 24" focusable="false" aria-hidden="true">
+        <path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/>
+      </svg>
+    </button>
+    <button mat-icon-button type="button" class="mat-calendar-next-button"
+            [disabled]="!nextEnabled()" (click)="nextClicked()"
+            [attr.aria-label]="nextButtonLabel">
+      <svg viewBox="0 0 24 24" focusable="false" aria-hidden="true">
+        <path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/>
+      </svg>
+    </button>
+  </div>
+</div>

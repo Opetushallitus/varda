@@ -1,0 +1,14 @@
+.taydennyskoulutus-rajoitettu {
+  margin-top: 2rem;
+  padding: 1rem;
+  background-color: var(--blue-lighten-3);
+}
+
+.taydennyskoulutus-rajoitettu>mat-icon {
+  margin-right: 1rem;
+}
+
+.headerTaydennyskoulutusId {
+  margin-left: 1em;
+  white-space: nowrap;
+}
