@@ -1,0 +1,144 @@
+@if (formGroup) {
+  <div [id]="'kielipainotus_'+ currentObject?.id"
+    class="painotus">
+    <app-robo-id [tunniste]="currentObject?.id"
+      nimi="kielipainotus"
+      [alkamis_pvm]="currentObject?.alkamis_pvm"
+    [paattymis_pvm]="currentObject?.paattymis_pvm"></app-robo-id>
+    <mat-expansion-panel #matPanel
+      [hideToggle]="savePending"
+      (opened)="togglePanel(true)"
+      (closed)="togglePanel(false)">
+      <mat-expansion-panel-header>
+        @if (currentObject) {
+          <mat-panel-title>
+            <app-varda-form-error-icon [errors]="errorList"></app-varda-form-error-icon>
+            <span [libKoodistoValue]="koodistoEnum.kieli"
+            format="long">{{ currentObject.kielipainotus_koodi }}</span>&nbsp;
+            @if (!currentObject.paattymis_pvm) {
+              <span>
+                {{ i18n.alkaen_PVM | translate: {pvm: currentObject.alkamis_pvm | vardaDate} }}
+              </span>
+            } @else {
+              <span>{{currentObject.alkamis_pvm | vardaDate }} - {{currentObject.paattymis_pvm | vardaDate }}</span>
+            }
+            <app-varda-timestamp [dateAdded]="currentObject.luonti_pvm" [dateChanged]="currentObject.muutos_pvm"></app-varda-timestamp>
+          </mat-panel-title>
+        } @else {
+          <mat-panel-title>
+            {{ i18n.painotukset_lisaa_kielipainotus | translate }}
+          </mat-panel-title>
+        }
+      </mat-expansion-panel-header>
+      <form [formGroup]="formGroup"
+        autocomplete="off"
+        (submit)="savePainotus(formGroup)">
+        <app-varda-form-error-list [errors]="errorList"></app-varda-form-error-list>
+        <app-varda-form-field name="kielipainotus_koodi"
+          [form]="formGroup"
+          [label]="i18n.painotukset_kielipainotus_koodi | translate"
+          [errorText]="i18n.painotukset_error_kielipainotus_koodi | translate"
+          [instructionText]="i18n.painotukset_instruction_kielipainotus_koodi | translate">
+          <app-varda-select>
+            <mat-select #fieldItem
+              placeholder="-- {{ i18n.choose | translate }} --"
+              class="oph-input oph-select"
+              formControlName="kielipainotus_koodi">
+              <mat-optgroup [label]="i18n.painotukset_kielipainotus_yleiset | translate">
+                @for (option of kielikoodisto; track option; let index = $index) {
+                  @if (index < 10) {
+                    <mat-option
+                      [value]="option.code_value"
+                      [libKoodistoValue]="koodistoEnum.kieli"
+                      format="long">
+                      {{ option.code_value }}
+                    </mat-option>
+                  }
+                }
+              </mat-optgroup>
+              <mat-optgroup [label]="i18n.painotukset_kielipainotus_muut | translate">
+                @for (option of kielikoodisto; track option; let index = $index) {
+                  @if (index >= 10) {
+                    <mat-option
+                      [value]="option.code_value"
+                      [libKoodistoValue]="koodistoEnum.kieli"
+                      format="long">
+                      {{ option.code_value }}
+                    </mat-option>
+                  }
+                }
+              </mat-optgroup>
+            </mat-select>
+          </app-varda-select>
+        </app-varda-form-field>
+        <app-varda-form-field name="kielipainotustyyppi_koodi"
+          [form]="formGroup"
+          [label]="i18n.painotukset_kielipainotustyyppi_koodi | translate"
+          [errorText]="i18n.painotukset_error_kielipainotustyyppi_koodi | translate"
+          [instructionText]="i18n.painotukset_instruction_kielipainotustyyppi_koodi | translate">
+          <div class="oph-select-container" [attr.disabled]="!!formGroup.controls.kielipainotustyyppi_koodi.disabled">
+            <select #fieldItem
+              class="oph-input oph-select"
+              formControlName="kielipainotustyyppi_koodi">
+              <option [ngValue]="null" disabled selected>-- {{ i18n.choose | translate }} --</option>
+              @for (code of kielipainotustyyppikoodisto; track code) {
+                <option
+                  [value]="code.code_value"
+                  [title]="code.name">
+                  <span [libKoodistoValue]="koodistoEnum.kielipainotustyyppi" format="long">{{ code.code_value }}</span>
+                </option>
+              }
+            </select>
+          </div>
+        </app-varda-form-field>
+        <app-varda-form-field name="alkamis_pvm"
+          [form]="formGroup"
+          [label]="i18n.painotukset_kielipainotus_alkamis_pvm | translate"
+          [errorText]="i18n.painotukset_kielipainotus_error_alkamis_pvm | translate"
+                              [errorMap]="[
+                              { key: 'matDatepickerMin', value: i18n.painotukset_kielipainotus_error_min_alkamis_pvm },
+                              { key: 'matDatepickerMax', value: i18n.painotukset_kielipainotus_error_max_alkamis_pvm }
+                              ]"
+          [instructionText]="i18n.painotukset_kielipainotus_instruction_alkamis_pvm | translate">
+          <app-varda-datepicker #fieldItem
+            [min]="startDateRange.min"
+            [max]="startDateRange.max"
+            (dateChange)="startDateChange($event.value)"
+          formControlName='alkamis_pvm'></app-varda-datepicker>
+        </app-varda-form-field>
+        <app-varda-form-field name="paattymis_pvm"
+          [form]="formGroup"
+          [label]="i18n.painotukset_kielipainotus_paattymis_pvm | translate"
+          [errorText]="i18n.painotukset_kielipainotus_error_paattymis_pvm | translate"
+                              [errorMap]="[
+                              { key: 'matDatepickerMin', value: i18n.painotukset_kielipainotus_error_min_paattymis_pvm },
+                              { key: 'matDatepickerMax', value: i18n.painotukset_kielipainotus_error_max_paattymis_pvm }
+                              ]"
+          [instructionText]="i18n.painotukset_kielipainotus_instruction_paattymis_pvm | translate">
+          <app-varda-datepicker #fieldItem
+            [min]="endDateRange.min"
+            [max]="endDateRange.max"
+          formControlName='paattymis_pvm'></app-varda-datepicker>
+        </app-varda-form-field>
+        <app-varda-error-field [errors]="formErrors"></app-varda-error-field>
+        @if (savePending) {
+          <div class="save-pending"
+            >
+            <mat-icon alt="">warning</mat-icon>
+            {{ i18n.painotukset_kielipainotus_save_pending | translate }}
+          </div>
+        }
+        @if (!savePending) {
+          <app-varda-action-row
+            [saveDisabled]="formGroup.pristine || isSubmitting"
+            [saveAccess]="saveAccess"
+            [formExists]="!!currentObject"
+            [isEdit]="isEdit"
+            (togglePanel)="togglePanel($event)"
+            (deleteForm)="deletePainotus()"
+          (enableEdit)="enableForm()"></app-varda-action-row>
+        }
+      </form>
+    </mat-expansion-panel>
+  </div>
+}

@@ -1,0 +1,20 @@
+import { Component, Input } from '@angular/core';
+import { HuoltajaTranslations } from 'projects/huoltaja-app/src/assets/i18n/translations.enum';
+import { KoodistoEnum } from 'varda-shared';
+
+@Component({
+    selector: 'app-table-row',
+    templateUrl: './table-row.component.html',
+    styleUrls: ['./table-row.component.css'],
+    standalone: false
+})
+export class TableRowComponent {
+  @Input() header: string;
+  @Input() tooltip: string;
+  @Input() content: string;
+  @Input() koodisto: KoodistoEnum;
+  @Input() format: 'short' | 'long' = 'short';
+  i18n = HuoltajaTranslations;
+
+  constructor() { }
+}

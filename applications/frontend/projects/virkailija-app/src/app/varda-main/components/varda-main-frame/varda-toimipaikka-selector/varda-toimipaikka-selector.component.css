@@ -1,0 +1,107 @@
+.toimipaikka-selector-top {
+  display: flex;
+  justify-content: space-between;
+  flex-direction: row-reverse;
+  margin-bottom: 1em;
+  flex-wrap: wrap;
+}
+
+.toimipaikka-selector-top>* {
+  flex: 1 1 500px;
+}
+
+.toimipaikka-selector-top>.toimipaikka-selector-navi {
+  justify-content: flex-end;
+  display: flex;
+  min-width: 650px;
+}
+
+.toimipaikka-selector-top>.toimipaikka-selector-navi>a {
+  color: var(--link-color);
+}
+
+.toimipaikka-selector-top>.toimipaikka-selector-navi>a:hover {
+  color: var(--link-color-hover);
+}
+
+.toimipaikka-selector-top>.toimipaikka-selector-navi>a:not(:last-child) {
+  margin-right: 1em;
+}
+
+.toimipaikka-selector-label {
+  display: flex;
+  align-items: center;
+  width: 100%;
+
+  .addBtn {
+    margin-left: auto;
+  }
+
+  .toimipaikka-number {
+    margin-left: 0.5em;
+  }
+}
+
+.toimipaikka-selector {
+  margin: 1em 0 0 0;
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  flex-direction: column;
+}
+
+.toimipaikka-selector>* {
+  width: auto;
+}
+
+.toimipaikka-selector-left>* {
+  margin: 0.25em;
+}
+
+.toimipaikka-selector-selection {
+  display: flex;
+  gap: 1em;
+  margin-bottom: 1rem;
+  align-items: center;
+  flex-wrap: wrap;
+  min-height: 2em;
+
+  label {
+    margin: 0
+  }
+  button {
+    align-self: center;
+  }
+}
+
+.toimipaikka-selector-add {
+  flex: 1 1 180px;
+  text-align: right;
+}
+
+.toimipaikka-selector-filter {
+  display: flex;
+  gap: 0 1rem;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+}
+
+.toimipaikka-selected {
+  font-weight: bold;
+}
+
+.toimipaikka-input {
+  flex: 1 1 50%;
+}
+
+.varda-button-small {
+  font-size: 0.9rem;
+  font-weight: bold;
+}
+
+@media (max-width: 750px) {
+  .toimipaikka-selector-navi {
+    display: none !important;
+  }
+}

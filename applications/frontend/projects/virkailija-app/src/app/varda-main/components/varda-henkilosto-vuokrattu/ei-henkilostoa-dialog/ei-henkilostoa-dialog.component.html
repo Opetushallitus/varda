@@ -1,0 +1,20 @@
+<h2 mat-dialog-title
+    tabindex="0"
+    cdkFocusInitial>
+  {{ i18n.vuokrattu_henkilosto_dialog_ei_henkilostoa_title | translate }}
+</h2>
+<mat-dialog-content class="mat-typography">
+  <div class="dialog-content"
+       role="dialog-content"
+       tabindex="0">
+    {{ i18n.vuokrattu_henkilosto_dialog_ei_henkilostoa_info | translate }}
+  </div>
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <div class="varda-form-btn-wrapper">
+    <button class="varda-button responsive"
+            [mat-dialog-close]="true">{{ i18n.save | translate }}</button>
+    <button class="varda-button varda-button-neutral responsive"
+            mat-dialog-close>{{ i18n.exit | translate }}</button>
+  </div>
+</mat-dialog-actions>

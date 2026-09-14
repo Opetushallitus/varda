@@ -1,0 +1,46 @@
+.public-header {
+  padding-top: 1em;
+  padding-bottom: 1em;
+  display: flex;
+}
+
+.public-header .form-control {
+  display: inline;
+  width: auto;
+}
+
+.oph-logo {
+  flex-grow: 1;
+}
+
+.oph-logo img {
+  height: 3.5em;
+}
+
+.language-selector {
+  align-self: center;
+}
+
+.language-wrapper {
+  display: inline;
+  background-color: white;
+  padding: .15em .75em
+}
+
+.language-link {
+  cursor: pointer;
+}
+
+a.active-language {
+  font-weight: bold;
+  color: inherit;
+  cursor: default;
+  pointer-events: none;
+}
+
+@media (max-width: 991px) {
+  .menu-inline a {
+    display: block;
+    padding-right: 0;
+  }
+}

@@ -1,0 +1,20 @@
+<div class="table-responsive">
+  <table id="toimipaikkaSelectionList">
+    <tbody>
+      @for (toimipaikka of toimipaikkaList; track toimipaikka) {
+        <tr
+          class="list-item"
+          tabindex="0"
+          (click)="clickItem(toimipaikka)"
+        >
+          <td class="list-item-icon">
+            <mat-icon>home-out</mat-icon>
+          </td>
+          <td>
+            <span>{{ toimipaikka.nimi }}</span>
+          </td>
+        </tr>
+      }
+    </tbody>
+  </table>
+</div>

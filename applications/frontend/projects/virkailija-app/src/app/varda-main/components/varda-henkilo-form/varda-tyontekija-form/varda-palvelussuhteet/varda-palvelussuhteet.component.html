@@ -1,0 +1,83 @@
+@if (objectList) {
+  <mat-expansion-panel class="palvelussuhteet mt-4 main-section"
+    (opened)="togglePanel(true)"
+    (closed)="togglePanel(false)"
+    [expanded]="expandPanel">
+    <mat-expansion-panel-header>
+      <mat-panel-title>
+        <h2 class="varda-fieldset-legend">
+          {{ i18n.palvelussuhteet | translate }}
+          @if (objectList.length) {
+            <span>({{ objectList.length }})</span>
+          }
+        </h2>
+      </mat-panel-title>
+      @if (toimipaikkaAccess?.tyontekijatiedot.tallentaja) {
+        @if (objectList.length) {
+          <mat-panel-description>
+            <button class="varda-text-button" id="add-palvelussuhde"
+              (keydown.enter)="initObject()"
+              (click)="initObject()">
+              <mat-icon class="d-none d-md-inline-block" alt="">assignment_outline</mat-icon>
+              <mat-icon alt="">add</mat-icon>{{ i18n.palvelussuhteet_lisaa_palvelussuhde | translate }}
+            </button>
+          </mat-panel-description>
+        }
+      }
+    </mat-expansion-panel-header>
+    <div class="tyontekija-panel-content tyontekija-panel-content-first">
+      @if (!toimipaikkaAccess.tyontekijatiedot.katselija) {
+        <div class="ei-palvelussuhteita"
+          role="alert">
+          <p>{{ i18n.palvelussuhteet_ei_oikeuksia | translate }}</p>
+        </div>
+      }
+      @if (toimipaikkaAccess.tyontekijatiedot.katselija) {
+        @if (!objectList.length) {
+          <div
+            class="ei-palvelussuhteita"
+            role="alert">
+            <div class="missing-info"
+              role="alert">
+              <mat-icon aria-ignore>error_outline</mat-icon>
+              {{ i18n.palvelussuhteet_ei_palvelussuhteita | translate }}
+            </div>
+            @if (toimipaikkaAccess?.tyontekijatiedot.tallentaja) {
+              @if (!addObjectBoolean) {
+                <button class="varda-text-button" id="add-palvelussuhde-empty"
+                  (click)="initObject()">
+                  <mat-icon alt="">add</mat-icon>{{ i18n.palvelussuhteet_lisaa_palvelussuhde | translate }}
+                </button>
+              }
+            }
+          </div>
+        }
+        <mat-accordion class="accordion-large-margin">
+          @for (palvelussuhde of objectList | slice:0:numberOfDisplayed; track palvelussuhde) {
+            <app-varda-palvelussuhde
+              [toimipaikkaAccess]="toimipaikkaAccess"
+              [henkilonToimipaikka]="henkilonToimipaikka"
+              [currentObject]="palvelussuhde"
+              (addObject)="addObject($event)"
+              (deleteObject)="deleteObject($event)"
+            (setBaseObject)="setBaseObject($event)"></app-varda-palvelussuhde>
+          }
+          @if (objectList) {
+            <app-varda-show-more-less [showMoreKey]="i18n.palvelussuhteet_show_more"
+              [(numberOfDisplayed)]="numberOfDisplayed" [numberOfItems]="objectList.length">
+            </app-varda-show-more-less>
+          }
+          @if (addObjectBoolean && toimipaikkaAccess.tyontekijatiedot.tallentaja) {
+            <app-varda-palvelussuhde
+              [henkilonToimipaikka]="henkilonToimipaikka"
+              [toimipaikkaAccess]="toimipaikkaAccess"
+              [currentObject]="baseObject"
+              (addObject)="addObject($event)"
+              (deleteObject)="deleteObject($event)"
+            (closeEmitter)="hideAddObject()"></app-varda-palvelussuhde>
+          }
+        </mat-accordion>
+      }
+    </div>
+  </mat-expansion-panel>
+}

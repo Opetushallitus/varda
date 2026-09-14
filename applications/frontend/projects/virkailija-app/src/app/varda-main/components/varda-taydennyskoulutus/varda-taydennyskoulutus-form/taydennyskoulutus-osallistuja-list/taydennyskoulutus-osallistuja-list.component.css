@@ -1,0 +1,28 @@
+.osallistuja-info {
+  width: 100%;
+  padding: 1rem;
+  border: 1px dotted var(--gray-lighten-1);
+  color: var(--gray-lighten-1);
+  z-index: 0;
+}
+
+.wide-cell {
+  width: 70%;
+}
+
+.wide-cell>div:first-child {
+  white-space: nowrap;
+}
+
+.wide-cell>div:first-child>.mat-mdc-select {
+  width: calc(100% - 1.5rem);
+}
+
+.wide-cell>div:first-child>span {
+  margin-left: 0.5rem;
+  margin-right: 0.5rem;
+}
+
+.varda-text-button>.mat-icon {
+  margin-right: 0 !important;
+}

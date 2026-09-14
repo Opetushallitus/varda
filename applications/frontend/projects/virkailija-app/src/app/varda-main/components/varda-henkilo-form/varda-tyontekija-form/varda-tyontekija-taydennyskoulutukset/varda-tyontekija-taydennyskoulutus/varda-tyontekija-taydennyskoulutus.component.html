@@ -1,0 +1,129 @@
+@if (formGroup) {
+  <div [id]="'taydennyskoulutus_'+ currentObject?.id"
+    class="taydennyskoulutus">
+    <app-robo-id [tunniste]="currentObject?.id"
+      nimi="taydennyskoulutus"
+    [alkamis_pvm]="currentObject?.suoritus_pvm"></app-robo-id>
+    <mat-expansion-panel #matPanel
+      (opened)="togglePanel(true)"
+      (closed)="togglePanel(false)">
+      <mat-expansion-panel-header>
+        @if (currentObject) {
+          <mat-panel-title>
+            <span>
+              {{currentObject.suoritus_pvm | vardaDate}}
+              <i>{{currentObject.nimi }}</i>
+              <span> ({{ i18n.taydennyskoulutus_COUNT_paivaa | translate: { count: currentObject.koulutuspaivia } }})
+              </span>
+            </span>
+            @if (currentObject) {
+              @if (currentObject) {
+                <app-varda-timestamp [dateAdded]="currentObject.luonti_pvm" [dateChanged]="currentObject.muutos_pvm"></app-varda-timestamp>
+              }
+              <span class="headerTaydennyskoulutusId">
+                ID: {{currentObject?.id}}
+              </span>
+            }
+          </mat-panel-title>
+        }
+        @if (!currentObject) {
+          <mat-panel-title>
+            <span>
+              {{ i18n.taydennyskoulutukset_lisaa_taydennyskoulutus | translate }}
+            </span>
+          </mat-panel-title>
+        }
+      </mat-expansion-panel-header>
+      <form [formGroup]="formGroup"
+        (submit)="saveTaydennyskoulutus(formGroup)">
+        <app-varda-form-field name="nimi"
+          [form]="formGroup"
+          [label]="i18n.taydennyskoulutus_nimi | translate"
+          [errorText]="i18n.taydennyskoulutus_error_nimi | translate"
+          [instructionText]="i18n.taydennyskoulutus_instruction_nimi | translate">
+          <input #fieldItem
+            type="text"
+            class="oph-input"
+            [readonly]="limitedEditAccess"
+            formControlName="nimi" />
+        </app-varda-form-field>
+        <app-varda-form-field name="suoritus_pvm"
+          [form]="formGroup"
+          [label]="i18n.taydennyskoulutus_suoritus_pvm | translate"
+          [errorText]="i18n.taydennyskoulutus_error_suoritus_pvm | translate"
+                              [errorMap]="[
+                              { key: 'matDatepickerMin', value: i18n.taydennyskoulutus_error_min_suoritus_pvm }
+                              ]"
+          [instructionText]="i18n.taydennyskoulutus_instruction_suoritus_pvm | translate">
+          <app-varda-datepicker #fieldItem
+            [min]="firstAllowedDate"
+            [readonly]="limitedEditAccess"
+          formControlName='suoritus_pvm'></app-varda-datepicker>
+        </app-varda-form-field>
+        <app-varda-form-field name="koulutuspaivia"
+          [form]="formGroup"
+          [label]="i18n.taydennyskoulutus_koulutuspaivia | translate"
+          [errorText]="i18n.taydennyskoulutus_error_koulutuspaivia | translate"
+          [instructionText]="i18n.taydennyskoulutus_instruction_koulutuspaivia | translate">
+          <input #fieldItem
+            type="number"
+            class="oph-input"
+            min="0.5"
+            max="160"
+            step="0.5"
+            [readonly]="limitedEditAccess"
+            formControlName="koulutuspaivia" />
+        </app-varda-form-field>
+        <app-varda-form-field name="tehtavanimike_koodit"
+          [form]="formGroup"
+          [label]="i18n.taydennyskoulutus_tehtavanimike | translate"
+          [errorText]="i18n.taydennyskoulutus_error_tehtavanimike | translate"
+          [instructionText]="i18n.taydennyskoulutus_instruction_tehtavanimike | translate">
+          @if (tehtavanimikeOptions?.length > 0) {
+            <app-varda-select>
+              <mat-select #fieldItem
+                placeholder="-- {{ i18n.choose | translate }} --"
+                multiple
+                class="oph-input oph-select"
+                formControlName="tehtavanimike_koodit">
+                @if (tehtavanimikeOptions) {
+                  @for (code of tehtavanimikeOptions; track code) {
+                    <mat-option
+                      [value]="code.code_value">
+                      <span [libKoodistoValue]="koodistoEnum.tehtavanimike" format="long">{{ code.code_value }}</span>
+                    </mat-option>
+                  }
+                  @for (disabledNimike of disabledTehtavanimikeCodes; track disabledNimike) {
+                    <mat-option
+                      [value]="disabledNimike" disabled>
+                      {{ disabledNimike | koodisto: { koodisto: koodistoEnum.tehtavanimike } | async }}
+                    </mat-option>
+                  }
+                }
+              </mat-select>
+            </app-varda-select>
+          } @else {
+            <div class="oph-error">
+              <mat-icon alt="">error_outline</mat-icon> {{ i18n.taydennyskoulutus_ei_nimikkeita | translate }}
+            </div>
+          }
+        </app-varda-form-field>
+        @if (limitedEditAccess) {
+          <div class="taydennyskoulutus-rajoitettu"
+            role="alert">
+            <mat-icon alt="">info_outlined</mat-icon>
+            {{ i18n.taydennyskoulutus_instruction_muokkaus_rajoitettu | translate }}
+          </div>
+        }
+        <app-varda-error-field [errors]="taydennyskoulutusFormErrors"></app-varda-error-field>
+        <app-varda-action-row [saveDisabled]="formGroup.pristine || isSubmitting"
+          [saveAccess]="toimipaikkaAccess?.taydennyskoulutustiedot.tallentaja"
+          [formExists]="!!currentObject"
+          [isEdit]="isEdit"
+          (togglePanel)="togglePanel($event)"
+          (deleteForm)="deleteTaydennyskoulutus()"
+        (enableEdit)="enableForm()"></app-varda-action-row>
+      </form>
+    </mat-expansion-panel>
+  </div>
+}

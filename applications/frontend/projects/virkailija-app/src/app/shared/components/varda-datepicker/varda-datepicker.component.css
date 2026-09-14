@@ -1,0 +1,78 @@
+.varda-datepicker.mat-mdc-form-field {
+  width: 100%;
+}
+
+.varda-datepicker .mat-mdc-text-field-wrapper {
+  padding-bottom: 0;
+  box-shadow: inset 0 1px 4px var(--gray-lighten-3);
+  transition-property: box-shadow, background;
+  transition-duration: var(--transition-duration-base);
+  transition-timing-function: var(--transition-timing-function-base);
+  background-color: var(--white);
+}
+
+.varda-datepicker.mat-mdc-form-field.mat-form-field-invalid .mat-mdc-text-field-wrapper {
+  box-shadow: 0 0 0;
+  background-color: var(--red-lighten-2);
+}
+
+.varda-datepicker.mat-mdc-form-field.mat-mdc-form-field-readonly .mat-mdc-text-field-wrapper,
+.varda-datepicker.mat-form-field.mat-form-field-disabled .mat-mdc-text-field-wrapper {
+  cursor: inherit;
+  box-shadow: 0 0 0;
+  background-color: var(--gray-lighten-5);
+  border: none;
+}
+
+.varda-datepicker.mat-mdc-form-field.mat-form-field-disabled .mat-mdc-text-field-wrapper input {
+  cursor: inherit;
+}
+
+.varda-datepicker.mat-mdc-form-field.mat-form-field-disabled .mat-mdc-input-element {
+  color: var(--black);
+}
+
+.varda-datepicker .mat-mdc-form-field-flex {
+  align-items: center !important;
+  height: 2.5rem; /* Keep input field smaller after mdv migration */
+}
+
+.varda-datepicker .mat-mdc-form-text-infix {
+  border-top: none;
+  padding: 0;
+  width: auto;
+}
+
+.varda-datepicker .mat-mdc-form-field-text-suffix {
+  padding: .15em 0;
+  top: initial !important;
+}
+
+.varda-datepicker.mat-form-field-readonly .mat-mdc-form-field-text-suffix,
+.varda-datepicker.mat-form-field-disabled .mat-mdc-form-field-text-suffix {
+  visibility: hidden;
+}
+
+/* Calendar popup */
+.cdk-overlay-container {
+  z-index: 1050;
+}
+
+.varda-datepicker .mdc-text-field {
+  padding: 0 0.5rem; /* Keep the text slightly more to the left */
+}
+
+.varda-datepicker .mdc-text-field--disabled {
+  cursor: inherit;
+  box-shadow: 0 0;
+  background-color: var(--gray-lighten-5);
+  border: none;
+}
+
+.varda-datepicker .mdc-text-field--disabled .mdc-icon-button {
+  display: none;
+}
+
+.varda-datepicker .mat-mdc-form-field-subscript-wrapper {
+  display: none;
+}

@@ -1,0 +1,21 @@
+legend {
+  font-weight: bold;
+  font-size: var(--h3);
+  color: var(--black);
+}
+
+fieldset:not(:first-child) {
+  margin-top: 2rem;
+}
+
+.mat-expansion-panel {
+  background-color: var(--gray-lighten-5);
+}
+
+.mat-expansion-panel .mat-expansion-panel-header {
+  padding: 0 0.5rem;
+}
+
+.no-results {
+  margin: 0 0.5rem 1rem;
+}

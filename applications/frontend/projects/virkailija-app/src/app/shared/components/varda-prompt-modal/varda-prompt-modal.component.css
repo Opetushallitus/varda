@@ -1,0 +1,17 @@
+p {
+  font-weight: bold;
+}
+
+.promt-modal-content-wrapper {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 35px;
+}
+
+.promt-modal-button-wrapper > button {
+  width: auto;
+  border: 0;
+  margin-right: 15px;
+}
+

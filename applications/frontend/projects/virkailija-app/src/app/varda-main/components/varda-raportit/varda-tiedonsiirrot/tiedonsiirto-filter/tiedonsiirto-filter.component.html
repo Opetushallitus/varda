@@ -1,0 +1,29 @@
+@if (vakajarjestajat$ | async; as vakajarjestajat) {
+  <div class="tiedonsiirrot-filter">
+    <mat-form-field appearance="outline">
+      <mat-label>{{ i18n.tiedonsiirrot_vakajarjestajat | translate }}</mat-label>
+      <mat-select [(ngModel)]="selectedVakajarjestajat"
+        panelClass="tiedonsiirrot-select"
+        multiple>
+        @for (vakajarjestaja of vakajarjestajat; track vakajarjestaja) {
+          <mat-option
+          [value]="vakajarjestaja.id"> {{ vakajarjestaja.nimi | translate }} </mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+    @if (selectedVakajarjestajat?.length) {
+      <div
+        class="mb-4">
+        <button class="varda-text-button ml-2"
+          (click)="saveSelectedVakajarjestajat([])">
+          <mat-icon alt="">close</mat-icon> <span>{{ i18n.katsele_tietoja_clear_filters | translate }}</span>
+        </button>
+      </div>
+    }
+    <div>
+      <button class="varda-button varda-button-secondary responsive"
+        (click)="saveSelectedVakajarjestajat(selectedVakajarjestajat)">{{ i18n.search | translate }}
+      </button>
+    </div>
+  </div>
+}

@@ -1,0 +1,27 @@
+.painotukset {
+  margin-bottom: 2rem;
+}
+
+.painotukset .varda-text-button {
+  margin-top: 1rem;
+}
+
+.painotus .mat-expansion-panel {
+  background-color: var(--blue-lighten-4);
+  margin: 0.5rem;
+}
+
+.save-pending {
+  display: flex;
+  align-items: center;
+}
+
+.save-pending .material-icons {
+  color: orange;
+  margin-right: 0.5rem;
+}
+
+.painotukset .show-more-container {
+  padding: 0;
+  margin: 1.5em 0 1em 0;
+}

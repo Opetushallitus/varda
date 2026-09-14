@@ -1,0 +1,24 @@
+body {
+  font-family: 'Roboto', mono;
+}
+
+body, .table {
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 24px;
+  color: #666666;
+}
+
+h1 {
+  font-size: 28px;
+  font-weight: 500;
+  line-height: 33px;
+  color: #2a2a2a;
+}
+
+h2 {
+  font-size: 20px;
+  font-weight: 500;
+  line-height: 24px;
+  color: #2a2a2a;
+}

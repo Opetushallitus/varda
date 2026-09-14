@@ -1,0 +1,306 @@
+<div #scrollTo></div>
+@if (tyontekijaKooste) {
+  <mat-card appearance="outlined" tabindex="0">
+    <mat-card-header>
+      <mat-card-title>
+        <span>{{tyontekijaKooste.henkilo.sukunimi}}, {{tyontekijaKooste.henkilo.etunimet}}</span>
+        <app-varda-timestamp [dateAdded]="tyontekijaKooste.henkilo.luonti_pvm" [dateChanged]="tyontekijaKooste.henkilo.muutos_pvm"></app-varda-timestamp>
+      </mat-card-title>
+    </mat-card-header>
+    <mat-card-content>
+      @if (tyontekijaKooste.henkilo.turvakielto) {
+        <div class="alert-container"
+          >
+          <mat-icon>visibility</mat-icon> {{i18n.turvakielto | translate}}
+        </div>
+      }
+      <div class="tyontekija-section">
+        <h3 class="oph-bold">{{i18n.perustiedot | translate}}</h3>
+        <div class="table-responsive">
+          <table class="mat-mdc-table">
+            <tr class="mat-mdc-row mdc-data-table__row">
+              <th scope="row" class="mat-mdc-header-cell mdc-data-table__header-cell">{{i18n.henkilo_etunimet | translate}}</th>
+              <td class="mat-mdc-cell mdc-data-table__cell">{{tyontekijaKooste.henkilo.etunimet}}</td>
+            </tr>
+            <tr class="mat-mdc-row mdc-data-table__row">
+              <th scope="row" class="mat-mdc-header-cell mdc-data-table__header-cell">{{i18n.henkilo_sukunimi | translate}}</th>
+              <td class="mat-mdc-cell mdc-data-table__cell">{{tyontekijaKooste.henkilo.sukunimi}}</td>
+            </tr>
+            <tr class="mat-mdc-row mdc-data-table__row">
+              <th scope="row" class="mat-mdc-header-cell mdc-data-table__header-cell">{{i18n.henkilo_id | translate}}</th>
+              <td class="mat-mdc-cell mdc-data-table__cell">{{tyontekijaKooste.henkilo.id}}</td>
+            </tr>
+            <tr class="mat-mdc-row mdc-data-table__row">
+              <th scope="row" class="mat-mdc-header-cell mdc-data-table__header-cell">{{i18n.tyontekija_id | translate}}</th>
+              <td class="mat-mdc-cell mdc-data-table__cell">{{tyontekijaKooste.id}}</td>
+            </tr>
+            <tr class="mat-mdc-row mdc-data-table__row">
+              <th scope="row" class="mat-mdc-header-cell mdc-data-table__header-cell">{{i18n.oppijanumero | translate}}</th>
+              <td class="mat-mdc-cell mdc-data-table__cell">{{tyontekijaKooste.henkilo.henkilo_oid}}</td>
+            </tr>
+            <tr class="mat-mdc-row mdc-data-table__row">
+              <th scope="row" class="mat-mdc-header-cell mdc-data-table__header-cell">{{i18n.tyontekija_sahkopostiosoite | translate}}</th>
+              <td class="mat-mdc-cell mdc-data-table__cell">
+                {{tyontekijaKooste.sahkopostiosoite || (i18n.tyontekija_missing_sahkopostiosoite | translate)}}
+              </td>
+            </tr>
+          </table>
+        </div>
+      </div>
+      <div class="tyontekija-section">
+        <h3 class="oph-bold">{{i18n.tutkinnot | translate}}</h3>
+        @if (!userAccess.tyontekijatiedot.katselija) {
+          <div class="varda-text-secondary d-block">
+            {{i18n.katsele_tietoja_error_invalid_permissions | translate}}
+          </div>
+        } @else {
+          @if (tyontekijaKooste.tutkinnot.length === 0) {
+            <div class="varda-text-secondary d-block">
+              {{i18n.katsele_tietoja_tyontekija_no_tutkinnot | translate}}
+            </div>
+          }
+          <div class="table-responsive">
+            @if (tyontekijaKooste.tutkinnot.length > 0) {
+              <table mat-table [dataSource]="tyontekijaKooste.tutkinnot">
+                <ng-container matColumnDef="code">
+                  <th mat-header-cell *matHeaderCellDef>{{i18n.code | translate }}</th>
+                  <td mat-cell *matCellDef="let tutkinto">{{tutkinto.tutkinto_koodi}}</td>
+                </ng-container>
+                <ng-container matColumnDef="name">
+                  <th mat-header-cell *matHeaderCellDef>{{i18n.nimi | translate }}</th>
+                  <td mat-cell *matCellDef="let tutkinto" [libKoodistoValue]="koodistoEnum.tutkinto">{{tutkinto.tutkinto_koodi}}</td>
+                </ng-container>
+                <ng-container matColumnDef="id">
+                  <th mat-header-cell *matHeaderCellDef>{{i18n.id | translate }}</th>
+                  <td mat-cell *matCellDef="let tutkinto">{{tutkinto.id}}</td>
+                </ng-container>
+                <tr mat-header-row *matHeaderRowDef="['code', 'name', 'id']"></tr>
+                <tr mat-row *matRowDef="let tutkinto; columns: ['code', 'name', 'id'];"></tr>
+              </table>
+            }
+          </div>
+        }
+      </div>
+      <div class="tyontekija-section">
+        <h3 class="oph-bold">{{i18n.palvelussuhteet | translate}}</h3>
+        @if (!userAccess.tyontekijatiedot.katselija) {
+          <div class="varda-text-secondary d-block">
+            {{i18n.katsele_tietoja_error_invalid_permissions | translate}}
+          </div>
+        } @else {
+          @if (tyontekijaKooste.palvelussuhteet.length === 0) {
+            <div class="varda-text-secondary d-block">
+              {{i18n.katsele_tietoja_tyontekija_no_palvelussuhteet | translate}}
+            </div>
+          }
+          @for (palvelussuhde of tyontekijaKooste.palvelussuhteet | slice:0:numberOfDisplayed.palvelussuhde; track palvelussuhde) {
+            <mat-expansion-panel class="palvelussuhde-panel blue-panel">
+              <mat-expansion-panel-header>
+                <mat-panel-title>
+                  {{i18n.palvelussuhde | translate}}
+                  {{getDateRangeDisplayValue(palvelussuhde.alkamis_pvm, palvelussuhde.paattymis_pvm)}}
+                  <app-varda-timestamp [dateAdded]="palvelussuhde.luonti_pvm" [dateChanged]="palvelussuhde.muutos_pvm"></app-varda-timestamp>
+                </mat-panel-title>
+              </mat-expansion-panel-header>
+              <div class="table-responsive">
+                <table class="mat-mdc-table">
+                  <tr class="mat-mdc-row mdc-data-table__row">
+                    <th scope="row" class="mat-mdc-header-cell mdc-data-table__header-cell">{{i18n.id | translate}}</th>
+                    <td class="mat-mdc-cell mdc-data-table__cell">{{palvelussuhde.id}}</td>
+                  </tr>
+                  <tr class="mat-mdc-row mdc-data-table__row">
+                    <th scope="row" class="mat-mdc-header-cell mdc-data-table__header-cell">{{i18n.palvelussuhde_tyosuhde | translate}}</th>
+                    <td class="mat-mdc-cell mdc-data-table__cell" [libKoodistoValue]="koodistoEnum.tyosuhde" format="long">
+                      {{palvelussuhde.tyosuhde_koodi}}
+                    </td>
+                  </tr>
+                  <tr class="mat-mdc-row mdc-data-table__row">
+                    <th scope="row" class="mat-mdc-header-cell mdc-data-table__header-cell">{{i18n.palvelussuhde_tyoaika | translate}}</th>
+                    <td class="mat-mdc-cell mdc-data-table__cell" [libKoodistoValue]="koodistoEnum.tyoaika" format="long">
+                      {{palvelussuhde.tyoaika_koodi}}
+                    </td>
+                  </tr>
+                  <tr class="mat-mdc-row mdc-data-table__row">
+                    <th scope="row" class="mat-mdc-header-cell mdc-data-table__header-cell">{{i18n.palvelussuhde_tyoaika_viikossa | translate}}</th>
+                    <td class="mat-mdc-cell mdc-data-table__cell">{{palvelussuhde.tyoaika_viikossa}}</td>
+                  </tr>
+                  <tr class="mat-mdc-row mdc-data-table__row">
+                    <th scope="row" class="mat-mdc-header-cell mdc-data-table__header-cell">{{i18n.tutkinto | translate}}</th>
+                    <td class="mat-mdc-cell mdc-data-table__cell" [libKoodistoValue]="koodistoEnum.tutkinto" format="long">
+                      {{palvelussuhde.tutkinto_koodi}}
+                    </td>
+                  </tr>
+                  <tr class="mat-mdc-row mdc-data-table__row">
+                    <th scope="row" class="mat-mdc-header-cell mdc-data-table__header-cell">{{i18n.alkamis_pvm | translate}}</th>
+                    <td class="mat-mdc-cell mdc-data-table__cell">{{getDateDisplayValue(palvelussuhde.alkamis_pvm)}}</td>
+                  </tr>
+                  <tr class="mat-mdc-row mdc-data-table__row">
+                    <th scope="row" class="mat-mdc-header-cell mdc-data-table__header-cell">{{i18n.paattymis_pvm | translate}}</th>
+                    <td class="mat-mdc-cell mdc-data-table__cell">{{getDateDisplayValue(palvelussuhde.paattymis_pvm)}}</td>
+                  </tr>
+                </table>
+              </div>
+            </mat-expansion-panel>
+            @if (palvelussuhde.tyoskentelypaikat.length > 0) {
+              <div class="tyontekija-section-inner tyoskentelypaikka-container">
+                @for (tyoskentelypaikka of palvelussuhde.tyoskentelypaikat; track tyoskentelypaikka) {
+                  <div class="tree-child-container">
+                    <mat-expansion-panel class="tyoskentelypaikka-panel white-panel tree-child">
+                      <mat-expansion-panel-header>
+                        <mat-panel-title>
+                          {{tyoskentelypaikka.toimipaikka_nimi}}
+                          {{getDateRangeDisplayValue(tyoskentelypaikka.alkamis_pvm, tyoskentelypaikka.paattymis_pvm)}}
+                          <span class="font-italic" [libKoodistoValue]="koodistoEnum.tehtavanimike">{{tyoskentelypaikka.tehtavanimike_koodi}}</span>
+                          <app-varda-timestamp [dateAdded]="tyoskentelypaikka.luonti_pvm" [dateChanged]="tyoskentelypaikka.muutos_pvm"></app-varda-timestamp>
+                        </mat-panel-title>
+                      </mat-expansion-panel-header>
+                      <div class="table-responsive">
+                        <table class="mat-mdc-table">
+                          <tr class="mat-mdc-row mdc-data-table__row">
+                            <th scope="row" class="mat-mdc-header-cell mdc-data-table__header-cell">{{i18n.id | translate}}</th>
+                            <td class="mat-mdc-cell mdc-data-table__cell">{{tyoskentelypaikka.id}}</td>
+                          </tr>
+                          @if (!tyoskentelypaikka.kiertava_tyontekija_kytkin) {
+                            <tr class="mat-mdc-row mdc-data-table__row">
+                              <th scope="row" class="mat-mdc-header-cell mdc-data-table__header-cell">{{i18n.toimipaikka | translate}}</th>
+                              <td class="mat-mdc-cell mdc-data-table__cell">{{tyoskentelypaikka.toimipaikka_nimi}}</td>
+                            </tr>
+                          }
+                          @if (!tyoskentelypaikka.kiertava_tyontekija_kytkin) {
+                            <tr class="mat-mdc-row mdc-data-table__row">
+                              <th scope="row" class="mat-mdc-header-cell mdc-data-table__header-cell">{{i18n.toimipaikka_id | translate}}</th>
+                              <td class="mat-mdc-cell mdc-data-table__cell">{{tyoskentelypaikka.toimipaikka_id}}</td>
+                            </tr>
+                          }
+                          <tr class="mat-mdc-row mdc-data-table__row">
+                            <th scope="row" class="mat-mdc-header-cell mdc-data-table__header-cell">{{i18n.tyoskentelypaikka_kiertava_kytkin | translate}}</th>
+                            <td class="mat-mdc-cell mdc-data-table__cell">{{getBooleanLabel(tyoskentelypaikka.kiertava_tyontekija_kytkin) | translate}}</td>
+                          </tr>
+                          <tr class="mat-mdc-row mdc-data-table__row">
+                            <th scope="row" class="mat-mdc-header-cell mdc-data-table__header-cell">{{i18n.tyoskentelypaikka_tehtavanimike | translate}}</th>
+                            <td class="mat-mdc-cell mdc-data-table__cell" [libKoodistoValue]="koodistoEnum.tehtavanimike" format="long">
+                              {{tyoskentelypaikka.tehtavanimike_koodi}}
+                            </td>
+                          </tr>
+                          <tr class="mat-mdc-row mdc-data-table__row">
+                            <th scope="row" class="mat-mdc-header-cell mdc-data-table__header-cell">{{i18n.tyoskentelypaikka_kelpoisuus_kytkin | translate}}</th>
+                            <td class="mat-mdc-cell mdc-data-table__cell">{{getBooleanLabel(tyoskentelypaikka.kelpoisuus_kytkin) | translate}}</td>
+                          </tr>
+                          <tr class="mat-mdc-row mdc-data-table__row">
+                            <th scope="row" class="mat-mdc-header-cell mdc-data-table__header-cell">{{i18n.alkamis_pvm | translate}}</th>
+                            <td class="mat-mdc-cell mdc-data-table__cell">{{getDateDisplayValue(tyoskentelypaikka.alkamis_pvm)}}</td>
+                          </tr>
+                          <tr class="mat-mdc-row mdc-data-table__row">
+                            <th scope="row" class="mat-mdc-header-cell mdc-data-table__header-cell">{{i18n.paattymis_pvm | translate}}</th>
+                            <td class="mat-mdc-cell mdc-data-table__cell">{{getDateDisplayValue(tyoskentelypaikka.paattymis_pvm)}}</td>
+                          </tr>
+                        </table>
+                      </div>
+                    </mat-expansion-panel>
+                  </div>
+                }
+              </div>
+            }
+            <div class="tyontekija-section-inner">
+              <h4 class="oph-bold varda-text-secondary-inherit-color">{{i18n.pidempi_poissaolo_plural | translate}}</h4>
+              @if (palvelussuhde.pidemmatpoissaolot.length === 0) {
+                <div class="varda-text-secondary d-block">
+                  {{i18n.katsele_tietoja_tyontekija_no_pidemmat_poissaolot | translate}}
+                </div>
+              }
+              <div class="table-responsive">
+                @if (palvelussuhde.pidemmatpoissaolot.length > 0) {
+                  <table mat-table [dataSource]="palvelussuhde.pidemmatpoissaolot">
+                    <ng-container matColumnDef="date">
+                      <th mat-header-cell *matHeaderCellDef>{{i18n.ajanjakso | translate }}</th>
+                      <td mat-cell *matCellDef="let poissaolo">{{getDateRangeDisplayValue(poissaolo.alkamis_pvm, poissaolo.paattymis_pvm)}}
+                        <app-varda-timestamp [dateAdded]="poissaolo.luonti_pvm" [dateChanged]="poissaolo.muutos_pvm"></app-varda-timestamp></td>
+                      </ng-container>
+                      <ng-container matColumnDef="id">
+                        <th mat-header-cell *matHeaderCellDef>{{i18n.id | translate }}</th>
+                        <td mat-cell *matCellDef="let poissaolo">{{poissaolo.id}}</td>
+                      </ng-container>
+                      <tr mat-header-row *matHeaderRowDef="['date', 'id']"></tr>
+                      <tr mat-row *matRowDef="let poissaolo; columns: ['date', 'id']"></tr>
+                    </table>
+                  }
+                </div>
+              </div>
+            }
+            @if (tyontekijaKooste.palvelussuhteet) {
+              <app-varda-show-more-less
+                [showMoreKey]="i18n.palvelussuhteet_show_more"
+                [(numberOfDisplayed)]="numberOfDisplayed.palvelussuhde"
+                [numberOfItems]="tyontekijaKooste.palvelussuhteet.length">
+              </app-varda-show-more-less>
+            }
+          }
+        </div>
+        <div class="tyontekija-section">
+          <h3 class="oph-bold">{{i18n.taydennyskoulutukset | translate}}</h3>
+          @if (!userAccess.taydennyskoulutustiedot.katselija) {
+            <div class="varda-text-secondary d-block">
+              {{i18n.katsele_tietoja_error_invalid_permissions | translate}}
+            </div>
+          } @else {
+            @if (tyontekijaKooste.taydennyskoulutukset.length === 0) {
+              <div class="varda-text-secondary d-block">
+                {{i18n.katsele_tietoja_tyontekija_no_taydennyskoulutukset | translate}}
+              </div>
+            }
+            @for (taydennyskoulutus of tyontekijaKooste.taydennyskoulutukset | slice:0:numberOfDisplayed.taydennyskoulutus; track taydennyskoulutus) {
+              <mat-expansion-panel
+                class="taydennyskoulutus-panel blue-panel">
+                <mat-expansion-panel-header>
+                  <mat-panel-title>
+                    {{getDateDisplayValue(taydennyskoulutus.suoritus_pvm)}}
+                    <span class="font-italic">{{taydennyskoulutus.nimi}}</span>
+                    ({{i18n.taydennyskoulutus_COUNT_paivaa | translate: {count: taydennyskoulutus.koulutuspaivia} }})
+                    <app-varda-timestamp [dateAdded]="taydennyskoulutus.luonti_pvm" [dateChanged]="taydennyskoulutus.muutos_pvm"></app-varda-timestamp>
+                  </mat-panel-title>
+                </mat-expansion-panel-header>
+                <div class="table-responsive">
+                  <table class="mat-mdc-table">
+                    <tr class="mat-mdc-row mdc-data-table__row">
+                      <th scope="row" class="mat-mdc-header-cell mdc-data-table__header-cell">{{i18n.id | translate}}</th>
+                      <td class="mat-mdc-cell mdc-data-table__cell">{{taydennyskoulutus.id}}</td>
+                    </tr>
+                    <tr class="mat-mdc-row mdc-data-table__row">
+                      <th scope="row" class="mat-mdc-header-cell mdc-data-table__header-cell">{{i18n.nimi | translate}}</th>
+                      <td class="mat-mdc-cell mdc-data-table__cell">{{taydennyskoulutus.nimi}}</td>
+                    </tr>
+                    <tr class="mat-mdc-row mdc-data-table__row">
+                      <th scope="row" class="mat-mdc-header-cell mdc-data-table__header-cell">{{i18n.taydennyskoulutus_suoritus_pvm | translate}}</th>
+                      <td class="mat-mdc-cell mdc-data-table__cell">{{getDateDisplayValue(taydennyskoulutus.suoritus_pvm)}}</td>
+                    </tr>
+                    <tr class="mat-mdc-row mdc-data-table__row">
+                      <th scope="row" class="mat-mdc-header-cell mdc-data-table__header-cell">{{i18n.taydennyskoulutus_koulutuspaivia | translate}}</th>
+                      <td class="mat-mdc-cell mdc-data-table__cell">{{taydennyskoulutus.koulutuspaivia}}</td>
+                    </tr>
+                    <tr class="mat-mdc-row mdc-data-table__row">
+                      <th scope="row" class="mat-mdc-header-cell mdc-data-table__header-cell">{{i18n.taydennyskoulutus_tehtavanimike | translate}}</th>
+                      <td class="mat-mdc-cell mdc-data-table__cell">
+                        @for (tehtavanimike_koodi of taydennyskoulutus.tehtavanimikeList; track tehtavanimike_koodi) {
+                          <span
+                            [libKoodistoValue]="koodistoEnum.tehtavanimike" format="long" class="tehtavanimike-item">
+                            {{tehtavanimike_koodi}}
+                          </span>
+                        }
+                      </td>
+                    </tr>
+                  </table>
+                </div>
+              </mat-expansion-panel>
+            }
+            @if (tyontekijaKooste.taydennyskoulutukset) {
+              <app-varda-show-more-less
+                [showMoreKey]="i18n.taydennyskoulutukset_show_more"
+                [(numberOfDisplayed)]="numberOfDisplayed.taydennyskoulutus"
+                [numberOfItems]="tyontekijaKooste.taydennyskoulutukset.length">
+              </app-varda-show-more-less>
+            }
+          }
+        </div>
+      </mat-card-content>
+    </mat-card>
+  }

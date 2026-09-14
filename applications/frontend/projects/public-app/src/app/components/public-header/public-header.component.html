@@ -1,0 +1,34 @@
+<div class="public-header container">
+  <div class="menu-inline">
+    <a routerLink="/koodistot" routerLinkActive="active-link">{{translation.menu_koodistot | translate}}</a>
+    <a routerLink="/swagger" routerLinkActive="active-link">{{translation.menu_swagger | translate}}</a>
+    <a routerLink="/tietomalli" routerLinkActive="active-link">{{translation.menu_data_model | translate}}</a>
+  </div>
+  <div class="language-selector">
+    @if (isSmall | async) {
+      <select
+        [ngModel]="currentLang"
+        (ngModelChange)="changeLanguage($event)"
+        class="form-control">
+        <option [ngValue]="'fi'">{{translation.lang_fi | translate}}</option>
+        <option [ngValue]="'sv'">{{translation.lang_sv | translate}}</option>
+      </select>
+    }
+    @if (!(isSmall | async)) {
+      <div
+        class="language-wrapper">
+        <a class="language-link"
+          (click)="changeLanguage('fi')"
+          [class.active-language]="currentLang === 'fi'">
+          {{ translation.lang_fi | translate}}
+        </a>
+        /
+        <a class="language-link"
+          (click)="changeLanguage('sv')"
+          [class.active-language]="currentLang === 'sv'">
+          {{translation.lang_sv | translate}}
+        </a>
+      </div>
+    }
+  </div>
+</div>

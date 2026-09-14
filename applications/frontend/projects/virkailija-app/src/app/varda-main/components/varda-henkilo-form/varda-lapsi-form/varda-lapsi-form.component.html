@@ -1,0 +1,163 @@
+@if (toimipaikkaAccess?.lapsitiedot.katselija || toimipaikkaAccess?.huoltajatiedot.katselija) {
+  <div class="modal-form-intro"
+    aria-role="info"
+    [innerHTML]="i18n.lapsi_instruction | translateMarkdown">
+  </div>
+  @if (lapsi.id) {
+    <app-varda-error-field
+    [errors]="lapsiFormErrors"></app-varda-error-field>
+  }
+  <form class="henkilo-perustiedot">
+    <h2 class="varda-fieldset-legend">{{ i18n.perustiedot | translate }}</h2>
+    @if (henkilo.turvakielto) {
+      <div class="alert-container"
+        >
+        <mat-icon>visibility</mat-icon> {{i18n.turvakielto | translate}}
+      </div>
+    }
+    <div class="oph-field oph-field-inline">
+      <label class="oph-label">{{ i18n.nimi | translate }}:</label>
+      <span>{{henkilo.sukunimi}}, {{henkilo.etunimet}}</span>
+    </div>
+    <div class="oph-field oph-field-inline">
+      <label class="oph-label">{{ i18n.syntymapaiva | translate }}:</label>
+      <span>{{henkilo.syntyma_pvm | vardaDate}}</span>
+    </div>
+    <div class="oph-field oph-field-inline">
+      <label class="oph-label">{{ i18n.oppijanumero | translate }}:</label>
+      <span>{{henkilo.henkilo_oid}}</span>
+    </div>
+    @if (lapsi.oma_organisaatio_oid) {
+      <div class="oph-field oph-field-inline"
+        >
+        <label class="oph-label">{{ i18n.lapsi_oma_organisaatio | translate }}:</label>
+        <span>{{lapsi.oma_organisaatio_nimi}}
+          @if (lapsi.oma_organisaatio_oid === lapsi.tallentaja_organisaatio_oid) {
+            <mat-icon
+            aria-ignore="true">save</mat-icon>
+          }
+        </span>
+      </div>
+    }
+    @if (lapsi.paos_organisaatio_oid) {
+      <div class="oph-field oph-field-inline"
+        >
+        <label class="oph-label">{{ i18n.lapsi_paos_organisaatio | translate }}:</label>
+        <span>{{lapsi.paos_organisaatio_nimi}}
+          @if (lapsi.paos_organisaatio_oid === lapsi.tallentaja_organisaatio_oid) {
+            <mat-icon
+            aria-ignore="true">save</mat-icon>
+          }
+        </span>
+      </div>
+    }
+  </form>
+  @if (lapsi.id && lapsiKooste) {
+    <app-varda-varhaiskasvatuspaatokset [henkilonToimipaikka]="selectedToimipaikka || henkilonToimipaikka"
+      [toimipaikkaAccess]="toimipaikkaAccess">
+    </app-varda-varhaiskasvatuspaatokset>
+    <app-varda-maksutiedot [toimipaikkaAccess]="toimipaikkaAccess"></app-varda-maksutiedot>
+    @if (deletePermission) {
+      <app-varda-error-field [errors]="deleteLapsiErrors"></app-varda-error-field>
+      @if (lapsi?.id) {
+        <app-varda-delete-henkilo
+          [instructionText]="i18n.lapsi_instruction_delete | translateMarkdown"
+          [deleteText]="i18n.henkilo_poista_lapsi | translate"
+          (deleteAction)="deleteLapsi()">
+        </app-varda-delete-henkilo>
+      }
+    }
+  }
+  @if (!lapsi?.id) {
+    <mat-expansion-panel
+      class="main-section create-lapsi mt-4"
+      [expanded]="true"
+      [hideToggle]="true"
+      [disabled]="true">
+      <mat-expansion-panel-header>
+        <h2>{{ i18n.lapsi_create | translate }}</h2>
+      </mat-expansion-panel-header>
+      <form [formGroup]="lapsiForm"
+        (submit)="createLapsi(lapsiForm)">
+        <div class="modal-form-intro"
+          aria-role="info">
+          {{ i18n.lapsi_instruction_create | translate }}
+        </div>
+        <app-varda-form-field name="paos_kytkin"
+          [form]="lapsiForm"
+          [label]="i18n.lapsi_paos_kytkin | translate"
+          [errorText]="i18n.lapsi_error_paos_kytkin | translate"
+          [instructionText]="i18n.lapsi_instruction_paos_kytkin | translate">
+          <mat-radio-group #fieldItem
+            (change)="changePaosKytkin($event)"
+            formControlName="paos_kytkin">
+            <mat-radio-button [value]="false">{{ i18n.no | translate }}</mat-radio-button>
+            <mat-radio-button [value]="true">{{ i18n.yes | translate }}</mat-radio-button>
+          </mat-radio-group>
+        </app-varda-form-field>
+        @if (lapsiForm.controls.paos_kytkin.value) {
+          <app-varda-form-field name="paos_jarjestaja_toimipaikka"
+            [form]="lapsiForm"
+            [label]="i18n.lapsi_liittyva_toimipaikka | translate"
+            [errorText]="i18n.lapsi_error_liittyva_toimipaikka | translate"
+            [instructionText]="i18n.lapsi_instruction_liittyva_toimipaikka | translate">
+            @if (!henkilonToimipaikka) {
+              <select #fieldItem
+                class="oph-input oph-select"
+                formControlName="paos_jarjestaja_toimipaikka">
+                <option [value]="null"
+                disabled>-- {{ i18n.choose | translate }} --</option>
+                @for (toimipaikka of paosToimipaikat; track toimipaikka) {
+                  <option
+                    [value]="toimipaikka.id">
+                    {{ toimipaikka.nimi }}
+                  </option>
+                }
+              </select>
+            } @else {
+              <span class="mb-2">{{ henkilonToimipaikka.nimi }}</span>
+            }
+          </app-varda-form-field>
+          @if (paosJarjestajaKunnat$ | async; as paosJarjestajaKunnat) {
+            <app-varda-form-field name="oma_organisaatio"
+              [form]="lapsiForm"
+              [label]="i18n.lapsi_jarjestava_organisaatio | translate"
+              [errorText]="i18n.lapsi_error_jarjestava_organisaatio | translate"
+              [instructionText]="i18n.lapsi_instruction_jarjestava_organisaatio | translate">
+              <select #fieldItem
+                class="oph-input oph-select"
+                (change)="changePaosOrganisaatio($event.target.value)"
+                [class.oph-red]="!paosJarjestajaKunnat.length"
+                formControlName="oma_organisaatio">
+                <option [value]="null"
+                  disabled>
+                  @if (paosJarjestajaKunnat.length) {
+                    <span>
+                      -- {{ i18n.choose | translate }} --
+                    </span>
+                  } @else {
+                    {{ i18n.lapsi_ei_valittavia_paos_jarjestajia | translate }}
+                  }
+                </option>
+                @for (vakajarjestaja of paosJarjestajaKunnat; track vakajarjestaja) {
+                  <option
+                    [value]="vakajarjestaja.url">
+                    {{ vakajarjestaja.nimi }}
+                  </option>
+                }
+              </select>
+            </app-varda-form-field>
+          }
+        }
+        <app-varda-error-field [errors]="lapsiFormErrors"></app-varda-error-field>
+        <button class="varda-button responsive-md mt-4"
+          [disabled]="isSubmitting"
+          type="submit"
+          id="submit-lapsi">
+          <mat-icon alt="">add</mat-icon>
+          {{ i18n.lapsi_create | translate }}
+        </button>
+      </form>
+    </mat-expansion-panel>
+  }
+}

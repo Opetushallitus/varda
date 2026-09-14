@@ -1,0 +1,24 @@
+<div class="expansion-panel-title-grid">
+  <div class="icon">
+    <i class="material-icons material-icons-outlined"
+    aria-hidden="true">{{ icon }}</i>
+  </div>
+
+  <div class="title">{{ title | translate }}</div>
+  <div class="range"
+    [class.voimassa]="voimassa">
+    @if (endDate) {
+      @if (startDate) {
+        {{ startDate | huoltajaDate }} - {{ endDate | huoltajaDate }}
+      } @else {
+        {{ endDate | huoltajaDate }}
+      }
+    } @else {
+      {{ i18n.alkaen | translate:{ date: startDate | huoltajaDate } }}
+    }
+
+  </div>
+  <div class="secondaryTitle">{{ secondaryTitle }}</div>
+
+  <span aria-ignore class="toggle">{{ expanded ? (i18n.close | translate) : (i18n.open | translate) }}</span>
+</div>

@@ -1,0 +1,43 @@
+@if (errors | async; as errorArr) {
+  @if (errorArr?.length) {
+    <div
+      role="alert"
+      aria-live="polite"
+      class="varda-error-component">
+      <div class="varda-error-header">
+        <header class="oph-h3"
+          #scrollTo>
+          <mat-icon alt="">error_outline</mat-icon>
+          @if (errorArr.length > 1) {
+            <span
+            >{{ i18n.error_multiple | translate: { count: errorArr.length } }}</span>
+          } @else {
+            {{ i18n.error_single | translate }}
+          }
+        </header>
+        <button (click)="hideError()"
+          class="varda-text-button">
+          <mat-icon mat-button>close</mat-icon>
+        </button>
+      </div>
+      @for (errorBranch of errorArr; track errorBranch; let lineNr = $index) {
+        <div class="tyontekija-error-line"
+          >
+          <label>
+            {{ i18n.error | translate }} {{lineNr + 1}}:
+          </label>
+          @for (key of errorBranch.keys; track key) {
+            <span>
+              <i> {{ key }} <mat-icon alt="">chevron_right</mat-icon></i>
+            </span>
+          }
+          @for (errorValue of errorBranch.values; track errorValue) {
+            <b>
+              {{ errorValue.errorTranslation }}
+            </b>
+          }
+        </div>
+      }
+    </div>
+  }
+}

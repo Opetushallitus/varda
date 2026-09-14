@@ -1,0 +1,37 @@
+@if (formControl) {
+  <div #formField
+    class="oph-field"
+    >
+    <div class="oph-field-inputs">
+      @if (!hideLabel) {
+        <label [id]="labelId"
+          class="oph-label">
+          <b>{{ label | translate }}</b>
+        </label>
+      }
+      <ng-content></ng-content>
+      @if (formControl.touched && (formControl.invalid || formControl.errors?.required)) {
+        <div class="oph-error"
+          role="alert"
+          [attr.robot]="errorRef"
+          >
+          {{ errorText | translate}}
+          @if (errorMap) {
+            @for (error of errorMap; track error) {
+              @if (formControl.hasError(error.key)) {
+                <div>
+                  {{ error.value | translate }}
+                </div>
+              }
+            }
+          }
+        </div>
+      }
+    </div>
+    <div class="oph-field-text" [attr.robot]="instructionRef">
+      <small [appSlideHide]="focusStatus$ | async">
+        {{ instructionText | translate}}
+      </small>
+    </div>
+  </div>
+}

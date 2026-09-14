@@ -1,0 +1,36 @@
+export interface PulssiDto {
+  organisaatio_count: number;
+  kunta_count: number;
+  yksityinen_count: number;
+  toimipaikka_count: number;
+  toimipaikka_by_tm: Record<string, number>;
+  toimipaikka_by_jm: Record<string, number>;
+  toimipaikka_by_kj: Record<string, number>;
+  toimipaikka_by_ak: Record<string, number>;
+  toimipaikka_with_kp: number;
+  toimipaikka_with_tp: number;
+  lapsi_count: number;
+  lapsi_kunta_count: number;
+  lapsi_yksityinen_count: number;
+  vakapaatos_count: number;
+  paivittainen_count: number;
+  kokopaivainen_count: number;
+  vuorohoito_count: number;
+  lapsi_by_jm: Record<string, number>;
+  huoltaja_count: number;
+  asiakasmaksu_avg: number;
+  tyontekija_count: number;
+  tyoskentelypaikka_by_tn: Record<string, number>;
+  tyontekija_multi_count: number;
+  taydennyskoulutus_count: number;
+  koulutuspaiva_count: number;
+  vuokrattu_henkilosto_tyontekijamaara: number;
+  vuokrattu_henkilosto_tuntimaara: number;
+  ui_login_count: number;
+  oppija_login_count: number;
+  valtuudet_login_count: number;
+  ui_new_paatos_count: number;
+  ui_new_tyontekija_count: number;
+  ui_new_maksutieto_count: number;
+  timestamp: string;
+}

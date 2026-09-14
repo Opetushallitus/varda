@@ -1,0 +1,102 @@
+<h1 class="varda-page-header">{{ i18n.paata_tiedot | translate }}</h1>
+<div class="varda-page-content">
+  <div class="full-width-row">
+    <div class="modal-form-intro col-12"
+      [innerHTML]="i18n.paata_tiedot_instructions | translateMarkdown">
+    </div>
+    @if (!result) {
+      <div class="col-md-5 col-lg-3">
+        <label for="datePicker"
+        class="oph-bold">{{i18n.paattymis_pvm | translate}}</label>
+        <app-varda-datepicker #datePicker="ngModel"
+          name="datePicker"
+          id="datePicker"
+          [(ngModel)]="date"
+          (dateChange)="isConfirmed = false"
+          (dateInput)="isConfirmed = false"
+          [required]="true"
+          [disabled]="isConfirmed">
+        </app-varda-datepicker>
+        @if (datePicker.invalid) {
+          <div aria-live="assertive"
+            class="varda-error-message-block"
+            role="alert"
+            >
+            <p>{{i18n.katsele_tietoja_error_date_format | translate}}</p>
+          </div>
+        }
+      </div>
+      @if ((errors | async)?.length > 0) {
+        <div class="col-12 margin-top">
+          <app-varda-error-field [errors]="errors"></app-varda-error-field>
+        </div>
+      }
+      <div class="full-width-row margin-top">
+        @if (isConfirmed) {
+          <div class="col-12 margin-bottom">
+            <span>
+              {{i18n.paata_tiedot_confirm_prompt_1 | translate}}:
+              <span class="oph-bold">{{selectedVakajarjestaja.nimi}} ({{selectedVakajarjestaja.organisaatio_oid}})</span>,
+              {{i18n.paata_tiedot_confirm_prompt_2 | translate}}:
+              <span class="oph-bold">{{getUIDate(date)}}</span>
+            </span>
+          </div>
+        }
+        @if (isConfirmed) {
+          <div class="col-md-auto">
+            <button class="varda-button varda-button-neutral varda-icon-button"
+              type="button"
+              (click)="reset()"
+              [disabled]="isLoading">
+              <mat-icon alt="">keyboard_backspace</mat-icon>
+              {{i18n.cancel | translate}}
+            </button>
+          </div>
+        }
+        <div class="col-md-auto" [class.margin-top-md]="isConfirmed">
+          <button class="varda-button varda-button-danger varda-icon-button"
+            type="button"
+            (click)="isConfirmed ? setPaattymisPvm() : confirm()"
+            [disabled]="isLoading">
+            <mat-icon alt="">save</mat-icon>
+            {{(isConfirmed ? i18n.paata_tiedot_confirm : i18n.paata_tiedot_save) | translate}}
+          </button>
+        </div>
+      </div>
+      @if (isLoading) {
+        <div class="col-12 margin-top"
+          >
+          <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+        </div>
+      }
+    } @else {
+      <div class="col-md-auto">
+        <button class="varda-button varda-button-neutral varda-icon-button"
+          type="button"
+          (click)="reset()">
+          <mat-icon alt="">keyboard_backspace</mat-icon>
+          {{i18n.cancel | translate}}
+        </button>
+      </div>
+      <div class="full-width-row">
+        <div class="col-12 col-md-10 col-lg-8 col-xl-7 margin-top">
+          <label class="oph-bold">{{i18n.paata_tiedot_result | translate}}</label>
+          <div class="table-responsive">
+            <table mat-table [dataSource]="datasource">
+              <ng-container matColumnDef="name">
+                <th mat-header-cell *matHeaderCellDef>{{i18n.katsele_tietoja_yhteenveto_key | translate }}</th>
+                <td mat-cell *matCellDef="let element">{{element.name | translate}}</td>
+              </ng-container>
+              <ng-container matColumnDef="value">
+                <th mat-header-cell *matHeaderCellDef>{{i18n.katsele_tietoja_yhteenveto_value | translate }}</th>
+                <td mat-cell *matCellDef="let element">{{element.value | number:undefined:'fi'}}</td>
+              </ng-container>
+              <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+              <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
+            </table>
+          </div>
+        </div>
+      </div>
+    }
+  </div>
+</div>

@@ -1,0 +1,23 @@
+.mat-column-first-position {
+  width: 200px;
+  border-right: 1px solid var(--mat-table-row-item-outline-color);
+  padding-right: 24px;
+  text-align: center;
+}
+
+.mat-mdc-table tr:last-child td {
+  font-weight: bold;
+  border-top: 1px solid black;
+}
+
+.tuen-tables {
+  overflow: auto;
+}
+
+.tuen-form {
+  margin-bottom: var(--space-3);
+}
+
+.not-available-warning {
+  color: var(--color-error);
+}

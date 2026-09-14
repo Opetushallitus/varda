@@ -1,0 +1,29 @@
+.varda-success-modal-body {
+    height: 400px;
+}
+
+.success-sign {
+    color: #43D949;
+    font-size: 10rem;
+}
+
+.success-icon-wrapper {
+    display: flex;
+    justify-content: center;
+    height: 300px;
+    align-items: center;
+}
+
+.success-icon-title, .success-icon-text {
+    display: flex;
+    justify-content: center;
+}
+
+.success-icon-title {
+    font-size: 1.2rem;
+    font-weight: bold;
+}
+
+#lapsiSuccessModal .modal-dialog {
+    width: 30%;
+}

@@ -1,0 +1,77 @@
+@if (objectList) {
+  <mat-expansion-panel class="palvelussuhteet mt-4 main-section"
+    (opened)="togglePanel(true)"
+    (closed)="togglePanel(false)"
+    [expanded]="expandPanel">
+    <mat-expansion-panel-header>
+      <mat-panel-title>
+        <h2 class="varda-fieldset-legend">{{ i18n.taydennyskoulutukset | translate }} @if (objectList.length) {
+          <span
+          >({{ objectList.length }})</span>
+        }</h2>
+      </mat-panel-title>
+      @if (toimipaikkaAccess?.taydennyskoulutustiedot.tallentaja) {
+        @if (objectList.length) {
+          <mat-panel-description>
+            <button class="varda-text-button" id="add-taydennyskoulutus"
+              (keydown.enter)="initObject()"
+              (click)="initObject()">
+              <mat-icon class="d-none d-md-inline-block" alt="">assignment_outline</mat-icon>
+              <mat-icon alt="">add</mat-icon>{{ i18n.taydennyskoulutukset_lisaa_taydennyskoulutus | translate }}
+            </button>
+          </mat-panel-description>
+        }
+      }
+    </mat-expansion-panel-header>
+    <div class="tyontekija-panel-content tyontekija-panel-content-first">
+      @if (!toimipaikkaAccess.taydennyskoulutustiedot.katselija) {
+        <div class="ei-palvelussuhteita"
+          role="alert">
+          <p>{{ i18n.taydennyskoulutukset_ei_oikeuksia | translate }}</p>
+        </div>
+      }
+      @if (toimipaikkaAccess.taydennyskoulutustiedot.katselija) {
+        @if (!objectList.length) {
+          <div
+            class="ei-palvelussuhteita"
+            role="alert">
+            <p>{{ i18n.taydennyskoulutukset_ei_taydennyskoulutuksia | translate }}</p>
+            @if (toimipaikkaAccess?.taydennyskoulutustiedot.tallentaja) {
+              @if (!addObjectBoolean) {
+                <button class="varda-text-button" id="add-taydennyskoulutus-empty"
+                  (click)="initObject()">
+                  <mat-icon alt="">add</mat-icon>{{ i18n.taydennyskoulutukset_lisaa_taydennyskoulutus | translate }}
+                </button>
+              }
+            }
+          </div>
+        }
+        <mat-accordion>
+          @for (taydennyskoulutus of objectList | slice:0:numberOfDisplayed; track taydennyskoulutus) {
+            <app-varda-tyontekija-taydennyskoulutus
+              [toimipaikkaAccess]="toimipaikkaAccess"
+              [currentObject]="taydennyskoulutus"
+              [tehtavanimikeOptions]="tehtavanimikeOptions"
+              (addObject)="addObject($event)"
+              (deleteObject)="deleteObject($event)">
+            </app-varda-tyontekija-taydennyskoulutus>
+          }
+          @if (objectList) {
+            <app-varda-show-more-less [showMoreKey]="i18n.taydennyskoulutukset_show_more"
+              [(numberOfDisplayed)]="numberOfDisplayed" [numberOfItems]="objectList.length">
+            </app-varda-show-more-less>
+          }
+          @if (addObjectBoolean && toimipaikkaAccess.taydennyskoulutustiedot.tallentaja) {
+            <app-varda-tyontekija-taydennyskoulutus
+              [toimipaikkaAccess]="toimipaikkaAccess"
+              [tehtavanimikeOptions]="tehtavanimikeOptions"
+              (addObject)="addObject($event)"
+              (deleteObject)="deleteObject($event)"
+              (closeEmitter)="hideAddObject()">
+            </app-varda-tyontekija-taydennyskoulutus>
+          }
+        </mat-accordion>
+      }
+    </div>
+  </mat-expansion-panel>
+}

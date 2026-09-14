@@ -1,0 +1,129 @@
+<section class="yhteenveto-section">
+  <div class="varda-info"
+    [innerHTML]="i18n.tiedonsiirrot_yhteenveto_instruction | translateMarkdown">
+  </div>
+
+  @if (toimijaAccess.oph.katselija) {
+    <app-tiedonsiirto-filter
+    [oph]="toimijaAccess.oph.katselija"></app-tiedonsiirto-filter>
+  }
+
+  <div class="table-responsive" #scrollContainer>
+    <table mat-table
+      #tiedonsiirtoTable
+      [dataSource]="yhteenvedot"
+      class="yksiloimattomat-table">
+
+      <ng-container matColumnDef="date">
+        <th mat-header-cell
+          *matHeaderCellDef>
+          <app-tiedonsiirto-filter-header [label]="i18n.tiedonsiirrot_yhteenveto_date"
+            [multiline]="true"
+            [formGroup]="timestampFormGroup"
+            (resetFilter)="resetTimestampFormGroup()"
+            (submitFilter)="getPage(true)">
+            <app-varda-datepicker formControlName="timestampAfter"
+              [placeholder]="i18n.tiedonsiirrot_placeholder_timestamp_after | translate"
+              [required]="true"
+              [min]="timestampAfterMin"
+              [isTouched]="timestampFormGroup.controls.timestampAfter.touched"
+                                  [errorMap]="[
+                                    { key: 'required', value: i18n.required_field },
+                                    { key: 'matDatepickerParse', value: i18n.katsele_tietoja_error_date_format },
+                                    { key: 'matDatepickerMin', value: i18n.tiedonsiirrot_timestamp_error_min }
+                                  ]"
+              (dateChange)="timestampAfterChange($event.value)">
+            </app-varda-datepicker>
+            <app-varda-datepicker formControlName="timestampBefore"
+              [placeholder]="i18n.tiedonsiirrot_placeholder_timestamp_before | translate"
+              [required]="true"
+              [min]="timestampBeforeRange.min"
+              [max]="timestampBeforeRange.max"
+              [isTouched]="timestampFormGroup.controls.timestampBefore.touched"
+                                  [errorMap]="[
+                                    { key: 'required', value: i18n.required_field },
+                                    { key: 'matDatepickerParse', value: i18n.katsele_tietoja_error_date_format },
+                                    { key: 'matDatepickerMin', value: i18n.tiedonsiirrot_timestamp_error_order },
+                                    { key: 'matDatepickerMax', value: i18n.tiedonsiirrot_timestamp_error_short }
+                                  ]">
+            </app-varda-datepicker>
+          </app-tiedonsiirto-filter-header>
+        </th>
+        <td mat-cell
+          class="text-nowrap"
+        *matCellDef="let row"> {{row.date}} </td>
+      </ng-container>
+
+      <ng-container matColumnDef="successful">
+        <th mat-header-cell
+          class="text-center"
+        *matHeaderCellDef>{{ i18n.tiedonsiirrot_yhteenveto_successful | translate }}</th>
+        <td mat-cell
+            class="
+            oph-green
+            text-center"
+        *matCellDef="let row"> {{row.successful}} </td>
+      </ng-container>
+
+
+      <ng-container matColumnDef="unsuccessful">
+        <th mat-header-cell
+          class="text-center"
+        *matHeaderCellDef>{{ i18n.tiedonsiirrot_yhteenveto_unsuccessful | translate }}</th>
+        <td mat-cell
+            class="
+            oph-red
+            text-center"
+        *matCellDef="let row"> {{row.unsuccessful}} </td>
+      </ng-container>
+
+      <ng-container matColumnDef="total">
+        <th mat-header-cell
+          class="text-center"
+        *matHeaderCellDef>{{ i18n.tiedonsiirrot_yhteenveto_total | translate }}</th>
+        <td mat-cell
+            class="
+            text-center"
+        *matCellDef="let row"> {{ row.unsuccessful + row.successful }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="username">
+        <th mat-header-cell
+          class="large-cell"
+          *matHeaderCellDef>
+          <app-tiedonsiirto-filter-header [label]="i18n.tiedonsiirrot_kayttaja"
+            (resetFilter)="searchFilter.username = null"
+            (submitFilter)="getPage(true)">
+            <input type="text"
+              class="oph-input"
+              [placeholder]="i18n.tiedonsiirrot_placeholder_username | translate"
+              [(ngModel)]="searchFilter.username" />
+          </app-tiedonsiirto-filter-header>
+        </th>
+        <td mat-cell
+        *matCellDef="let row"> {{row.username}}</td>
+      </ng-container>
+
+      <tr mat-header-row
+      *matHeaderRowDef="displayedColumns"></tr>
+      <tr mat-row
+      *matRowDef="let row; columns: displayedColumns;"></tr>
+    </table>
+    @if (yhteenvedot?.data.length === 0) {
+      <div>{{ i18n.yksiloimattomat_ei_hakutuloksia | translate }}</div>
+    }
+    @if (isLoading) {
+      <mat-progress-bar
+        mode="indeterminate"
+      color="accent"></mat-progress-bar>
+    }
+    <app-varda-error-field [errors]="formErrors"></app-varda-error-field>
+
+    <mat-paginator [disabled]="isLoading"
+      [length]="resultCount"
+      [pageSize]="searchFilter.page_size"
+      (page)="changePage($event)"
+      #tiedonsiirtoPaginator>
+    </mat-paginator>
+  </div>
+</section>

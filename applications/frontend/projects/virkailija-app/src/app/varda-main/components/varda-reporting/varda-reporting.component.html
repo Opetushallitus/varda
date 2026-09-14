@@ -1,0 +1,55 @@
+<h1 class="varda-page-header">
+  {{i18n.katsele_tietoja | translate}}
+</h1>
+<main class="varda-reporting-wrapper">
+  <div class="varda-card-top">
+    <div class="row align-items-baseline">
+      <div class="col-auto">
+        <h2 class="varda-text-large">
+          {{selectedVakajarjestaja.nimi}}
+          @if (!selectedVakajarjestaja.active) {
+            <span class="badge text-bg-secondary">{{ i18n.passive | translate }}</span>
+          }
+        </h2>
+      </div>
+      <div class="col">
+        <span class="varda-text-secondary">{{selectedVakajarjestaja.organisaatio_oid}}</span>
+      </div>
+    </div>
+    <nav mat-tab-nav-bar mat-stretch-tabs="false" mat-align-tabs="start" [tabPanel]="reportingTabPanel">
+      @if (userAccess.paakayttaja || userAccess.lapsitiedot.katselija || userAccess.huoltajatiedot.katselija ||
+        userAccess.tyontekijatiedot.katselija || userAccess.taydennyskoulutustiedot.katselija ||
+        userAccess.toimijatiedot.katselija) {
+        <a mat-tab-link
+          routerLink="toimipaikat"
+          [active]="activeRoute === 'toimipaikat'"
+          >
+          {{i18n.katsele_tietoja_toimipaikat | translate}}
+        </a>
+      }
+      @if (userAccess.paakayttaja || userAccess.lapsitiedot.katselija || userAccess.huoltajatiedot.katselija) {
+        <a mat-tab-link
+          routerLink="lapset"
+          [active]="activeRoute === 'lapset'"
+          >
+          {{i18n.katsele_tietoja_lapset | translate}}
+        </a>
+      }
+      @if (userAccess.tyontekijatiedot.katselija || userAccess.taydennyskoulutustiedot.katselija) {
+        <a mat-tab-link
+          routerLink="tyontekijat"
+          [active]="activeRoute === 'tyontekijat'"
+          >
+          {{i18n.katsele_tietoja_tyontekijat | translate}}
+        </a>
+      }
+      <a mat-tab-link
+        routerLink="yhteenveto"
+        [active]="activeRoute === 'yhteenveto'">
+        {{i18n.katsele_tietoja_yhteenveto | translate}}
+      </a>
+    </nav>
+    <mat-tab-nav-panel #reportingTabPanel></mat-tab-nav-panel>
+  </div>
+  <router-outlet></router-outlet>
+</main>

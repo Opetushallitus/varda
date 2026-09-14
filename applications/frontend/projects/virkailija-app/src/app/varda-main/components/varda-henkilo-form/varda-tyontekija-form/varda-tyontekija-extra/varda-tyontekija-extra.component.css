@@ -1,0 +1,10 @@
+.tyontekija-extra .email-edit button {
+  margin-left: 1em;
+}
+
+.tyontekija-extra .email-edit mat-icon {
+  line-height: 0.75;
+  font-size: 1em;
+  height: 1em;
+  width: 1em;
+}
