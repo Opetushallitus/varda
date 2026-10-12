@@ -1,0 +1,45 @@
+<h1 class="varda-page-header">
+  {{ i18n.navi_syota_tietoja | translate }}
+</h1>
+<main class="varda-main-frame-wrapper">
+  <section class="varda-main-frame-toimipaikka-section-container varda-page-content">
+    <app-varda-toimipaikka-selector [toimijaAccess]="toimijaAccess"
+      (changeToimipaikka)="onToimipaikkaChanged($event)">
+    </app-varda-toimipaikka-selector>
+  </section>
+  @if (toimipaikat?.length > 0) {
+    @if (toimipaikkaAccess) {
+      <div class="varda-main-frame-henkilo-section-container "
+        aria-live="polite"
+        role="region">
+        @if (toimipaikkaAccess.lapsitiedot.katselija || toimipaikkaAccess.huoltajatiedot.katselija) {
+          <app-varda-lapsi-section
+            (openHenkiloForm)="openHenkilo($event)"
+            [toimipaikkaAccess]="toimipaikkaAccess"
+          [selectedToimipaikka]="selectedToimipaikka"></app-varda-lapsi-section>
+        }
+        @if (toimipaikkaAccess.tyontekijatiedot.katselija || toimipaikkaAccess.taydennyskoulutustiedot.katselija) {
+          <app-varda-henkilosto-section
+            (openHenkiloForm)="openHenkilo($event)"
+            [toimipaikkaAccess]="toimipaikkaAccess"
+          [selectedToimipaikka]="selectedToimipaikka"></app-varda-henkilosto-section>
+        }
+      </div>
+    }
+  }
+  <app-varda-modal-form [identifier]="'henkiloModal'"
+    [isLg]="true"
+    [openModal]="!!activeSuhde"
+    [closeWithoutConfirm]="confirmedHenkiloFormLeave"
+    (events)="handleFormClose($event)">
+    @if (!!activeSuhde) {
+      <app-varda-henkilo-form
+        [henkilonSuhde]="activeSuhde"
+        [henkilonToimipaikka]="selectedToimipaikka"
+        (createHenkilo)="onHenkiloAdded()"
+        (closeHenkiloForm)="handleFormClose(ModalEvent.hidden)"
+        (valuesChanged)="henkiloFormValuesChanged($event)">
+      </app-varda-henkilo-form>
+    }
+  </app-varda-modal-form>
+</main>

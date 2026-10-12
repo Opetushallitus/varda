@@ -1,0 +1,9 @@
+
+.mat-mdc-form-field + button {
+  margin-left: 0.5em;
+}
+
+.henkilo-section-header h3{
+  padding-right: 0;
+  margin-bottom: 0;
+}

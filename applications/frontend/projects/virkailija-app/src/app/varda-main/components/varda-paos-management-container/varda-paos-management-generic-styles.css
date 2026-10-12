@@ -1,0 +1,8 @@
+.paos-container h1, .paos-container h2, .paos-container h3, .paos-container h4, .paos-container h5, .paos-container h6 {
+  font-weight: bold;
+  margin-bottom: 10px;
+}
+
+.paos-container h4, .paos-container h6, .paos-container p, .paos-container .small-text {
+  font-size: 0.8rem;
+}

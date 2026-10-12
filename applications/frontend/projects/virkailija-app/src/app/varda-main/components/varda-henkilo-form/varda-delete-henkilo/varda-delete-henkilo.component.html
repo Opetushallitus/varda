@@ -1,0 +1,36 @@
+<div class="henkilo-delete"
+  [class.modal-form-intro]="promptDeleteHenkilo > 0">
+  @if (promptDeleteHenkilo > 0) {
+    <div>
+      <mat-icon class="varda-button-danger" alt="">warning</mat-icon>
+      <span [innerHTML]="instructionText"></span>
+    </div>
+  }
+
+  <div class="henkilo-delete-action-row">
+    @if (promptDeleteHenkilo < 2) {
+      <button
+        (click)="promptDeleteHenkilo = promptDeleteHenkilo + 1"
+        [class.varda-button-neutral]="promptDeleteHenkilo !== 1"
+        [class.varda-button-danger]="promptDeleteHenkilo === 1"
+        class="varda-button secondary responsive-md">
+        <mat-icon alt="">delete_outline</mat-icon>
+        {{ deleteText | translate }}
+      </button>
+    }
+
+
+    @if (promptDeleteHenkilo >= 2) {
+      <button (click)="deleteEmit()"
+        class="varda-button varda-button-danger secondary responsive-md">
+        <mat-icon alt="">delete_outline</mat-icon>
+        {{ deleteText | translate }}
+      </button>
+      <button class="varda-button varda-button-wide varda-button-neutral responsive-md secondary"
+        type="button"
+        (click)="promptDeleteHenkilo = 0">
+        {{ i18n.cancel | translate }}
+      </button>
+    }
+  </div>
+</div>

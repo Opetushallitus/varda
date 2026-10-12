@@ -1,0 +1,21 @@
+.datepicker-container {
+  min-width: 12em;
+}
+
+.report-type-select-container {
+  width: calc(100% - 40px);
+}
+
+.input-info-container {
+  display: flex;
+}
+
+.varda-date-range-row {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: flex-start;
+}
+
+.varda-date-range-dash {
+  width: fit-content;
+}

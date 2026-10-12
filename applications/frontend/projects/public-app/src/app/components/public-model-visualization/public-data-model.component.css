@@ -1,0 +1,8 @@
+:host {
+  flex-grow: 1;
+  display: flex;
+}
+
+app-public-iframe {
+  flex-grow: 1;
+}

@@ -1,0 +1,32 @@
+.cdk-overlay-pane .mat-mdc-snack-bar-container {
+  max-width: min(66vw, 800px);
+}
+
+.cdk-overlay-pane .mat-mdc-snack-bar-container .mat-mdc-snack-bar-label {
+  font-weight: bold;
+}
+
+.cdk-overlay-pane .mat-mdc-snack-bar-container .mat-mdc-snack-bar-actions button {
+  font-weight: normal;
+}
+
+/* success */
+.varda-snackbar-success {
+  --mat-snackbar-container-color: var(--green-lighten-2) !important;
+  --mat-snackbar-supporting-text-color: var(--gray) !important;
+  --mat-mdc-snack-bar-button-color: var(--black) !important;
+}
+
+/* error */
+.varda-snackbar-error {
+  --mat-snackbar-container-color: var(--red) !important;
+  --mat-snackbar-supporting-text-color: var(--white) !important;
+  --mat-mdc-snack-bar-button-color: var(--white) !important;
+}
+
+/* warning */
+.varda-snackbar-warning {
+  --mat-snackbar-container-color: var(--yellow-lighten-1) !important;
+  --mat-snackbar-supporting-text-color: var(--black) !important;
+  --mat-mdc-snack-bar-button-color: var(--black) !important;
+}

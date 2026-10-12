@@ -1,0 +1,57 @@
+<div [class.oph-invalid-container]="(isInvalid || isOptionInvalid()) && textInput.touched" class="varda-autocomplete-selector">
+  <div class="oph-select-container" [attr.disabled]="disabled">
+    <input class="oph-input autocomplete-input"
+      [class.input-null-option]="isNullOption"
+      type="text"
+      [placeholder]="placeholder"
+      [matAutocomplete]="autocomplete"
+      (input)="inputChange($event)"
+      [disabled]="disabled"
+      (blur)="propagateTouch()"
+      #textInput="ngModel"
+      [(ngModel)]="inputValue">
+  </div>
+  <mat-autocomplete #autocomplete="matAutocomplete"
+    (optionSelected)="autocompleteSelected($event)"
+    (opened)="autocompleteOpened()">
+    @if (options.length < 100) {
+      @if (isNullOption) {
+        <mat-option [value]="nullValue">{{nullOptionLabel}}</mat-option>
+      }
+      @if (isNoResults) {
+        <mat-option disabled>{{ i18n.katsele_tietoja_no_results | translate}}</mat-option>
+      }
+      @for (option of filteredOptions | async; track option) {
+        <mat-option
+          [value]="option"
+          [title]="getFormattedOption(option)">
+          {{getFormattedOption(option)}}
+        </mat-option>
+      }
+    } @else {
+      <cdk-virtual-scroll-viewport itemSize="25"
+        class="virtual-viewport"
+        [style.height.px]="viewportHeight">
+        @if (isNullOption) {
+          <mat-option [value]="nullValue">{{nullOptionLabel}}</mat-option>
+        }
+        @if (isNoResults) {
+          <mat-option disabled>{{ i18n.katsele_tietoja_no_results | translate}}</mat-option>
+        }
+        <mat-option *cdkVirtualFor="let option of filteredOptions | async"
+          [value]="option"
+          [title]="getFormattedOption(option)">
+          {{getFormattedOption(option)}}
+        </mat-option>
+      </cdk-virtual-scroll-viewport>
+    }
+  </mat-autocomplete>
+  @if ((isInvalid || isOptionInvalid()) && invalidInputLabel && textInput.touched) {
+    <div class="varda-error-message-block"
+      aria-live="assertive"
+      role="alert"
+      >
+      <p>{{invalidInputLabel}}</p>
+    </div>
+  }
+</div>

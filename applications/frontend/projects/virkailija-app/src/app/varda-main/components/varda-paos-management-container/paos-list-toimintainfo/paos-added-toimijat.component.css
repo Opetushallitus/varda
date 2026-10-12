@@ -1,0 +1,77 @@
+.varda-paos-list-toimintainfo-highlight {
+  border: #00B6E2 solid;
+}
+
+.scrollable {
+  overflow: auto;
+  max-height: 300px;
+}
+
+.paos-toimijat-list-tallennusvastuu-wrapper {
+  display: flex;
+  align-items: center;
+}
+
+.paos-toimipaikat-list-tallennusvastuu-column {
+  border: 0px solid transparent;
+  margin: 0.1em 0.25em;
+}
+
+.paos-toimipaikat-list-tallennusvastuu-column>select {
+  min-width: 7em;
+}
+
+.paos-toimipaikat-list-tallennusvastuu-column:not(:nth-child(3)) {
+  padding-left: 4px;
+}
+
+.paos-list-toimijat-search-empty {
+  font-style: italic;
+}
+
+.paos-yksikot {
+  text-align: left;
+  padding: 0.5em;
+}
+
+.paos-toimijat-list-toimipaikat-text {
+  margin-top: 10px;
+}
+
+.paos-toimijat-list-toimipaikka {
+  padding: 1em;
+  border: 2px solid transparent;
+  border-bottom: 2px solid #ccc;
+}
+
+.paos-toimijat-list-toimipaikka:last-child {
+  border-color: transparent;
+}
+
+.paos-toimijat-list-toimipaikka app-varda-delete-button {
+  align-self: center;
+}
+
+.paos-toimijat-list-toimipaikka-header {
+  font-weight: bold;
+}
+
+.paos-list-flexbox {
+  display: flex;
+  justify-content: space-between;
+  margin: 0.5em 0;
+}
+
+.paos-prompt-modal-header {
+  font-weight: bold;
+  color: #4a4a4a;
+  font-size: 0.8rem;
+}
+
+mat-icon {
+  color: #e44e4e;
+  position: relative;
+  top: -1px;
+  margin-left: 0.5em;
+  vertical-align: middle;
+}

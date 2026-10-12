@@ -1,0 +1,174 @@
+@if (toimijaAccess.tukipaatokset.katselija) {
+  <h1 class="varda-page-header">{{ i18n.tuen_tiedot | translate }}</h1>
+  <main class="varda-page-content">
+    <div class="modal-form-intro"
+      [innerHTML]="i18n.tuen_tiedot_instruction | translateMarkdown">
+    </div>
+    <app-varda-error-field [errors]="tukipaatosFormErrors"></app-varda-error-field>
+    <h2 class="mb-1">{{ i18n.tuen_tiedot_tilastointi_paivamaarat | translate}}</h2>
+    <mat-form-field>
+      <mat-label>{{ i18n.tuen_tiedot_tilastointi_paivamaara | translate}}</mat-label>
+      <mat-select [(ngModel)]="selectedStatisticalDate" (selectionChange)="selectChange(selectedStatisticalDate)">
+        @for (tilastointiPvm of statisticalDateList; track tilastointiPvm) {
+          <mat-option [value]="tilastointiPvm">{{tilastointiPvm}}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+    <div class="col-lg-8 pl-0 tuen-tables">
+      <h2 class="mb-1"><b>{{ i18n.tuen_tiedot_kunnalinen | translate}}</b></h2>
+      @if (municipalDataSource) {
+        <form class="tuen-form" (submit)="saveTukipaatokset(false)">
+          <table mat-table [dataSource]="municipalDataSource" class="mat-elevation-z8">
+            @for (column of columnsToDisplay; track column) {
+              <ng-container [matColumnDef]="column">
+                @if (column === 'ikaryhma_koodi') {
+                  <ng-container matColumnDef="first-position">
+                    <th mat-header-cell *matHeaderCellDef>{{ i18n.tuen_tiedot_ikaryhma | translate}}</th>
+                    <td mat-cell [libKoodistoValue]="koodistoEnum.ikaryhma" *matCellDef="let element">{{element[column] | translate}}</td>
+                  </ng-container>
+                } @else {
+                  <th mat-header-cell *matHeaderCellDef [libKoodistoValue]="koodistoEnum.tuentaso">{{column}}</th>
+                  <td mat-cell *matCellDef="let element">
+                    @if (isMunicipalEdit) {
+                      @if (!isNaN(element[column])) {
+                        {{ element[column] }}
+                      }
+                      @if (isNaN(element[column]) || element[column] === undefined) {
+                        <input type="number"
+                          class="oph-input"
+                          min="0"
+                          (change)="valueChanged(element[column].get('paatosmaara'))"
+                          [formControl]="element[column].get('paatosmaara')"
+                          [placeholder]="i18n.tuen_tiedot_paatosmaara | translate" />
+                        <div class="error-field oph-error">
+                          @if (element[column].get('paatosmaara').hasError('required')) {
+                            <span>
+                              {{ i18n.tuen_tiedot_error_paatosmaara_required | translate }}
+                            </span>
+                          }
+                          @if (element[column].get('paatosmaara').hasError('pattern')) {
+                            <span>
+                              {{ i18n.tuen_tiedot_error_paatosmaara_pattern | translate }}
+                            </span>
+                          }
+                          @if (element[column].get('paatosmaara').hasError('max')) {
+                            <span>
+                              {{ i18n.tuen_tiedot_error_paatosmaara_max | translate }}
+                            </span>
+                          }
+                        </div>
+                      }
+                    } @else {
+                      @if (!isNaN(element[column])) {
+                        {{ element[column] }}
+                      }
+                      @if (isNaN(element[column]) || element[column] === undefined) {
+                        {{element[column].get('paatosmaara').value}}
+                      }
+                    }
+                  </td>
+                }
+              </ng-container>
+            }
+            <tr mat-header-row *matHeaderRowDef="columnsToDisplay"></tr>
+            <tr mat-row *matRowDef="let row; columns: columnsToDisplay;"></tr>
+          </table>
+          @if (isTimeframeEditable) {
+            <app-varda-action-row
+              [saveDisabled]="municipalFormArray.pristine || !municipalFormArray.valid || isPrivateEdit || (isSubmitting | async)"
+              [editDisabled]="isPrivateEdit || (isSubmitting | async)"
+              [saveAccess]="toimijaAccess.tukipaatokset.tallentaja"
+              [formExists]="true"
+              [isEdit]="isMunicipalEdit"
+              [noDelete]="true"
+              [noToggle]="true"
+              (enableEdit)="enableMunicipalForm()"
+            (disableEdit)="disableMunicipalForm()"></app-varda-action-row>
+          }
+        </form>
+      }
+      <h2 class="mb-1"><b>{{ i18n.tuen_tiedot_yksityinen | translate}}</b></h2>
+      @if (privateDataSource) {
+        <form class="tuen-form" (submit)="saveTukipaatokset(true)">
+          <table mat-table [dataSource]="privateDataSource" class="mat-elevation-z8">
+            @for (column of columnsToDisplay; track column) {
+              <ng-container [matColumnDef]="column">
+                @if (column === 'ikaryhma_koodi') {
+                  <ng-container matColumnDef="first-position">
+                    <th mat-header-cell *matHeaderCellDef>{{ i18n.tuen_tiedot_ikaryhma | translate}}</th>
+                    <td mat-cell [libKoodistoValue]="koodistoEnum.ikaryhma" *matCellDef="let element">{{element[column] | translate}}</td>
+                  </ng-container>
+                } @else {
+                  <th mat-header-cell *matHeaderCellDef [libKoodistoValue]="koodistoEnum.tuentaso">{{column}}</th>
+                  <td mat-cell *matCellDef="let element">
+                    @if (isPrivateEdit) {
+                      @if (!isNaN(element[column])) {
+                        {{ element[column] }}
+                      }
+                      @if (isNaN(element[column]) || element[column] === undefined) {
+                        <input type="number"
+                          class="oph-input"
+                          min="0"
+                          (change)="valueChanged(element[column].get('paatosmaara'))"
+                          [formControl]="element[column].get('paatosmaara')"
+                          [placeholder]="i18n.tuen_tiedot_paatosmaara | translate" />
+                        <div class="error-field oph-error">
+                          @if (element[column].get('paatosmaara').hasError('required')) {
+                            <span>
+                              {{ i18n.tuen_tiedot_error_paatosmaara_required | translate }}
+                            </span>
+                          }
+                          @if (element[column].get('paatosmaara').hasError('pattern')) {
+                            <span>
+                              {{ i18n.tuen_tiedot_error_paatosmaara_pattern | translate }}
+                            </span>
+                          }
+                          @if (element[column].get('paatosmaara').hasError('max')) {
+                            <span>
+                              {{ i18n.tuen_tiedot_error_paatosmaara_max | translate }}
+                            </span>
+                          }
+                        </div>
+                      }
+                    } @else {
+                      @if (!isNaN(element[column])) {
+                        {{ element[column] }}
+                      }
+                      @if (isNaN(element[column]) || element[column] === undefined) {
+                        {{element[column].get('paatosmaara').value}}
+                      }
+                    }
+                  </td>
+                }
+              </ng-container>
+            }
+            <tr mat-header-row *matHeaderRowDef="columnsToDisplay"></tr>
+            <tr mat-row *matRowDef="let row; columns: columnsToDisplay;"></tr>
+          </table>
+          @if (isTimeframeEditable) {
+            <app-varda-action-row
+              [saveDisabled]="privateFormArray.pristine || !privateFormArray.valid || isMunicipalEdit || (isSubmitting | async)"
+              [editDisabled]="isMunicipalEdit || (isSubmitting | async)"
+              [saveAccess]="toimijaAccess.tukipaatokset.tallentaja"
+              [formExists]="true"
+              [isEdit]="isPrivateEdit"
+              [noDelete]="true"
+              [noToggle]="true"
+              (enableEdit)="enablePrivateForm()"
+            (disableEdit)="disablePrivateForm()"></app-varda-action-row>
+          }
+        </form>
+      }
+    </div>
+    <app-varda-error-field [errors]="tukipaatosFormErrors"></app-varda-error-field>
+    @if (lastUpdated) {
+      <div
+        class="last-updated">
+        <strong>{{ i18n.vuokrattu_henkilosto_tiedot_paivitetty_viimeksi | translate}}:</strong>
+        @if (lastUpdated) {
+          <span> {{ lastUpdated | date: 'd.M.yyyy HH:mm' }}</span>
+        }
+      </div>
+    }
+  </main>
+}
