@@ -1,0 +1,2 @@
+class InvalidKoodiUriException(Exception):
+    pass

@@ -1,0 +1,30 @@
+table {
+  width: 100%;
+}
+
+nav a .material-icons {
+  margin-right: 0.5rem;
+}
+
+a.mdc-tab--active {
+  color: var(--text-color);
+  opacity: 1 !important;
+}
+
+.henkilot {
+  margin: 1rem 0;
+}
+
+.henkilot .mat-mdc-form-field {
+  width: min(100%, 400px);
+}
+
+.ei-huollettavia {
+  display: flex;
+  align-items: center;
+}
+
+.ei-huollettavia>.material-icons {
+  margin-right: 0.5rem;
+  color: var(--oph-orange);
+}

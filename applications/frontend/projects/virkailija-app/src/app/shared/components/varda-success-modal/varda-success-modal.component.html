@@ -1,0 +1,24 @@
+<div class="modal fade"
+     [id]="identifier"
+     tabindex="-1"
+     role="dialog"
+     aria-hidden="true">
+  <div class="modal-dialog"
+       role="document">
+    <div class="modal-content">
+      <div class="modal-body varda-modal-body varda-success-modal-body">
+        <div>
+          <div class="success-icon-wrapper">
+            <i class="material-icons success-sign" alt="">check_circle</i>
+          </div>
+          <div class="success-icon-title">
+            {{successTitle | translate}}
+          </div>
+          <div class="success-icon-text">
+            {{successMsg}}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

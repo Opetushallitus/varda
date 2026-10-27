@@ -1,0 +1,196 @@
+<div class="varda-card-bottom">
+  <form>
+    <div class="varda-reporting-search-form-content toimipaikka-search-form varda-reporting-row-wrap margin-top">
+      <div class="col-sm col-md-6 col-lg-5">
+        <label for="toimipaikkaSearchInput"
+        class="oph-bold">{{i18n.katsele_tietoja_nimi_tunniste | translate}}</label>
+        <button mat-icon-button
+          class="varda-info-button"
+          [matTooltip]="i18n.katsele_tietoja_toimipaikka_tooltip_search | translate"
+          matTooltipClass="varda-tooltip"
+          aria-label="katsele tietoja ohje">
+          <mat-icon alt="">info</mat-icon>
+        </button>
+        <app-varda-input #searchInput="ngModel"
+          [name]="'toimipaikkaSearchInput'"
+          [id]="'toimipaikkaSearchInput'"
+          type="text"
+          placeholder="{{i18n.katsele_tietoja_nimi_tunniste | translate}}"
+          minlength="3"
+          [(ngModel)]="searchValue"
+                         [errorMap]="[
+                           { key: 'minlength', value: i18n.katsele_tietoja_error_search_minlength }
+                         ]"
+        (keydownEnter)="search()"></app-varda-input>
+      </div>
+      <div class="col-sm-auto">
+        <button class="varda-button varda-icon-button search-button-toimipaikat margin-top-sm"
+          type="button"
+          (click)="search()">
+          <mat-icon alt="">search</mat-icon>
+          {{i18n.katsele_tietoja_search | translate}}
+        </button>
+      </div>
+      @if (isFiltersVisible) {
+        <div class="oph-bg-gray-lighten-5 filter-form"
+          >
+          <div class="col-md-auto">
+            @if (isSmall) {
+              <label class="varda-link varda-filter-close"
+                (click)="isFiltersVisible = false; clearFilters()">
+                {{i18n.close | translate}}
+              </label>
+            }
+            <label for="toimintamuotoSelect"
+            class="oph-bold">{{i18n.toimipaikka_toimintamuoto | translate}}</label>
+            <div class="oph-select-container">
+              <select class="oph-input oph-select"
+                name="toimintamuotoSelect"
+                id="toimintamuotoSelect"
+                (change)="search()"
+                [(ngModel)]="filterParams.toimintamuoto">
+                <option [ngValue]="null">{{i18n.katsele_tietoja_toimipaikka_toimintamuoto_all | translate}}</option>
+                @for (code of (getKoodistoFromKoodistoService(koodistoEnum.toimintamuoto) | async)?.codes; track code) {
+                  <option
+                    [ngValue]="code"
+                    [title]="getCodeUiString(code)">
+                    {{getCodeUiString(code)}}
+                  </option>
+                }
+              </select>
+            </div>
+          </div>
+          <div class="col-md-auto">
+            <label for="jarjestamismuotoSelect"
+            class="oph-bold">{{i18n.toimipaikka_jarjestamismuoto | translate}}</label>
+            <div class="oph-select-container">
+              <select class="oph-input oph-select"
+                name="jarjestamismuotoSelect"
+                id="jarjestamismuotoSelect"
+                (change)="search()"
+                [(ngModel)]="filterParams.jarjestamismuoto">
+                <option [ngValue]="null">{{i18n.katsele_tietoja_toimipaikka_jarjestamismuoto_all | translate}}</option>
+                @for (code of (getKoodistoFromKoodistoService(koodistoEnum.jarjestamismuoto) | async)?.codes; track code) {
+                  <option
+                    [ngValue]="code"
+                    [title]="getCodeUiString(code)">
+                    {{getCodeUiString(code)}}
+                  </option>
+                }
+              </select>
+            </div>
+          </div>
+          <div class="col-md-auto">
+            <div class="row filter-time-container align-items-end">
+              <div class="col-md-auto">
+                <label class="oph-bold" for="toimipaikkaVoimassaoloButtonGroup">
+                  {{i18n.katsele_tietoja_filter_time | translate}}
+                </label>
+                <app-varda-radio-button-group name="toimipaikkaVoimassaoloButtonGroup"
+                  id="toimipaikkaVoimassaoloButtonGroup"
+                  responsive="md"
+                  wrap="sm"
+                  (valueChanged)="search()"
+                  [(ngModel)]="filterParams.voimassaolo">
+                  <app-varda-radio-button [id]="'filterKaikki'"
+                    [value]="voimassaolo.KAIKKI">
+                    {{i18n.all | translate}}
+                  </app-varda-radio-button>
+                  <app-varda-radio-button [id]="'filterVoimassa'"
+                    [value]="voimassaolo.VOIMASSA">
+                    {{i18n.katsele_tietoja_voimassa | translate}}
+                  </app-varda-radio-button>
+                  <app-varda-radio-button [id]="'filterAlkanut'"
+                    [value]="voimassaolo.ALKANUT">
+                    {{i18n.katsele_tietoja_alkanut | translate}}
+                  </app-varda-radio-button>
+                  <app-varda-radio-button [id]="'filterPaattynyt'"
+                    [value]="voimassaolo.PAATTYNYT">
+                    {{i18n.katsele_tietoja_paattynyt | translate}}
+                  </app-varda-radio-button>
+                </app-varda-radio-button-group>
+              </div>
+              @if (filterParams.voimassaolo !== voimassaolo.KAIKKI) {
+                <div class="col varda-date-range-container">
+                  <div class="row-custom varda-date-range-row">
+                    <div class="col-6">
+                      <app-varda-datepicker #alkamisPvm="ngModel"
+                        [name]="'filterAlkamisPvm'"
+                        [(ngModel)]="filterParams.alkamisPvm"
+                        (dateInput)="search()"
+                        [required]="true">
+                      </app-varda-datepicker>
+                      @if (alkamisPvm.invalid) {
+                        <div aria-live="assertive"
+                          class="varda-error-message-block"
+                          role="alert"
+                          >
+                          <p>{{i18n.katsele_tietoja_error_date_format | translate}}</p>
+                        </div>
+                      }
+                    </div>
+                    <span class="varda-date-range-dash">–</span>
+                    <div class="col-6">
+                      <app-varda-datepicker #paattymisPvm="ngModel"
+                        [name]="'filterPaattymisPvm'"
+                        [(ngModel)]="filterParams.paattymisPvm"
+                        (dateInput)="search()"
+                        [required]="true">
+                      </app-varda-datepicker>
+                      @if (paattymisPvm.invalid) {
+                        <div aria-live="assertive"
+                          class="varda-error-message-block"
+                          role="alert"
+                          >
+                          <p>{{i18n.katsele_tietoja_error_date_format | translate}}</p>
+                        </div>
+                      }
+                    </div>
+                  </div>
+                </div>
+              }
+            </div>
+          </div>
+          <div class="col filter-clear-container">
+            <button class="varda-button varda-icon-button filter-clear"
+              type="button"
+              (click)="clearFilters()"
+              [disabled]="!isFiltersActive()">
+              <mat-icon alt="">delete</mat-icon>
+              {{i18n.katsele_tietoja_clear_filters | translate}}
+            </button>
+          </div>
+        </div>
+      }
+      @if (!isFiltersVisible) {
+        <div class="col-12 varda-link margin-top-md"
+          (click)="isFiltersVisible = true">
+          {{i18n.katsele_tietoja_apply_filters | translate}}
+        </div>
+      }
+    </div>
+  </form>
+</div>
+<app-varda-result-info [filterString]="filterString"
+[resultCount]="resultCount"></app-varda-result-info>
+@if (resultCount > 0) {
+  <div class="varda-reporting-card-container"
+    >
+    <div class="col-12 col-lg-5 custom-col varda-reporting-card">
+      <app-varda-result-list #resultList
+        [resultCount]="resultCount"
+        [nextCursor]="nextCursor"
+        [prevCursor]="prevCursor"
+        [searchResults]="searchResults"
+        [pageSize]="pageSize"
+        (paginationChanged)="search($event)"
+      (resultSelected)="setSelectedId($event)"></app-varda-result-list>
+    </div>
+    @if (selectedId) {
+      <div class="col-12 col-lg-7 varda-reporting-card"
+        >
+        <app-varda-result-toimipaikka [toimipaikkaId]="selectedId"></app-varda-result-toimipaikka>
+      </div>
+    }
+  </div>
+}

@@ -1,0 +1,35 @@
+:host {
+  display: table-row
+}
+
+th {
+  white-space: nowrap;
+  padding-right: clamp(0.25rem, 3vw, 5rem);
+}
+
+td.tooltip {
+  text-align: right;
+  padding-right: 0.5rem;
+}
+
+td.content {
+  width: 100%;
+}
+
+@media (max-width: 600px) {
+  th {
+    white-space: normal;
+    word-wrap: break-word;
+  }
+
+  td.content {
+    width: auto;
+    word-wrap: break-word;
+  }
+}
+
+@media (max-width: 400px) {
+  th {
+    padding-right: 0.25rem;
+  }
+}

@@ -1,0 +1,31 @@
+<mat-expansion-panel>
+  <mat-expansion-panel-header>
+    <mat-panel-title class="bold">
+      {{ huoltajuussuhde.lapsi_sukunimi }} {{ huoltajuussuhde.lapsi_etunimet }}
+    </mat-panel-title>
+    <mat-panel-description>
+      <div class="subheader">
+        {{ huoltajuussuhde.organisaatio_nimi }}
+      </div>
+    </mat-panel-description>
+  </mat-expansion-panel-header>
+
+  @if (!huoltajuussuhde.maksutiedot.length) {
+    <div class="no-results"
+      >
+      {{ i18n.maksutiedot_ei_maksutietoja | translate }}
+    </div>
+  }
+
+  <mat-accordion>
+    @for (maksutieto of huoltajuussuhde.maksutiedot; track maksutieto) {
+      <app-maksutieto
+        [huoltajuussuhde]="huoltajuussuhde"
+      [maksutieto]="maksutieto"></app-maksutieto>
+    }
+  </mat-accordion>
+
+  <button class="onko-tiedoissa-virhe"
+    (click)="openDialog(huoltajuussuhde)">{{ i18n.varhaiskasvatuspaatos_onko_tiedoissa_virhe | translate}}
+  </button>
+</mat-expansion-panel>

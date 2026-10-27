@@ -1,0 +1,10 @@
+@if (areDatesWithinSameSecond(dateAdded, dateChanged)) {
+  <small class="object-date">
+    {{ i18n.luonti_pvm | translate }}: {{dateAdded | vardaDateMinutes }}
+  </small>
+} @else {
+  <small class="object-date">
+    {{ i18n.muutos_pvm | translate }}: {{dateChanged | vardaDateMinutes }}
+  </small>
+}
+

@@ -1,0 +1,292 @@
+.varda-form {
+  width: auto;
+  margin: auto;
+}
+
+.varda-form legend {
+  margin-bottom: 1em;
+}
+
+.oph-field {
+  display: flex;
+  flex-flow: wrap;
+  justify-content: space-between;
+}
+
+.oph-form-submit,
+.oph-field-inputs,
+.oph-field-text {
+  flex: 1 1 350px;
+  display: flex;
+  flex-direction: column;
+}
+
+.oph-field-inputs .mat-mdc-radio-group .mat-mdc-radio-button~.mat-mdc-radio-button {
+  margin-left: 0;
+}
+
+.mat-mdc-radio-group .mat-mdc-radio-button {
+  flex-basis: 1 1 300px;
+  margin: auto 0.5em !important;
+}
+
+.mat-mdc-checkbox label {
+  margin-bottom: 0;
+  font-size: 0.95rem;
+}
+
+.oph-field.oph-field-inline+.oph-field.oph-field-inline {
+  margin-top: 0px;
+}
+
+.oph-field-inline .oph-label:first-of-type {
+  margin-right: var(--space-1);
+}
+
+.oph-field.oph-field-inline {
+  justify-content: flex-start;
+}
+
+.oph-field-inline>.oph-field-inputs {
+  flex-direction: unset;
+  flex-wrap: nowrap;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+.oph-field-inline>.oph-field-inputs>* {
+  white-space: nowrap;
+  margin: 0.25em;
+  margin-bottom: 0.25em;
+  flex: 1 1 50px;
+}
+
+.oph-field-inline>.oph-field-inputs>.oph-label {
+  min-width: 160px;
+}
+
+.oph-field-inline>.oph-field-inputs>.mat-mdc-radio-group,
+.oph-field-inline>.oph-field-inputs>.oph-input {
+  flex: 10 1;
+}
+
+.oph-field-inline>.oph-field-inputs>.mat-mdc-radio-group {
+  position: relative;
+  top: 5px;
+  display: flex;
+}
+
+.oph-field-inline>.oph-field-inputs>.oph-input+button {
+  height: 42px;
+}
+
+.oph-field-text {
+  align-self: center;
+  padding: 0 0.5em;
+  margin-top: 0;
+
+}
+
+.oph-field-text>small {
+  margin: var(--space-1);
+
+}
+
+.mat-mdc-select-disabled.oph-input,
+.mat-mdc-select-disabled .mat-mdc-select-value,
+.oph-input[disabled],
+.oph-input[readonly],
+.mat-mdc-select-disabled.oph-input > option,
+.mat-mdc-select-disabled .mat-mdc-select-value > option,
+.oph-input[disabled] > option,
+.oph-input[readonly] > option {
+  border: 0;
+  color: var(--black);
+  background-color: transparent;
+  box-shadow: none;
+  opacity: 0.8;
+}
+
+.mat-mdc-radio-button .mdc-radio--disabled+label {
+  --mat-radio-disabled-label-color: var(--black);
+  opacity: 0.8;
+}
+
+.oph-field label,
+.oph-field .oph-input,
+.oph-field .oph-error,
+.oph-field .oph-field-text {
+  max-width: 100%;
+}
+
+.oph-label {
+  font-weight: 500;
+}
+
+.varda-fieldset {
+  margin: 1em auto;
+  width: 100%;
+}
+
+.varda-fieldset-legend {
+  font-size: var(--h4);
+  font-weight: bold;
+  text-transform: uppercase;
+  margin-bottom: 0.5em;
+}
+
+.varda-fieldset-content {
+  margin: 0.5em 1em;
+}
+
+.varda-form-btn-wrapper {
+  margin: 1em 0;
+  padding: 0 0.5em;
+  width: 100%;
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.varda-form-btn-wrapper button {
+  margin: 0.5em;
+}
+
+.varda-form-main-feedback {
+  margin: 0.5em;
+}
+
+.varda-input,
+.varda-select,
+.varda-textarea {
+  cursor: pointer;
+  width: 100%;
+  padding: 6px;
+  border: 1px solid var(--gray-lighten-3);
+  border-radius: 4px;
+  box-sizing: border-box;
+  resize: vertical;
+  font-size: 0.87rem;
+}
+
+.varda-painotukset {
+  margin: 3em 1em;
+}
+
+.varda-painotukset .varda-painotukset-panel > .row {
+  margin-bottom: 0;
+}
+
+.varda-painotukset .varda-painotukset-wrapper {
+  margin: 1em;
+}
+
+.varda-painotukset .varda-painotukset-header {
+  font-weight: bold;
+  font-size: var(--h4);
+  margin-bottom: 0.5em;
+}
+
+.varda-painotukset .varda-painotukset-panel .mat-expansion-panel {
+  box-shadow: none;
+  border: 1px solid var(--blue-lighten-3);
+  background-color: var(--blue-lighten-4);
+}
+
+.form-continues-text-wrapper {
+  position: absolute;
+  bottom: 15%;
+  right: 15%;
+  z-index: 1;
+  display: flex;
+  flex-flow: column;
+  align-items: center;
+  user-select: none;
+}
+
+.form-continues-text-wrapper .form-continues-text {
+  text-align: center;
+  font-weight: bold;
+}
+
+.oph-invalid-container .oph-input {
+  background-color: var(--red-lighten-2);
+  border-color: var(--red-lighten-1);
+  box-shadow: 0 0 0;
+}
+
+.oph-invalid-container .oph-select-container:after {
+  border-top-color: var(--red-lighten-2);
+}
+
+.mat-expansion-panel-header .mat-content {
+  flex-wrap: wrap;
+}
+
+.oph-select-container[disabled='true']:after, .oph-select-container[disabled='true']:before {
+  content: none;
+}
+
+.oph-select-container::after, .oph-select-container::before {
+  pointer-events: none;
+}
+
+.oph-select-container .mat-mdc-select-arrow-wrapper {
+  display: none;
+}
+
+.oph-select-container .mat-mdc-select-trigger {
+  padding: 0.5em 2em 0.5em 0.5em;
+  height: 2.125em;
+  width: 100%;
+}
+
+.oph-select-container mat-select.oph-select {
+  padding: 0;
+}
+
+.mat-expansion-panel-header {
+  --mat-expansion-header-text-size: 16px
+}
+
+.mat-expansion-panel-content {
+  --mat-expansion-container-text-size: 16px
+}
+
+.oph-select option {
+  font-family: var(--font-family-base);
+}
+
+@media (max-width: 767px) {
+  .form-continues-text-wrapper {
+    display: none;
+  }
+
+  .oph-field-inline>.oph-field-inputs {
+    flex-wrap: wrap;
+  }
+
+  .oph-field-inline>.oph-field-inputs>* {
+    width: 100%;
+    flex: 1 1 100%;
+  }
+
+  .oph-field .oph-field-text {
+    order: 1;
+  }
+
+  .oph-field .oph-field-inputs {
+    order: 2;
+  }
+
+  .oph-field .oph-field-inputs>* {
+    order: 3
+  }
+
+  .oph-field .oph-field-inputs .oph-label {
+    order: 1
+  }
+
+  .oph-field .oph-field-inputs .oph-error {
+    order: 2
+  }
+}

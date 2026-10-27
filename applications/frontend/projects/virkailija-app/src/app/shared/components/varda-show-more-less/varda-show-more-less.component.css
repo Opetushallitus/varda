@@ -1,0 +1,14 @@
+.show-more-container {
+  display: flex;
+  flex-direction: row;
+  gap: 1em;
+  flex-wrap: wrap;
+}
+
+.show-more-container button {
+  width: auto;
+}
+
+.show-more-container span {
+  align-self: center;
+}

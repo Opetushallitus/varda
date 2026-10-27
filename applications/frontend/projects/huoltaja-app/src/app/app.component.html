@@ -1,0 +1,9 @@
+<a href id="jump-link"
+  (click)="onJumpClick($event)"
+  (keydown.enter)="onJumpClick($event)">
+  {{ translation.jump_link | translate }}
+</a>
+<router-outlet></router-outlet>
+@if (isLoading | async) {
+  <lib-loading-indicator></lib-loading-indicator>
+}

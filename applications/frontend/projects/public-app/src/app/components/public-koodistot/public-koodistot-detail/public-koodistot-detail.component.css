@@ -1,0 +1,93 @@
+.koodisto-detail-header {
+  display: flex;
+  padding-right: .25em;
+}
+
+.koodisto-detail-header h2 {
+  margin-bottom: 0;
+  padding-right: .5em;
+}
+
+.koodisto-version {
+  flex-grow: 1;
+}
+
+.koodisto-version, .koodisto-update-date {
+  align-self: flex-end;
+  margin-bottom: 0;
+  font-style: italic;
+  line-height: 20px;
+  font-size: 14px;
+}
+
+.koodisto-table {
+  margin-top: 2em;
+}
+
+.koodisto-small-wrapper {
+  margin-top: 2em;
+}
+
+.koodisto-small-wrapper hr {
+  margin: 0;
+}
+
+.koodisto-table-small {
+  margin-bottom: 0;
+}
+
+.koodisto-table-small th, .koodisto-table-small td {
+  padding: .5em;
+}
+
+.koodisto-table-small tr:nth-child(2) th, .koodisto-table-small tr:nth-child(2) td {
+  padding-top: 0;
+  padding-bottom: 0;
+}
+
+.koodisto-table-small tr td {
+  width: 99%;
+}
+
+.koodisto-table-small th {
+  padding-left: 0;
+}
+
+.koodisto-table-small td {
+  padding-right: 0;
+}
+
+tr.koodisto-passive-header {
+  font-weight: bold;
+}
+
+tr.koodisto-passive-header, tr.koodisto-passive, table.koodisto-passive  {
+   background-color: rgba(0,0,0,.075);
+  --bs-table-bg: null;
+ }
+
+p.koodisto-passive-header {
+  margin-top: 2em;
+  font-weight: bold;
+}
+
+.koodisto-table-subheading {
+  font-weight: bold;
+}
+
+.koodisto-table-small-subheading {
+  font-weight: bold;
+  margin: 1em 0 0.5em 0;
+}
+
+@media (max-width: 767px) {
+  .koodisto-detail-header {
+    flex-direction: column;
+    padding-right: initial;
+  }
+
+  .koodisto-version, .koodisto-update-date {
+    align-self: initial;
+    margin-top: .25em;
+  }
+}

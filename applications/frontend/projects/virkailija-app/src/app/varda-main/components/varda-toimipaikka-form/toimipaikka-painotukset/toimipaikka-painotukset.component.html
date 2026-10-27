@@ -1,0 +1,100 @@
+<mat-expansion-panel class="painotukset kielipainotukset"
+  [expanded]="true">
+  <mat-expansion-panel-header>
+    <legend>{{ i18n.painotukset_kielipainotukset | translate }}</legend>
+  </mat-expansion-panel-header>
+
+  @if (!kielipainotusList?.length) {
+    <div
+    class="no-results">{{ i18n.painotukset_ei_kielipainotuksia | translate }}</div>
+  }
+  <mat-accordion>
+    @for (painotus of kielipainotusList | slice:0:numberOfDisplayed.kielipainotus; track painotus) {
+      <app-kielipainotus
+        [kielikoodisto]="kielikoodisto"
+        [kielipainotustyyppikoodisto]="kielipainotustyyppikoodisto"
+        [minStartDate]="minStartDate"
+        [maxEndDate]="maxEndDate"
+        [toimipaikka]="toimipaikka"
+        [currentObject]="painotus"
+        [saveAccess]="saveAccess"
+        (addObject)="addKielipainotus($event)"
+      (deleteObject)="deleteKielipainotus($event)"></app-kielipainotus>
+    }
+    @if (kielipainotusList) {
+      <app-varda-show-more-less #showMoreLessKielipainotus
+        [showMoreKey]="i18n.painotukset_kielipainotukset_show_more"
+        [(numberOfDisplayed)]="numberOfDisplayed.kielipainotus"
+        [numberOfItems]="kielipainotusList.length">
+      </app-varda-show-more-less>
+    }
+    @if (addKielipainotusBoolean) {
+      <app-kielipainotus
+        [kielikoodisto]="kielikoodisto"
+        [kielipainotustyyppikoodisto]="kielipainotustyyppikoodisto"
+        [minStartDate]="minStartDate"
+        [maxEndDate]="maxEndDate"
+        [saveAccess]="saveAccess"
+        [toimipaikka]="toimipaikka"
+        (addObject)="addKielipainotus($event)"
+        (deleteObject)="deleteKielipainotus($event)"
+      (closeEmitter)="hideAddKielipainotus()"></app-kielipainotus>
+    }
+  </mat-accordion>
+  @if (isEdit && !addKielipainotusBoolean && saveAccess) {
+    <button class="varda-text-button" id="add-kielipainotus"
+      (click)="addKielipainotusBoolean = true">
+      <mat-icon alt="">add</mat-icon>
+      <span>{{ i18n.painotukset_lisaa_kielipainotus | translate }}</span>
+    </button>
+  }
+</mat-expansion-panel>
+
+
+<mat-expansion-panel class="painotukset kielipainotukset"
+  [expanded]="true">
+  <mat-expansion-panel-header>
+    <legend>{{ i18n.painotukset_toimintapainotukset | translate }}</legend>
+  </mat-expansion-panel-header>
+
+  @if (!toiminnallinenPainotusList?.length) {
+    <div
+    class="no-results">{{ i18n.painotukset_ei_toimintapainotuksia | translate }}</div>
+  }
+  <mat-accordion>
+    @for (painotus of toiminnallinenPainotusList | slice:0:numberOfDisplayed.toiminnallinenpainotus; track painotus) {
+      <app-toimintapainotus
+        [minStartDate]="minStartDate"
+        [maxEndDate]="maxEndDate"
+        [toimipaikka]="toimipaikka"
+        [currentObject]="painotus"
+        [saveAccess]="isEdit && saveAccess"
+        (addObject)="addToiminnallinenPainotus($event)"
+      (deleteObject)="deleteToiminnallinenPainotus($event)"></app-toimintapainotus>
+    }
+    @if (toiminnallinenPainotusList) {
+      <app-varda-show-more-less #showMoreLessToiminnallinenPainotus
+        [showMoreKey]="i18n.painotukset_toimintapainotukset_show_more"
+        [(numberOfDisplayed)]="numberOfDisplayed.toiminnallinenpainotus"
+        [numberOfItems]="toiminnallinenPainotusList.length">
+      </app-varda-show-more-less>
+    }
+    @if (addToimintapainotusBoolean) {
+      <app-toimintapainotus
+        [minStartDate]="minStartDate"
+        [maxEndDate]="maxEndDate"
+        [saveAccess]="isEdit && saveAccess"
+        [toimipaikka]="toimipaikka"
+        (addObject)="addToiminnallinenPainotus($event)"
+        (deleteObject)="deleteToiminnallinenPainotus($event)"
+      (closeEmitter)="hideAddToiminnallinenPainotus()"></app-toimintapainotus>
+    }
+  </mat-accordion>
+  @if (isEdit && !addToimintapainotusBoolean && saveAccess) {
+    <button class="varda-text-button" id="add-toiminnallinenpainotus"
+      (click)="addToimintapainotusBoolean = true">
+      <mat-icon alt="">add</mat-icon>
+      <span>{{ i18n.painotukset_lisaa_toimintapainotus | translate }}</span>
+    </button>
+  }
+</mat-expansion-panel>

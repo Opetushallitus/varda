@@ -1,0 +1,50 @@
+.varda-footer-wrapper {
+  position: fixed;
+  bottom: 0;
+  width: min(100vw, 100%);
+  background-color: var(--white);
+  font-size: 0.75rem;
+  border-top: 2px solid var(--gray-lighten-4);
+  display: flex;
+  flex-wrap: nowrap;
+  justify-content: space-between;
+  align-items: center;
+  min-height: 4.5em;
+  z-index: 2;
+}
+
+.varda-footer-section {
+  display: flex;
+  flex-wrap: wrap;
+  flex: 1 0 200px;
+  margin: auto 2em;
+}
+
+.varda-footer-section.site-version {
+  flex: 5 3 90%;
+  color: var(--gray-lighten-1);
+}
+
+.varda-footer-link {
+  margin: 0.25em 1em;
+  color: var(--black);
+}
+
+.varda-footer-link:hover {
+  font-weight: bold;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+@media (max-width: 450px) {
+  .varda-footer-section {
+    flex-wrap: nowrap;
+    justify-content: space-between;
+    flex-direction: row-reverse;
+    margin: auto 1em;
+    flex: 1 1 100px;
+  }
+  .varda-footer-section.site-version {
+    display:none;
+  }
+}

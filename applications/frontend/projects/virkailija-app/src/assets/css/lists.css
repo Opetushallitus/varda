@@ -1,0 +1,75 @@
+.varda-list {
+
+}
+
+.varda-list-header {
+  font-size: var(--oph-h4);
+  font-weight: bold;
+}
+
+.varda-list-error {
+  color: var(--color-error);
+}
+
+.varda-list-content {
+  display: flex;
+  align-items: right;
+  flex-direction: column;
+}
+
+.varda-list-content-scrollable {
+  min-height: 50px;
+  max-height: 300px;
+  overflow: auto;
+  margin-bottom: 1em;
+}
+
+.varda-list-item {
+  display: flex;
+  flex-wrap: wrap;
+  width: 100%;
+}
+
+.varda-list-item-outside:nth-child(even),
+.varda-list-item:nth-child(even) {
+  background-color: var(--blue-lighten-4);
+}
+
+.varda-list-item:hover {
+  color: var(--white);
+  background-color: var(--blue-darken-1) !important;
+  cursor:pointer;
+}
+
+.varda-list-item-column {
+  padding: 0.25em;
+  flex: 3 1 auto;
+}
+
+.varda-list-item-column:first-child {
+  flex: 1 1 150px;
+}
+
+.varda-list-page {
+  text-align: center;
+  align-self: center;
+  font-size: var(--h6);
+  margin: 0.5em;
+}
+
+.varda-list-search-more {
+  display: flex;
+  flex-flow: wrap;
+  justify-content: space-between;
+}
+
+.varda-list-search-more > * {
+  flex: 1 1 auto;
+  width: auto;
+}
+
+@media (max-width: 576px) {
+  .varda-list-search-more > * {
+    flex: 1 1 100%;
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "outDir": "../../out-tsc/app",
+    "types": []
+  },
+  "files": [
+    "src/main.ts"
+  ],
+  "include": [
+    "projects/virkailija-app/src/**/*.ts",
+    "projects/virkailija-app/src/**/*.d.ts",
+    "projects/varda-shared/src/**/*.ts"
+  ]
+}

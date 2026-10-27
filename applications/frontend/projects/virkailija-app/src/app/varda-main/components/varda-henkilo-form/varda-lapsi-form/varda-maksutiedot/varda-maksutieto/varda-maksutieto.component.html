@@ -1,0 +1,212 @@
+@if (formGroup) {
+  <div [id]="'maksutieto_' + currentObject?.id"
+    class="maksutieto taydennyskoulutus">
+    <app-robo-id [tunniste]="currentObject?.id"
+      nimi="maksutieto"
+      [alkamis_pvm]="currentObject?.alkamis_pvm"
+    [paattymis_pvm]="currentObject?.paattymis_pvm"></app-robo-id>
+    <mat-expansion-panel #matPanel
+      (opened)="togglePanel(true)"
+      (closed)="togglePanel(false)">
+      <mat-expansion-panel-header>
+        @if (objectExists()) {
+          <mat-panel-title>
+            <app-varda-form-error-icon [errors]="errorList"></app-varda-form-error-icon>
+            @if (!currentObject.paattymis_pvm) {
+              <span>
+                {{ i18n.maksutieto_alkaen_PVM | translate: {pvm: currentObject.alkamis_pvm | vardaDate} }}
+              </span>
+            } @else {
+              @if (currentObject.paattymis_pvm) {
+                <span>
+                  {{ i18n.maksutieto | translate }}
+                  {{currentObject.alkamis_pvm | vardaDate }} - {{currentObject.paattymis_pvm | vardaDate }}
+                </span>
+              }
+            }
+            @if (currentObject) {
+              <app-varda-timestamp [dateAdded]="currentObject.luonti_pvm" [dateChanged]="currentObject.muutos_pvm"></app-varda-timestamp>
+            }
+            <span class="headerMaksutietoId">
+              ID: {{currentObject?.id}}
+            </span>
+          </mat-panel-title>
+        } @else {
+          <mat-panel-title>
+            <span>
+              {{ i18n.maksutiedot_lisaa_maksutieto | translate }}
+            </span>
+          </mat-panel-title>
+        }
+        @if (toimipaikkaAccess?.huoltajatiedot.tallentaja && objectExists()) {
+          <button type="button"
+            robot="copy-button"
+            class="copy-button varda-button varda-button-small secondary"
+            (click)="useAsCopy($event)">
+            {{ i18n.use_as_copy | translate }}
+          </button>
+        }
+      </mat-expansion-panel-header>
+      <form [formGroup]="formGroup"
+        (submit)="saveMaksutieto(formGroup)"
+        autocomplete="off">
+        <app-varda-form-error-list [errors]="errorList"></app-varda-form-error-list>
+        <div class="huoltajat">
+          @if (objectExists()) {
+            @for (huoltaja of currentObject.huoltajat; track huoltaja; let i = $index) {
+              <app-varda-maksutieto-huoltaja
+                [indexNr]="i"
+                [huoltaja]="huoltaja">
+              </app-varda-maksutieto-huoltaja>
+            }
+          }
+          @if (isEdit) {
+            <ng-container formArrayName="huoltajat">
+              @for (huoltajaFormGroup of huoltajat.controls; track huoltajaFormGroup; let i = $index) {
+                <app-varda-maksutieto-huoltaja
+                  [huoltajaForm]="huoltajaFormGroup"
+                  [indexNr]="i"
+                  [showDeleteButton]="huoltajat.controls.length > 1 || objectExists()"
+                  (removeHuoltaja)="removeHuoltajaForm($event)">
+                </app-varda-maksutieto-huoltaja>
+              }
+            </ng-container>
+            @if (huoltajat.length < 7) {
+              <button class="varda-button secondary responsive-md"
+                type="button"
+                (click)="addHuoltaja()">
+                <mat-icon alt="">add</mat-icon>
+                {{ i18n.maksutieto_lisaa_huoltaja | translate }}
+              </button>
+            }
+          }
+        </div>
+        <app-varda-form-field name="maksun_peruste_koodi"
+          [form]="formGroup"
+          [label]="i18n.maksutieto_maksunperuste_koodi | translate"
+          [errorText]="i18n.maksutieto_error_maksunperuste_koodi | translate"
+          [instructionText]="i18n.maksutieto_instruction_maksunperuste_koodi | translate">
+          @if (objectExists()) {
+            <div
+              [libKoodistoValue]="koodistoEnum.maksunperuste"
+            format="long">{{ currentObject.maksun_peruste_koodi }}</div>
+          } @else {
+            <div class="oph-select-container" [attr.disabled]="formGroup.controls.maksun_peruste_koodi.disabled">
+              @if (maksunperusteKoodisto?.codes.length > 0) {
+                <select #fieldItem
+                  (ngModelChange)="changeMaksunPeruste($event)"
+                  class="oph-input oph-select"
+                  formControlName="maksun_peruste_koodi">
+                  <option [value]="null"
+                  disabled>-- {{ i18n.choose | translate }} --</option>
+                  @for (maksunperuste of maksunperusteKoodisto.codes; track maksunperuste) {
+                    <option
+                      [value]="maksunperuste.code_value">
+                      <span [libKoodistoValue]="koodistoEnum.maksunperuste" format="long">{{ maksunperuste.code_value }}</span>
+                    </option>
+                  }
+                </select>
+              }
+            </div>
+          }
+        </app-varda-form-field>
+        @if (!yksityinenBoolean) {
+          <app-varda-form-field name="palveluseteli_arvo"
+            [form]="formGroup"
+            [label]="i18n.maksutieto_palveluseteli_arvo | translate"
+            [placeholder]="i18n.maksutieto_placeholder_palveluseteli_arvo | translate"
+            [errorText]="i18n.maksutieto_error_palveluseteli_arvo | translate"
+            [instructionText]="i18n.maksutieto_instruction_palveluseteli_arvo | translate">
+            <input #fieldItem
+              [readonly]="disableForMaksuttomuus"
+              type="number"
+              class="oph-input"
+              min="0"
+              max="9999"
+              step="0.05"
+              formControlName="palveluseteli_arvo" />
+          </app-varda-form-field>
+        }
+        <app-varda-form-field name="asiakasmaksu"
+          [form]="formGroup"
+          [label]="i18n.maksutieto_asiakasmaksu | translate"
+          [placeholder]="i18n.maksutieto_placeholder_asiakasmaksu | translate"
+          [errorText]="i18n.maksutieto_error_asiakasmaksu | translate"
+          [instructionText]="i18n.maksutieto_instruction_asiakasmaksu | translate">
+          <input #fieldItem
+            [readonly]="disableForMaksuttomuus"
+            type="number"
+            class="oph-input"
+            min="0"
+            max="9999"
+            step="0.05"
+            formControlName="asiakasmaksu" />
+        </app-varda-form-field>
+        @if (!yksityinenBoolean) {
+          <app-varda-form-field name="perheen_koko"
+            [form]="formGroup"
+            [label]="i18n.maksutieto_perheen_koko | translate"
+            [placeholder]="i18n.maksutieto_placeholder_perheen_koko | translate"
+            [errorText]="i18n.maksutieto_error_perheen_koko | translate"
+            [instructionText]="i18n.maksutieto_instruction_perheen_koko | translate">
+            <input #fieldItem
+              type="number"
+              class="oph-input"
+              min="2"
+              max="50"
+              step="1"
+              formControlName="perheen_koko" />
+          </app-varda-form-field>
+        }
+        <app-varda-form-field name="alkamis_pvm"
+          [form]="formGroup"
+          [label]="i18n.maksutieto_alkamis_pvm | translate"
+                              [errorMap]="[
+                                { key: 'required', value: i18n.maksutieto_error_alkamis_pvm },
+                                { key: 'matDatepickerParse', value: i18n.katsele_tietoja_error_date_format }
+                              ]"
+          [instructionText]="i18n.maksutieto_instruction_alkamis_pvm | translate">
+          <app-varda-datepicker #fieldItem
+            (dateChange)="startDateChange($event.value)"
+          formControlName='alkamis_pvm'></app-varda-datepicker>
+        </app-varda-form-field>
+        <app-varda-form-field name="paattymis_pvm"
+          [form]="formGroup"
+          [label]="i18n.maksutieto_paattymis_pvm | translate"
+                              [errorMap]="[
+                                { key: 'matDatepickerMin', value: i18n.maksutieto_error_paattymis_pvm },
+                                { key: 'matDatepickerParse', value: i18n.katsele_tietoja_error_date_format }
+                              ]"
+          [instructionText]="i18n.maksutieto_instruction_paattymis_pvm | translate">
+          <app-varda-datepicker #fieldItem
+            [min]="minEndDate"
+          formControlName='paattymis_pvm'></app-varda-datepicker>
+        </app-varda-form-field>
+        <app-varda-error-field [errors]="maksutietoFormErrors"></app-varda-error-field>
+        @if (huoltajaSaveStatus) {
+          <div
+            role="alert"
+            aria-live="polite"
+            class="alert alert-success">
+            @if (!huoltajaSaveStatus.failure) {
+              <div>
+                {{ i18n.save_success | translate }}
+              </div>
+            } @else {
+              <div>{{ i18n.maksutieto_save_success_partial | translate }}</div>
+              <div>{{ i18n.maksutieto_save_success_COUNT | translate: { count: huoltajaSaveStatus.success} }}</div>
+              <div>{{ i18n.maksutieto_save_failure_COUNT | translate: { count: huoltajaSaveStatus.failure} }}</div>
+            }
+          </div>
+        }
+        <app-varda-action-row [saveDisabled]="formGroup.pristine || isSubmitting"
+          [saveAccess]="toimipaikkaAccess?.huoltajatiedot.tallentaja"
+          [formExists]="objectExists()"
+          [isEdit]="isEdit"
+          (togglePanel)="togglePanel($event)"
+          (deleteForm)="deleteMaksutieto()"
+        (enableEdit)="enableForm()"></app-varda-action-row>
+      </form>
+    </mat-expansion-panel>
+  </div>
+}

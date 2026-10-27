@@ -1,0 +1,170 @@
+@if (toimijaAccess.vuokrattuHenkilosto.katselija) {
+  <h1 class="varda-page-header">{{ i18n.vuokrattu_henkilosto | translate }}</h1>
+  <main class="varda-page-content">
+    <div class="modal-form-intro"
+      [innerHTML]="i18n.vuokrattu_henkilosto_instruction | translateMarkdown">
+    </div>
+    <div class="oph-field oph-field-inline year-picker">
+      <label class="oph-label">{{ i18n.aika_vuosi | translate }}</label>
+      <select class="oph-select"
+        (change)="initiateMonths(henkilostoVuosi)"
+        [(ngModel)]="henkilostoVuosi">
+        @for (vuosi of vuodet; track vuosi) {
+          <option
+          [ngValue]="vuosi">{{ vuosi.prefix | translate }} / {{ vuosi.year }}</option>
+        }
+      </select>
+    </div>
+    @if (monthArray) {
+      <form (submit)="saveHenkilosto(monthArray)">
+        <div class="toggle-henkilosto">
+          <mat-checkbox class="henkilostoKytkin"
+            [disabled]="henkilostoKytkin.disabled"
+            [ngModelOptions]="{standalone: true}"
+            (change)="toggleHenkilosto()"
+            [(ngModel)]="henkilostoKytkin.value">
+            {{ i18n.vuokrattu_henkilosto_ei_vuokrattua_henkilostoa | translate }}
+          </mat-checkbox>
+          <button class="varda-text-button"
+            type="button"
+            [matTooltip]="i18n.vuokrattu_henkilosto_tooltip_ei_vuokrattua_henkilostoa | translate"
+            matTooltipClass="varda-tooltip"
+            #henkilotunnus="matTooltip"
+            (click)="henkilotunnus.toggle()"
+            (mouseenter)="$event.stopImmediatePropagation()"
+            (mouseleave)="$event.stopImmediatePropagation()">
+            <mat-icon alt="">help_outline</mat-icon>
+          </button>
+        </div>
+        <ng-container>
+          <div class="table-responsive">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>{{ i18n.aika_kuukausi | translate }}:</th>
+                  <th>{{ i18n.vuokrattu_henkilosto_henkiloiden_maara | translate }}:</th>
+                  <th>{{ i18n.vuokrattu_henkilosto_tehdyt_tunnit | translate }}:</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr class="">
+                  <td></td>
+                  <td><span>{{ i18n.kokonaisluku | translate }}</span></td>
+                  <td><span>{{ i18n.vuokrattu_henkilosto_tunnit_yhteensa | translate }}</span></td>
+                </tr>
+                @for (month of monthArray.controls; track month; let index = $index) {
+                  <tr>
+                    <ng-container [formGroup]="month">
+                      <td>{{ month.value.name | translate }}</td>
+                      <td>
+                        <input type="number"
+                          class="oph-input"
+                          [attr.robot]="'tyontekijamaara-'+index"
+                          formControlName="tyontekijamaara"
+                          min="0"
+                          (change)="valueChanged(month)"
+                          [readonly]="month.get('readonly').value"
+                          [placeholder]="i18n.vuokrattu_henkilosto_henkilomaara | translate" />
+                        @if (month.touched && !month.get('readonly').value) {
+                          <div class="error-field oph-error"
+                            >
+                            @if (month.get('tyontekijamaara').hasError('required')) {
+                              <span>
+                                {{ i18n.vuokrattu_henkilosto_error_tyontekijamaara | translate }}
+                              </span>
+                            }
+                            @if (month.get('tyontekijamaara').hasError('pattern')) {
+                              <span>
+                                {{ i18n.vuokrattu_henkilosto_error_tyontekijamaara_kokonaisluku | translate }}
+                              </span>
+                            }
+                            @if (month.get('tyontekijamaara').hasError('max')) {
+                              <span>
+                                {{ i18n.vuokrattu_henkilosto_error_tyontekijamaara_zero | translate }}
+                              </span>
+                            }
+                          </div>
+                        }
+                      </td>
+                      <td>
+                        <input type="number"
+                          class="oph-input"
+                          [attr.robot]="'tuntimaara-'+index"
+                          formControlName="tuntimaara"
+                          min="0"
+                          step="0.5"
+                          (change)="valueChanged(month)"
+                          [readonly]="month.get('readonly').value"
+                          [placeholder]="i18n.vuokrattu_henkilosto_tyotunnit | translate" />
+                        @if (month.touched && !month.get('readonly').value) {
+                          <div class="error-field oph-error"
+                            >
+                            @if (month.get('tuntimaara').hasError('required')) {
+                              <span>
+                                {{ i18n.vuokrattu_henkilosto_error_tuntimaara | translate }}
+                              </span>
+                            }
+                            @if (month.get('tuntimaara').hasError('pattern')) {
+                              <span>
+                                {{ i18n.vuokrattu_henkilosto_error_tuntimaara_pattern | translate }}
+                              </span>
+                            }
+                            @if (month.get('tuntimaara').hasError('max')) {
+                              <span>
+                                {{ i18n.vuokrattu_henkilosto_error_tuntimaara_zero | translate }}
+                              </span>
+                            }
+                          </div>
+                        }
+                      </td>
+                    </ng-container>
+                  </tr>
+                }
+                @if (vuosiArvot.months > 0) {
+                  <tr class="black-border">
+                    <td>{{ i18n.keskimaarin | translate }}</td>
+                    <td>
+                      {{ i18n.vuokrattu_henkilosto_COUNT_henkiloa_per_kk | translate: { count: vuosiArvot.employees /
+                      vuosiArvot.months | number:'1.1-1' } }}
+                    </td>
+                    <td>
+                      {{ i18n.vuokrattu_henkilosto_HOURS_tuntia_per_kk | translate: { hours: vuosiArvot.hours /
+                      vuosiArvot.months | number:'1.2-2' } }}
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>{{ i18n.yhteensa | translate }}</td>
+                    <td>{{ i18n.vuokrattu_henkilosto_COUNT_henkiloa | translate: { count: vuosiArvot.employees } }}
+                    </td>
+                    <td>{{ i18n.vuokrattu_henkilosto_HOURS_tuntia | translate: { hours: vuosiArvot.hours } }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+          <app-varda-error-field [errors]="henkilostoFormErrors"></app-varda-error-field>
+          @if (!henkilostoKytkin.disabled) {
+            <app-varda-action-row
+              [saveDisabled]="monthArray.pristine || (isSubmitting | async)"
+              [saveAccess]="toimijaAccess.vuokrattuHenkilosto.tallentaja"
+              [formExists]="true"
+              [isEdit]="isEdit"
+              [noDelete]="true"
+              [noToggle]="true"
+              (enableEdit)="enableForm()"
+            (disableEdit)="disableForm()"></app-varda-action-row>
+          }
+        </ng-container>
+      </form>
+    }
+    @if (lastUpdated) {
+      <div
+        class="last-updated">
+        <strong>{{ i18n.vuokrattu_henkilosto_tiedot_paivitetty_viimeksi | translate}}:</strong>
+        @if (lastUpdated) {
+          <span>{{ lastUpdated | date: 'd.M.yyyy HH:mm' }}</span>
+        }
+      </div>
+    }
+  </main>
+}

@@ -1,0 +1,52 @@
+:root {
+  /* Colors */
+  --black: #2a2a2a;
+
+  --white: #fff;
+
+  --gray: #666;
+  --gray-lighten-1: #999;
+  --gray-lighten-2: #aeaeae;
+  --gray-lighten-3: #ccc;
+  --gray-lighten-4: #f6f4f0;
+  --gray-lighten-5: #f5f5f5;
+  --gray-lighten-6: #f0f3f7;
+
+  --red: #db2828;
+  --red-lighten-1: #e09191;
+  --red-lighten-2: #ffe9e9;
+
+  --blue: #0a789c;
+  --blue-lighten-1: #159ecb;
+  --blue-lighten-2: #00b5f0;
+  --blue-lighten-3: #a6dcee;
+  --blue-lighten-4: #def2ff;
+  --blue-darken-1: #00526c;
+
+  --green: #118616;
+  --green-lighten-1: #43a047;
+  --green-lighten-2: #e6ffc1;
+
+  --yellow: #ffd024;
+  --yellow-lighten-1: #fff7bc;
+
+  /* Contextual colors */
+  --color-primary: var(--blue-lighten-1);
+
+  --font-color-base: var(--black);
+  --color-muted: var(--gray-lighten-2);
+  --color-info: var(--blue);
+  --color-success: var(--green);
+  --color-error: var(--red);
+
+  --link-color: var(--blue-lighten-1);
+  --link-color-hover: var(--blue-lighten-2);
+
+  --bg-color-info: var(--blue-lighten-4);
+  --bg-color-success: var(--green-lighten-1);
+  --bg-color-warning: var(--yellow-lighten-1);
+  --bg-color-error: var(--red-lighten-2);
+
+  /* MDC Components */
+  --mat-progress-bar-track-height: 0.5em;
+}
